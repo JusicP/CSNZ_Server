@@ -7,18 +7,18 @@ CUserInventoryItem::CUserInventoryItem()
 	Reset();
 }
 
-CUserInventoryItem::CUserInventoryItem(int slot, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, int partSlot1, int partSlot2)
+CUserInventoryItem::CUserInventoryItem(int slot, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, std::string paintIDList, int partSlot1, int partSlot2, int lockStatus)
 {
-	Init(slot, itemID, count, status, inUse, obtainDate, expiryDate, isClanItem, enhanceLvl, enhanceExp, enhanceValue, paintID, partSlot1, partSlot2);
+	Init(slot, itemID, count, status, inUse, obtainDate, expiryDate, isClanItem, enhanceLvl, enhanceExp, enhanceValue, paintID, paintIDList, partSlot1, partSlot2, lockStatus);
 }
 
 // for sqlite 
-CUserInventoryItem::CUserInventoryItem(int userID, int slot, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, int partSlot1, int partSlot2)
+CUserInventoryItem::CUserInventoryItem(int userID, int slot, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, std::string paintIDList, int partSlot1, int partSlot2, int lockStatus)
 {
-	Init(slot, itemID, count, status, inUse, obtainDate, expiryDate, isClanItem, enhanceLvl, enhanceExp, enhanceValue, paintID, partSlot1, partSlot2);
+	Init(slot, itemID, count, status, inUse, obtainDate, expiryDate, isClanItem, enhanceLvl, enhanceExp, enhanceValue, paintID, paintIDList, partSlot1, partSlot2, lockStatus);
 }
 
-void CUserInventoryItem::Init(int slot, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, int partSlot1, int partSlot2)
+void CUserInventoryItem::Init(int slot, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, std::string paintIDList, int partSlot1, int partSlot2, int lockStatus)
 {
 	m_nSlot = slot;
 	m_nItemID = itemID;
@@ -29,11 +29,13 @@ void CUserInventoryItem::Init(int slot, int itemID, int count, int status, int i
 	m_nExpiryDate = expiryDate;
 	m_nIsClanItem = isClanItem;
 	m_nPaintID = paintID;
+	m_nPaintIDList = paintIDList;
 	m_nEnhancementLevel = enhanceLvl;
 	m_nEnhancementExp = enhanceExp;
 	m_nEnhanceValue = enhanceValue;
 	m_nPartSlot1 = partSlot1;
 	m_nPartSlot2 = partSlot2;
+	m_nLockStatus = lockStatus;
 }
 
 void CUserInventoryItem::Reset()
@@ -45,17 +47,19 @@ void CUserInventoryItem::Reset()
 	m_nObtainDate = 0;
 	m_nExpiryDate = 0;
 	m_nPaintID = 0;
+	m_nPaintIDList = "";
 	m_nIsClanItem = 0;
 	m_nEnhancementLevel = 0;
 	m_nEnhancementExp = 0;
 	m_nEnhanceValue = 0;
 	m_nPartSlot1 = 0;
 	m_nPartSlot2 = 0;
+	m_nLockStatus = 0;
 }
 
-void CUserInventoryItem::PushItem(std::vector<CUserInventoryItem>& vec, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, int partSlot1, int partSlot2)
+void CUserInventoryItem::PushItem(std::vector<CUserInventoryItem>& vec, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, std::string paintIDList, int partSlot1, int partSlot2, int lockStatus)
 {
-	vec.push_back(CUserInventoryItem(0, itemID, count, status, inUse, obtainDate, expiryDate, isClanItem, enhanceLvl, enhanceExp, enhanceValue, paintID, partSlot1, partSlot2));
+	vec.push_back(CUserInventoryItem(0, itemID, count, status, inUse, obtainDate, expiryDate, isClanItem, enhanceLvl, enhanceExp, enhanceValue, paintID, paintIDList, partSlot1, partSlot2, lockStatus));
 }
 
 void CUserInventoryItem::PushItem(std::vector<CUserInventoryItem>& vec, CUserInventoryItem& item)

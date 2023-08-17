@@ -221,7 +221,7 @@ bool CHostManager::OnUseInGameItem(CReceivePacket* msg, CExtendedSocket* socket)
 
 	g_pItemManager->UseItem(destUser, items[0].GetGameSlot());
 
-	g_pPacketManager->SendHostOnItemUse(destRoom->GetHostUser()->GetExtendedSocket(), userID, items[0].m_nItemID);
+	g_pPacketManager->SendHostOnItemUse(socket, userID, items[0].m_nItemID);
 
 	return true;
 }

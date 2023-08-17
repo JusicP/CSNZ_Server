@@ -49,7 +49,10 @@ private:
 	bool OnDailyRewardsRequest(CUser* user, int requestId);
 	bool OnEnhancementRequest(CUser* user, CReceivePacket* msg);
 	bool OnWeaponPaintRequest(CUser* user, CReceivePacket* msg);
+	bool OnWeaponPaintSwitchRequest(CUser* user, CReceivePacket* msg);
 	bool OnPartEquipRequest(CUser* user, CReceivePacket* msg);
+	bool OnSwitchInUseRequest(CUser* user, CReceivePacket* msg);
+	bool OnLockItemRequest(CUser* user, CReceivePacket* msg);
 	void OnDailyRewardsSpinRequest(CUser* user);
 
 	// enhance funcs

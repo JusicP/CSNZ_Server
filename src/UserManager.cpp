@@ -15,7 +15,7 @@ CUserManager::CUserManager(int maxPlayers)
 	users.reserve(maxPlayers);
 
 	for (size_t i = 0; i < g_pServerConfig->defUser.defaultItems.size(); i++)
-		m_DefaultItems.push_back(CUserInventoryItem(i, g_pServerConfig->defUser.defaultItems[i], 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+		m_DefaultItems.push_back(CUserInventoryItem(i, g_pServerConfig->defUser.defaultItems[i], 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0));
 }
 
 bool CUserManager::OnLoginPacket(CReceivePacket* msg, CExtendedSocket* socket)

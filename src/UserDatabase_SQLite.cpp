@@ -9,7 +9,7 @@
 
 using namespace std;
 
-#define LAST_DB_VERSION 1
+#define LAST_DB_VERSION 2
 #define MAX_USER_REGISTRATIONS_PER_IP 3
 
 //#define OBFUSCATE(data) (string)AY_OBFUSCATE_KEY(data, 'F')
@@ -606,7 +606,7 @@ int CUserDatabaseSQLite::AddInventoryItem(int userID, CUserInventoryItem& item)
 
 		if (!queryGetInvItem.executeStep())
 		{
-			SQLite::Statement queryInsertNewInvItem(m_Database, OBFUSCATE("INSERT INTO UserInventory VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+			SQLite::Statement queryInsertNewInvItem(m_Database, OBFUSCATE("INSERT INTO UserInventory VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
 			queryInsertNewInvItem.bind(1, userID);
 			queryInsertNewInvItem.bind(2, slot);
 			queryInsertNewInvItem.bind(3, item.m_nItemID);
@@ -620,14 +620,16 @@ int CUserDatabaseSQLite::AddInventoryItem(int userID, CUserInventoryItem& item)
 			queryInsertNewInvItem.bind(11, item.m_nEnhancementExp);
 			queryInsertNewInvItem.bind(12, item.m_nEnhanceValue);
 			queryInsertNewInvItem.bind(13, item.m_nPaintID);
-			queryInsertNewInvItem.bind(14, item.m_nPartSlot1);
-			queryInsertNewInvItem.bind(15, item.m_nPartSlot2);
+			queryInsertNewInvItem.bind(14, item.m_nPaintIDList);
+			queryInsertNewInvItem.bind(15, item.m_nPartSlot1);
+			queryInsertNewInvItem.bind(16, item.m_nPartSlot2);
+			queryInsertNewInvItem.bind(17, item.m_nLockStatus);
 
 			queryInsertNewInvItem.exec();
 		}
 		else
 		{
-			SQLite::Statement queryUpdateItem(m_Database, OBFUSCATE("UPDATE UserInventory SET itemID = ? , count = ? , status = ? , inUse = ? , obtainDate = ? , expiryDate = ? , isClanItem = ?, enhancementLevel = ?, enhancementExp = ?, enhanceValue = ?, paintID = ?, partSlot1 = ?, partSlot2 = ? WHERE userID = ? AND slot = ?"));
+			SQLite::Statement queryUpdateItem(m_Database, OBFUSCATE("UPDATE UserInventory SET itemID = ? , count = ? , status = ? , inUse = ? , obtainDate = ? , expiryDate = ? , isClanItem = ?, enhancementLevel = ?, enhancementExp = ?, enhanceValue = ?, paintID = ?, paintIDList = ?, partSlot1 = ?, partSlot2 = ?, lockStatus = ? WHERE userID = ? AND slot = ?"));
 			queryUpdateItem.bind(1, item.m_nItemID);
 			queryUpdateItem.bind(2, item.m_nCount);
 			queryUpdateItem.bind(3, item.m_nStatus);
@@ -639,10 +641,12 @@ int CUserDatabaseSQLite::AddInventoryItem(int userID, CUserInventoryItem& item)
 			queryUpdateItem.bind(9, item.m_nEnhancementExp);
 			queryUpdateItem.bind(10, item.m_nEnhanceValue);
 			queryUpdateItem.bind(11, item.m_nPaintID);
-			queryUpdateItem.bind(12, item.m_nPartSlot1);
-			queryUpdateItem.bind(13, item.m_nPartSlot2);
-			queryUpdateItem.bind(14, userID);
-			queryUpdateItem.bind(15, slot);
+			queryUpdateItem.bind(12, item.m_nPaintIDList);
+			queryUpdateItem.bind(13, item.m_nPartSlot1);
+			queryUpdateItem.bind(14, item.m_nPartSlot2);
+			queryUpdateItem.bind(15, item.m_nLockStatus);
+			queryUpdateItem.bind(16, userID);
+			queryUpdateItem.bind(17, slot);
 
 			queryUpdateItem.exec();
 		}
@@ -721,7 +725,7 @@ int CUserDatabaseSQLite::AddInventoryItems(int userID, std::vector<CUserInventor
 
 			if (!queryGetInvItem.executeStep())
 			{
-				SQLite::Statement queryInsertNewInvItem(m_Database, OBFUSCATE("INSERT INTO UserInventory VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+				SQLite::Statement queryInsertNewInvItem(m_Database, OBFUSCATE("INSERT INTO UserInventory VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
 				queryInsertNewInvItem.bind(1, userID);
 				queryInsertNewInvItem.bind(2, slot);
 				queryInsertNewInvItem.bind(3, item.m_nItemID);
@@ -735,14 +739,16 @@ int CUserDatabaseSQLite::AddInventoryItems(int userID, std::vector<CUserInventor
 				queryInsertNewInvItem.bind(11, item.m_nEnhancementExp);
 				queryInsertNewInvItem.bind(12, item.m_nEnhanceValue);
 				queryInsertNewInvItem.bind(13, item.m_nPaintID);
-				queryInsertNewInvItem.bind(14, item.m_nPartSlot1);
-				queryInsertNewInvItem.bind(15, item.m_nPartSlot2);
+				queryInsertNewInvItem.bind(14, item.m_nPaintIDList);
+				queryInsertNewInvItem.bind(15, item.m_nPartSlot1);
+				queryInsertNewInvItem.bind(16, item.m_nPartSlot2);
+				queryInsertNewInvItem.bind(17, item.m_nLockStatus);
 
 				queryInsertNewInvItem.exec();
 			}
 			else
 			{
-				SQLite::Statement queryUpdateItem(m_Database, OBFUSCATE("UPDATE UserInventory SET itemID = ? , count = ? , status = ? , inUse = ? , obtainDate = ? , expiryDate = ? , isClanItem = ?, enhancementLevel = ?, enhancementExp = ?, enhanceValue = ?, paintID = ?, partSlot1 = ?, partSlot2 = ? WHERE userID = ? AND slot = ?"));
+				SQLite::Statement queryUpdateItem(m_Database, OBFUSCATE("UPDATE UserInventory SET itemID = ? , count = ? , status = ? , inUse = ? , obtainDate = ? , expiryDate = ? , isClanItem = ?, enhancementLevel = ?, enhancementExp = ?, enhanceValue = ?, paintID = ?, paintIDList = ?, partSlot1 = ?, partSlot2 = ?, lockStatus = ? WHERE userID = ? AND slot = ?"));
 				queryUpdateItem.bind(1, item.m_nItemID);
 				queryUpdateItem.bind(2, item.m_nCount);
 				queryUpdateItem.bind(3, item.m_nStatus);
@@ -754,10 +760,12 @@ int CUserDatabaseSQLite::AddInventoryItems(int userID, std::vector<CUserInventor
 				queryUpdateItem.bind(9, item.m_nEnhancementExp);
 				queryUpdateItem.bind(10, item.m_nEnhanceValue);
 				queryUpdateItem.bind(11, item.m_nPaintID);
-				queryUpdateItem.bind(12, item.m_nPartSlot1);
-				queryUpdateItem.bind(13, item.m_nPartSlot2);
-				queryUpdateItem.bind(14, userID);
-				queryUpdateItem.bind(15, slot);
+				queryUpdateItem.bind(12, item.m_nPaintIDList);
+				queryUpdateItem.bind(13, item.m_nPartSlot1);
+				queryUpdateItem.bind(14, item.m_nPartSlot2);
+				queryUpdateItem.bind(15, item.m_nLockStatus);
+				queryUpdateItem.bind(16, userID);
+				queryUpdateItem.bind(17, slot);
 
 				queryUpdateItem.exec();
 			}
@@ -782,7 +790,7 @@ int CUserDatabaseSQLite::UpdateInventoryItem(int userID, CUserInventoryItem item
 {
 	try
 	{
-		SQLite::Statement query(m_Database, OBFUSCATE("UPDATE UserInventory SET itemID = ? , count = ? , status = ? , inUse = ? , obtainDate = ? , expiryDate = ? , isClanItem = ?, enhancementLevel = ?, enhancementExp = ?, enhanceValue = ?, paintID = ?, partSlot1 = ?, partSlot2 = ? WHERE userID = ? AND slot = ?"));
+		SQLite::Statement query(m_Database, OBFUSCATE("UPDATE UserInventory SET itemID = ? , count = ? , status = ? , inUse = ? , obtainDate = ? , expiryDate = ? , isClanItem = ?, enhancementLevel = ?, enhancementExp = ?, enhanceValue = ?, paintID = ?, paintIDList = ?, partSlot1 = ?, partSlot2 = ?, lockStatus = ? WHERE userID = ? AND slot = ?"));
 		query.bind(1, item.m_nItemID);
 		query.bind(2, item.m_nCount);
 		query.bind(3, item.m_nStatus);
@@ -794,10 +802,12 @@ int CUserDatabaseSQLite::UpdateInventoryItem(int userID, CUserInventoryItem item
 		query.bind(9, item.m_nEnhancementExp);
 		query.bind(10, item.m_nEnhanceValue);
 		query.bind(11, item.m_nPaintID);
-		query.bind(12, item.m_nPartSlot1);
-		query.bind(13, item.m_nPartSlot2);
-		query.bind(14, userID);
-		query.bind(15, item.m_nSlot);
+		query.bind(12, item.m_nPaintIDList);
+		query.bind(13, item.m_nPartSlot1);
+		query.bind(14, item.m_nPartSlot2);
+		query.bind(15, item.m_nLockStatus);
+		query.bind(16, userID);
+		query.bind(17, item.m_nSlot);
 
 		query.exec();
 	}
@@ -821,7 +831,7 @@ int CUserDatabaseSQLite::GetInventoryItems(int userID, vector<CUserInventoryItem
 
 		while (query.executeStep())
 		{
-			CUserInventoryItem item = query.getColumns<CUserInventoryItem, 15>();
+			CUserInventoryItem item = query.getColumns<CUserInventoryItem, 17>();
 			items.push_back(item);
 		}
 	}
@@ -849,11 +859,11 @@ int CUserDatabaseSQLite::GetInventoryItemsByID(int userID, int itemID, vector<CU
 			return 0;
 		}
 
-		CUserInventoryItem item = query.getColumns<CUserInventoryItem, 15>();
+		CUserInventoryItem item = query.getColumns<CUserInventoryItem, 17>();
 		items.push_back(item);
 		while (query.executeStep())
 		{
-			CUserInventoryItem item = query.getColumns<CUserInventoryItem, 15>();
+			CUserInventoryItem item = query.getColumns<CUserInventoryItem, 17>();
 			items.push_back(item);
 		}
 	}
@@ -881,7 +891,7 @@ int CUserDatabaseSQLite::GetInventoryItemBySlot(int userID, int slot, CUserInven
 			return 0;
 		}
 
-		item = query.getColumns<CUserInventoryItem, 15>();
+		item = query.getColumns<CUserInventoryItem, 17>();
 	}
 	catch (exception& e)
 	{
@@ -907,7 +917,7 @@ int CUserDatabaseSQLite::GetFirstActiveItemByItemID(int userID, int itemID, CUse
 			return 0;
 		}
 
-		item = query.getColumns<CUserInventoryItem, 15>();
+		item = query.getColumns<CUserInventoryItem, 17>();
 	}
 	catch (exception& e)
 	{
@@ -955,7 +965,7 @@ int CUserDatabaseSQLite::ProcessInventory(time_t curTime)
 		map<int, int> expiredItems;
 		while (query.executeStep())
 		{
-			CUserInventoryItem item(query.getColumn(1), query.getColumn(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+			CUserInventoryItem item(query.getColumn(1), query.getColumn(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0);
 			int userID = query.getColumn(0);
 
 			CUser* user = g_pUserManager->GetUserById(userID);

@@ -1,0 +1,2 @@
+ALTER TABLE UserInventory ADD COLUMN paintIDList TEXT DEFAULT '';
+ALTER TABLE UserInventory ADD COLUMN lockStatus INT;

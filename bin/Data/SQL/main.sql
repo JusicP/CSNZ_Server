@@ -1,4 +1,4 @@
-PRAGMA user_version = 1;
+PRAGMA user_version = 2;
 CREATE TABLE IF NOT EXISTS "UserDist" (
 	"userIDNext" INT,
 	"clanIDNext" INT
@@ -90,8 +90,10 @@ CREATE TABLE IF NOT EXISTS "UserInventory" (
 	"enhancementExp"    INT,
 	"enhanceValue"		INT,
 	"paintID"    		INT,
+	"paintIDList"    	TEXT DEFAULT '',
 	"partSlot1"    		INT,
 	"partSlot2"   	 	INT,
+	"lockStatus"		INT,
 	FOREIGN KEY("userID") REFERENCES "UserCharacter"("userID") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "UserBan" (

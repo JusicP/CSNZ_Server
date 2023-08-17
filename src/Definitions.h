@@ -245,6 +245,7 @@ enum ItemPacketType
 	WeaponPaintReq = 17,
 	Part = 21,
 	SwitchInUse = 23,
+	WeaponPaintSwitchReq = 24,
 	LockItem = 26,
 };
 

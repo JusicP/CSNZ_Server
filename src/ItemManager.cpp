@@ -163,7 +163,7 @@ bool CItemManager::KVToJson()
 {
 	ofstream f("ItemRewards.json", ios::in);
 	if (f)
-		return false;
+		return f.close(), false;
 
 	f.close();
 
@@ -426,31 +426,13 @@ bool CItemManager::OnItemPacket(CReceivePacket* msg, CExtendedSocket* socket)
 		OnPartEquipRequest(user, msg);
 		break;
 	case ItemPacketType::SwitchInUse: // switch in use
-	{
-		int unk = msg->ReadUInt8();
-		int slot = msg->ReadUInt16();
-
-		CUserInventoryItem item;
-		g_pUserDatabase->GetInventoryItemBySlot(user->GetID(), item.GameSlotToSlot(msg->ReadInt16()), item);
-		vector<CUserInventoryItem> items;
-
-		if (item.m_nInUse == 1)
-		{
-			item.m_nInUse = 0;
-		}
-		else
-		{
-			item.m_nInUse = 1;
-		}
-
-		item.PushItem(items, item);
-
-		// send inventory update to user
-		g_pPacketManager->SendInventoryAdd(socket, items, slot);
-	}
+		OnSwitchInUseRequest(user, msg);
+		break;
+	case ItemPacketType::WeaponPaintSwitchReq: // switch weapon paint request
+		OnWeaponPaintSwitchRequest(user, msg);
+		break;
 	case ItemPacketType::LockItem:
-		// TODO
-		// you can't do anything with item if it's locked
+		OnLockItemRequest(user, msg);
 		break;
 	default:
 		g_pConsole->Warn("Packet_Item type %d is not implemented\n", type);
@@ -676,7 +658,7 @@ int CItemManager::AddItem(int userID, CUser* user, int itemID, int count, int du
 	else // create new slot for item
 	{
 		// push new item
-		item.PushItem(items, itemID, count, itemStatus, itemInUse, currentTimestamp, expiryDate, 0, 0, 0, 0, 0, 0, 0); // push new items to inventory
+		item.PushItem(items, itemID, count, itemStatus, itemInUse, currentTimestamp, expiryDate, 0, 0, 0, 0, 0, "", 0, 0, 0); // push new items to inventory
 
 		// add new item to db
 		// TODO: check for return value
@@ -919,7 +901,7 @@ int CItemManager::AddItems(int userID, CUser* user, vector<RewardItem>& items)
 		}
 		else // create new slot for item
 		{
-			item.Init(0, itemID, count, itemStatus, itemInUse, currentTimestamp, expiryDate, 0, 0, 0, 0, 0, 0, 0); // push new items to inventory]
+			item.Init(0, itemID, count, itemStatus, itemInUse, currentTimestamp, expiryDate, 0, 0, 0, 0, 0, "", 0, 0, 0); // push new items to inventory]
 
 			g_pUserDatabase->AddInventoryItem(userID, item);
 
@@ -1901,11 +1883,14 @@ bool CItemManager::OnWeaponPaintRequest(CUser* user, CReceivePacket* msg)
 	// TODO: Make check for valid paint item
 	string className = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(paint.m_nItemID));
 
-	bool isResetItem = className == "WeaponPaintRemoveItem";
-	if (className != "WeaponPaintItem" && !isResetItem)
+	if (className != "WeaponPaintItem" || className == "WeaponPaintRemoveItem")
 		return false;
 
-	weapon.m_nPaintID = isResetItem ? 0 : paint.m_nItemID;
+	weapon.m_nPaintID = paint.m_nItemID;
+
+	if (!weapon.m_nPaintIDList.empty())
+		weapon.m_nPaintIDList += " ";
+	weapon.m_nPaintIDList += to_string(paint.m_nItemID);
 
 	g_pUserDatabase->UpdateInventoryItem(user->GetID(), weapon);
 
@@ -1917,6 +1902,39 @@ bool CItemManager::OnWeaponPaintRequest(CUser* user, CReceivePacket* msg)
 
 	// remove paint item
 	OnItemUse(user, paint);
+
+	g_pPacketManager->SendItemWeaponPaintReply(user->GetExtendedSocket());
+
+	return true;
+}
+
+bool CItemManager::OnWeaponPaintSwitchRequest(CUser* user, CReceivePacket* msg)
+{
+	int weaponSlot = msg->ReadUInt16();
+	int paintID = msg->ReadUInt16();
+
+	CUserInventoryItem weapon;
+
+	g_pUserDatabase->GetInventoryItemBySlot(user->GetID(), weapon.GameSlotToSlot(weaponSlot), weapon);
+
+	if (!weapon.m_nItemID)
+		return false;
+
+	// TODO: Make check for valid paint item
+	string className = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(paintID));
+
+	if (className != "WeaponPaintItem" && className != "WeaponPaintRemoveItem")
+		return false;
+
+	weapon.m_nPaintID = paintID;
+
+	g_pUserDatabase->UpdateInventoryItem(user->GetID(), weapon);
+
+	vector<CUserInventoryItem> items;
+	weapon.PushItem(items, weapon);
+
+	// update client inventory
+	g_pPacketManager->SendInventoryAdd(user->GetExtendedSocket(), items);
 
 	g_pPacketManager->SendItemWeaponPaintReply(user->GetExtendedSocket());
 
@@ -2003,6 +2021,62 @@ bool CItemManager::OnPartEquipRequest(CUser* user, CReceivePacket* msg)
 		g_pConsole->Warn("CItemManager::OnPartEquipRequest: unknown request: %d\n", type);
 		break;
 	}
+	return true;
+}
+
+bool CItemManager::OnSwitchInUseRequest(CUser* user, CReceivePacket* msg)
+{
+	int newInUse = msg->ReadUInt8();
+	int slot = msg->ReadUInt16();
+
+	CUserInventoryItem item;
+	g_pUserDatabase->GetInventoryItemBySlot(user->GetID(), item.GameSlotToSlot(slot), item);
+
+	if (!item.m_nItemID)
+		return false;
+
+	if (newInUse == item.m_nInUse)
+	{
+		g_pConsole->Warn("CItemManager::OnSwitchInUseRequest: User '%s' tried to switch in use status, but newInUse == item.m_nInUse... how?\n", user->GetLogName());
+		return false;
+	}
+
+	item.m_nInUse == newInUse;
+
+	vector<CUserInventoryItem> items;
+	item.PushItem(items, item);
+
+	// send inventory update to user
+	g_pPacketManager->SendInventoryAdd(user->GetExtendedSocket(), items, slot);
+
+	return true;
+}
+
+bool CItemManager::OnLockItemRequest(CUser* user, CReceivePacket* msg)
+{
+	int newLockStatus = msg->ReadUInt8();
+	int slot = msg->ReadUInt16();
+
+	CUserInventoryItem item;
+	g_pUserDatabase->GetInventoryItemBySlot(user->GetID(), item.GameSlotToSlot(slot), item);
+
+	if (!item.m_nItemID)
+		return false;
+
+	if (newLockStatus == item.m_nLockStatus)
+	{
+		g_pConsole->Warn("CItemManager::OnLockStatusRequest: User '%s' tried to switch lock status, but newLockStatus == item.m_nLockStatus... how?\n", user->GetLogName());
+		return false;
+	}
+
+	item.m_nLockStatus == newLockStatus;
+
+	vector<CUserInventoryItem> items;
+	item.PushItem(items, item);
+
+	// send inventory update to user
+	g_pPacketManager->SendInventoryAdd(user->GetExtendedSocket(), items, slot);
+
 	return true;
 }
 
