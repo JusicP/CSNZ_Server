@@ -3321,7 +3321,7 @@ void CPacketManager::SendDefaultItems(CExtendedSocket* socket, vector<CUserInven
 				msg->WriteUInt16(item.m_nPartSlot2);
 			}
 
-			msg->WriteUInt8(1); // item->m_nInUse
+			msg->WriteUInt8(item.m_nInUse);
 
 			// unk shit
 			msg->WriteUInt8(0); 

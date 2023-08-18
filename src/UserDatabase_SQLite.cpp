@@ -959,7 +959,7 @@ int CUserDatabaseSQLite::ProcessInventory(time_t curTime)
 {
 	try
 	{
-		static SQLite::Statement query(m_Database, OBFUSCATE("SELECT * FROM UserInventory WHERE expiryDate != 0 AND status = 1 AND expiryDate < ?"));
+		static SQLite::Statement query(m_Database, OBFUSCATE("SELECT * FROM UserInventory WHERE expiryDate != 0 AND inUse = 1 AND expiryDate < ?"));
 		query.bind(1, curTime);	
 
 		map<int, int> expiredItems;
@@ -2177,6 +2177,7 @@ int CUserDatabaseSQLite::GetCostumeLoadout(int userID, CUserCostumeLoadout& load
 			loadout.m_nPelvisCostumeID = query.getColumn(4);
 			loadout.m_nFaceCostumeID = query.getColumn(5);
 			loadout.m_nTattooID = query.getColumn(6);
+			loadout.m_nPetCostumeID = query.getColumn(7);
 		}
 
 		{
@@ -2208,18 +2209,19 @@ int CUserDatabaseSQLite::UpdateCostumeLoadout(int userID, CUserCostumeLoadout& l
 	{
 		// update zombie loadout
 		if (zbSlot == -1)
-		{ 
-			SQLite::Statement query(m_Database, OBFUSCATE("UPDATE UserCostumeLoadout SET head = ?, back = ?, arm = ?, pelvis = ?, face = ?, tattoo = ? WHERE userID = ?"));
+		{
+			SQLite::Statement query(m_Database, OBFUSCATE("UPDATE UserCostumeLoadout SET head = ?, back = ?, arm = ?, pelvis = ?, face = ?, tattoo = ?, pet = ? WHERE userID = ?"));
 			query.bind(1, loadout.m_nHeadCostumeID);
 			query.bind(2, loadout.m_nBackCostumeID);
 			query.bind(3, loadout.m_nArmCostumeID);
 			query.bind(4, loadout.m_nPelvisCostumeID);
 			query.bind(5, loadout.m_nFaceCostumeID);
 			query.bind(6, loadout.m_nTattooID);
-			query.bind(7, userID);
+			query.bind(7, loadout.m_nPetCostumeID);
+			query.bind(8, userID);
 			if (!query.exec())
 			{
-				SQLite::Statement query(m_Database, OBFUSCATE("INSERT INTO UserCostumeLoadout VALUES (?, ?, ?, ?, ?, ?, ?)"));
+				SQLite::Statement query(m_Database, OBFUSCATE("INSERT INTO UserCostumeLoadout VALUES (?, ?, ?, ?, ?, ?, ?, ?)"));
 				query.bind(1, userID);
 				query.bind(2, loadout.m_nHeadCostumeID);
 				query.bind(3, loadout.m_nBackCostumeID);
@@ -2227,6 +2229,7 @@ int CUserDatabaseSQLite::UpdateCostumeLoadout(int userID, CUserCostumeLoadout& l
 				query.bind(5, loadout.m_nPelvisCostumeID);
 				query.bind(6, loadout.m_nFaceCostumeID);
 				query.bind(7, loadout.m_nTattooID);
+				query.bind(8, loadout.m_nPetCostumeID);
 
 				query.exec();
 			}

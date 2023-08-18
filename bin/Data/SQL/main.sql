@@ -173,6 +173,7 @@ CREATE TABLE IF NOT EXISTS "UserCostumeLoadout" (
 	"pelvis"	INT,
 	"face"		INT,
 	"tattoo"	INT,
+	"pet"		INT,
 	FOREIGN KEY("userID") REFERENCES "UserCharacter"("userID") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "UserZBCostumeLoadout" (

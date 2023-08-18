@@ -34,9 +34,10 @@ public:
 		m_nPelvisCostumeID = 0;
 		m_nFaceCostumeID = 0;
 		m_nTattooID = 0;
+		m_nPetCostumeID = 0;
 	}
 
-	CUserCostumeLoadout(int head, int back, int arm, int pelvis, int face, int tattoo)
+	CUserCostumeLoadout(int head, int back, int arm, int pelvis, int face, int tattoo, int pet)
 	{
 		m_nHeadCostumeID = head;
 		m_nBackCostumeID = back;
@@ -44,6 +45,7 @@ public:
 		m_nPelvisCostumeID = pelvis;
 		m_nFaceCostumeID = face;
 		m_nTattooID = tattoo;
+		m_nPetCostumeID = pet;
 	}
 
 	int m_nHeadCostumeID;
@@ -53,4 +55,5 @@ public:
 	int m_nFaceCostumeID;
 	std::map<int, int> m_ZombieSkinCostumeID;
 	int m_nTattooID;
+	int m_nPetCostumeID;
 };
