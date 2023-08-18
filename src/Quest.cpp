@@ -1,5 +1,7 @@
 #include "Quest.h"
 
+using namespace std;
+
 CQuestBaseCondition::CQuestBaseCondition(CQuestTask* task, int id)
 {
 	m_pTask = task;
@@ -29,7 +31,7 @@ int CQuestBaseCondition::GetEventType()
 	return m_nEventType;
 }
 
-CQuestTask::CQuestTask(CQuest* quest, int id, std::string name, int goal)
+CQuestTask::CQuestTask(CQuest* quest, int id, string name, int goal)
 {
 	m_pQuest = quest;
 	m_nID = id;
@@ -240,7 +242,7 @@ void CQuestTask::ApplyProgress(CUser* user, UserQuestTaskProgress progress)
 	g_pPacketManager->SendQuestUpdateTaskInfo(user->GetExtendedSocket(), 0xFF, m_pQuest->GetID(), this, progress);
 }
 
-std::string CQuestTask::GetName()
+string CQuestTask::GetName()
 {
 	return m_szName;
 }
@@ -281,22 +283,22 @@ CQuest::~CQuest()
 		delete task;
 }
 
-void CQuest::SetName(std::string name)
+void CQuest::SetName(string name)
 {
 	m_szName = name;
 }
 
-std::string CQuest::GetName()
+string CQuest::GetName()
 {
 	return m_szName;
 }
 
-void CQuest::SetDescription(std::string desc)
+void CQuest::SetDescription(string desc)
 {
 	m_szDescription = desc;
 }
 
-std::string CQuest::GetDescription()
+string CQuest::GetDescription()
 {
 	return m_szDescription;
 }
@@ -336,14 +338,14 @@ void CQuest::AddTask(CQuestTask* task)
 	m_Tasks.push_back(task);
 }
 
-void CQuest::AddReward(QuestReward_s reward)
+void CQuest::AddReward(QuestReward_s& reward)
 {
 	m_Rewards.push_back(reward);
 }
 
 CQuestTask* CQuest::GetTask(int id)
 {
-	std::vector<CQuestTask*>::iterator taskIt = find_if(m_Tasks.begin(), m_Tasks.end(),
+	vector<CQuestTask*>::iterator taskIt = find_if(m_Tasks.begin(), m_Tasks.end(),
 		[id](CQuestTask* task) { return id == task->GetID(); });
 
 	if (taskIt != m_Tasks.end())
@@ -352,17 +354,17 @@ CQuestTask* CQuest::GetTask(int id)
 	return NULL;
 }
 
-std::vector<CQuestTask*> CQuest::GetTasks()
+vector<CQuestTask*> CQuest::GetTasks()
 {
 	return m_Tasks;
 }
 
-std::vector<QuestReward_s> CQuest::GetRewards()
+vector<QuestReward_s> CQuest::GetRewards()
 {
 	return m_Rewards;
 }
 
-void CQuest::ApplyProgress(CUser* user, UserQuestProgress progress)
+void CQuest::ApplyProgress(CUser* user, UserQuestProgress& progress)
 {
 	for (auto& taskProgress : progress.tasks)
 	{
@@ -382,7 +384,7 @@ void CQuest::OnMinuteTick(CGameMatchUserStat* userStat, CGameMatch* gameMatch)
 	}
 }
 
-void CQuest::OnKillEvent(CGameMatchUserStat* userStat, CGameMatch* gameMatch, GameMatch_KillEvent killEvent)
+void CQuest::OnKillEvent(CGameMatchUserStat* userStat, CGameMatch* gameMatch, GameMatch_KillEvent& killEvent)
 {
 	for (auto task : m_Tasks)
 	{
@@ -459,7 +461,7 @@ void CQuest::OnMatchEndEvent(CGameMatchUserStat* userStat, CGameMatch* gameMatch
 	}
 }
 
-void CQuest::OnTaskDone(CUser* user, UserQuestTaskProgress taskProgress, CQuestTask* doneTask)
+void CQuest::OnTaskDone(CUser* user, UserQuestTaskProgress& taskProgress, CQuestTask* doneTask)
 {
 	g_pQuestManager->OnQuestTaskFinished(user, taskProgress, doneTask, this);
 }

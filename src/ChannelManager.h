@@ -35,4 +35,5 @@ private:
 	bool OnRoomUpdateSettings(CReceivePacket* msg, CUser* user);
 	bool OnSetTeamRequest(CReceivePacket* msg, CUser* user);
 	bool OnUserInviteRequest(CReceivePacket* msg, CUser* user);
+	bool OnRoomSetZBAddonRequest(CReceivePacket* msg, CUser* user);
 };

@@ -86,6 +86,8 @@ bool CChannelManager::OnRoomRequest(CReceivePacket* msg, CExtendedSocket* socket
 		break;
 	case 27:
 		break;
+	case InRoomType::SetZBAddons:
+		return OnRoomSetZBAddonRequest(msg, user);
 	default:
 		g_pConsole->Warn("Unknown room request %d\n", type);
 		break;
@@ -577,7 +579,7 @@ bool CChannelManager::OnCommandHandler(CExtendedSocket* socket, CUser* user, str
 							texts.push_back(OBFUSCATE("Select one of the available item slots to remove:\n"));
 
 							int i = 0;
-							for (auto item : items)
+							for (auto& item : items)
 							{
 								texts.push_back(string(va(OBFUSCATE("[%d], count: %d\n"), i++, item.m_nCount)));
 							}
@@ -1347,6 +1349,39 @@ bool CChannelManager::OnUserInviteRequest(CReceivePacket* msg, CUser* user)
 		CUserCharacter character = user->GetCharacter(UFLAG_GAMENAME);
 		g_pPacketManager->SendSearchRoomNotice(destUser->GetExtendedSocket(), user->GetCurrentRoom(), character.gameName, inviteMsg);
 	}
+
+	return true;
+}
+
+bool CChannelManager::OnRoomSetZBAddonRequest(CReceivePacket* msg, CUser* user)
+{
+	CRoom* currentRoom = user->GetCurrentRoom();
+	if (currentRoom == NULL)
+	{
+		return false;
+	}
+
+	CRoomUser* roomUser = user->GetRoomData();
+	if (roomUser == NULL)
+	{
+		return false;
+	}
+
+	vector<int> addons;
+	int size = msg->ReadUInt16();
+	for (int i = 0; i < size; i++)
+	{
+		addons.push_back(msg->ReadUInt16());
+	}
+
+	// TODO: check if addons is real
+
+	roomUser->m_Addons = addons;
+
+	// update addon list on client side
+	g_pPacketManager->SendAddonPacket(user->GetExtendedSocket(), addons);
+
+	//g_pPacketManager->SendRoomZBAddonSurvey(user->GetExtendedSocket(), addons);
 
 	return true;
 }

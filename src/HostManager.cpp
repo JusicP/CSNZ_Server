@@ -255,8 +255,15 @@ bool CHostManager::OnUpdateUserStatus(CReceivePacket* msg, CExtendedSocket* sock
 	if (destRoom != room)
 		return false;
 
-	if (msg->ReadUInt8() == 1)
+	int status = msg->ReadUInt8();
+	if (status == 1)
+	{
 		destRoom->GetGameMatch()->Connect(destUser);
+	}
+	else
+	{
+		g_pConsole->Log("CHostManager::OnUpdateUserStatus: got %d\n", status);
+	}
 
 	return true;
 }
@@ -498,6 +505,16 @@ bool CHostManager::OnUpdateClass(CReceivePacket* msg, CExtendedSocket* socket)
 	int unk3 = msg->ReadInt8();
 
 	destRoom->GetGameMatch()->OnUpdateClass(destUser, classItemID);
+
+	// send zbs addon info
+	if (destRoom->GetSettings()->gameMode == 15)
+	{
+		CRoomUser* roomUser = destUser->GetRoomData();
+		if (!roomUser)
+			g_pConsole->Error("CHostManager::OnUpdateClass: no roomUser for '%d'!\n", destUser->GetID());
+		else
+			g_pPacketManager->SendHostZBAddon(socket, destUser->GetID(), roomUser->m_Addons);
+	}
 
 	return true;
 }

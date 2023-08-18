@@ -22,6 +22,7 @@ public:
 	RoomTeamNum m_Team;
 	RoomReadyStatus m_Ready;
 	bool m_bIsIngame;
+	std::vector<int> m_Addons; // ZBS
 };
 
 class CRoom
@@ -47,7 +48,6 @@ public:
 	bool IsRoomReady();
 	bool IsUserIngame(CUser* user);
 	void SetUserIngame(CUser* user, bool inGame);
-	void SetUserEntityNum(/*user: User, entityNum : number*/);
 	void RemoveUser(CUser* targetUser);
 	void RemoveUserById(int userId);
 	void SetUserToTeam(CUser* user, RoomTeamNum newTeam);

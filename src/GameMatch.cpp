@@ -4,16 +4,6 @@
 
 using namespace std;
 
-#define EXP_COEF_ZB 125
-#define EXP_COEF_ZS 15
-#define EXP_COEF_DM 100
-#define EXP_COEF_DEFAULT 25
-
-#define POINTS_COEF_ZB 165
-#define POINTS_COEF_ZS 30
-#define POINTS_COEF_DM 130
-#define POINTS_COEF_DEFAULT 30
-
 CGameMatchUserStat::CGameMatchUserStat()
 {
 	m_pUser = NULL;
@@ -654,7 +644,6 @@ void CGameMatch::PrintGameResult()
 
 	g_pConsole->Log(log.str().c_str());
 }
-
 
 // TODO: find another way
 int GetZbsMapSeason(int mapID)

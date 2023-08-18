@@ -60,8 +60,8 @@ const char* CConsole::GetCurrTime()
 	_strdate_s(szDate);
 #else
 	time_t myTime = time(NULL);
-	strftime(timeStr, MAX_DATE_LEN, "%T", localtime(&mytime));
-	strftime(dateStr, MAX_DATE_LEN, "%D", localtime(&mytime));
+	strftime(timeStr, MAX_DATE_LEN, "%T", localtime(&myTime));
+	strftime(dateStr, MAX_DATE_LEN, "%D", localtime(&myTime));
 #endif
 
 	sprintf(buf, "[%s %s]", szDate, szTime);

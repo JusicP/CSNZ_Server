@@ -538,7 +538,7 @@ CRoomSettings* CRoom::UpdateSettings(CPacketHelper_RoomUpdateSettings newSetting
 		m_pSettings->unk62 = newSettings.unk62;
 		m_pSettings->unk62_vec = newSettings.unk62_vec;
 		updatedSet->unk62 = newSettings.unk62;
-		m_pSettings->unk62_vec = newSettings.unk62_vec;
+		updatedSet->unk62_vec = newSettings.unk62_vec;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK63) {
 		m_pSettings->unk63 = newSettings.unk63;

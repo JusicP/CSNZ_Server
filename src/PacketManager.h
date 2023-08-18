@@ -31,9 +31,9 @@ public:
 	void SendUMsgRoomTeamMessage(CExtendedSocket* socket, std::string senderName, std::string text); // use SendUMsgChatMessage
 	void SendUMsgSystemReply(CExtendedSocket* socket, int type, std::string msg, std::vector<std::string> additionalText = {});
 	void SendUMsgLobbyMessage(CExtendedSocket* socket, std::string senderName, std::string text); // use SendUMsgChatMessage
-	void SendUMsgNotice(CExtendedSocket* socket, Notice_s notice, bool unk = 1);
+	void SendUMsgNotice(CExtendedSocket* socket, Notice_s& notice, bool unk = 1);
 	void SendUMsgExpiryNotice(CExtendedSocket* socket, std::vector<int>& expiryItems);
-	void SendUMsgRewardNotice(CExtendedSocket* socket, RewardNotice reward, std::string title = "", std::string description = "", bool inGame = false, bool scen = false);
+	void SendUMsgRewardNotice(CExtendedSocket* socket, RewardNotice& reward, std::string title = "", std::string description = "", bool inGame = false, bool scen = false);
 	void SendUMsgRewardSelect(CExtendedSocket* socket, Reward* reward);
 
 	void SendServerList(CExtendedSocket* socket);
@@ -99,11 +99,11 @@ public:
 	void SendItemUnk1(CExtendedSocket* socket);
 	void SendItemUnk3(CExtendedSocket* socket);
 	void SendItemEquipTattoo(CExtendedSocket* socket);
-	void SendItemDailyRewardsUpdate(CExtendedSocket* socket, UserDailyRewards dailyRewards);
-	void SendItemDailyRewardsSpinResult(CExtendedSocket* socket, RewardItem item);
-	void SendItemOpenDecoderResult(CExtendedSocket* socket, ItemBoxOpenResult result);
+	void SendItemDailyRewardsUpdate(CExtendedSocket* socket, UserDailyRewards& dailyRewards);
+	void SendItemDailyRewardsSpinResult(CExtendedSocket* socket, RewardItem& item);
+	void SendItemOpenDecoderResult(CExtendedSocket* socket, ItemBoxOpenResult& result);
 	void SendItemOpenDecoderErrorReply(CExtendedSocket* socket, ItemBoxError code);
-	void SendItemEnhanceResult(CExtendedSocket* socket, EnhResult result);
+	void SendItemEnhanceResult(CExtendedSocket* socket, EnhResult& result);
 	void SendItemWeaponPaintReply(CExtendedSocket* socket);
 	void SendItemPartCheck(CExtendedSocket* socket, int slot, int partNum);
 	void SendItemGachapon(CExtendedSocket* socket, int gachaponItem);
@@ -138,14 +138,15 @@ public:
 	void SendRoomKick(CExtendedSocket* socket, int userID);
 	void SendRoomInitiateVoteKick(CExtendedSocket* socket, int userID, int destUserID, int reason);
 	void SendRoomVoteKickResult(CExtendedSocket* socket, bool kick, int userID, int reason);
-
+	void SendRoomZBAddonSurvey(CExtendedSocket* socket, std::vector<int>& addons);
+	
 	void SendHostOnItemUse(CExtendedSocket* socket, int userId, int itemId);
 	void SendHostServerJoin(CExtendedSocket* socket, int ipAddress, bool bigEndian, int port, int userId);
 	void SendHostStop(CExtendedSocket* socket);
 	void SendHostLeaveResultWindow(CExtendedSocket* socket);
 	void SendHostUserInventory(CExtendedSocket* socket, int userId, std::vector<CUserInventoryItem>& items);
 	void SendHostGameStart(CExtendedSocket* socket, int userId);
-	void SendHostUnk(CExtendedSocket* socket);
+	void SendHostZBAddon(CExtendedSocket* socket, int userID, std::vector<int>& addons);
 	void SendHostJoin(CExtendedSocket* socket, int hostID);
 	void SendHostFlyerFlock(CExtendedSocket* socket, int type);
 	void SendHostAdBalloon(CExtendedSocket* socket);
@@ -222,6 +223,8 @@ public:
 
 	void SendRankReply(CExtendedSocket* socket, int replyCode);
 	void SendRankUserInfo(CExtendedSocket* socket, int userID, CUserCharacter& character);
+
+	void SendAddonPacket(CExtendedSocket* socket, std::vector<int>& addons);
 
 private:
 	BinMetadata* LoadBinaryMetadata(const char* fileName);

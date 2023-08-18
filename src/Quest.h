@@ -81,15 +81,15 @@ public:
 	void SetNPCID(int npcID);
 	int GetNPCID();
 	void AddTask(CQuestTask* task);
-	void AddReward(QuestReward_s reward);
+	void AddReward(QuestReward_s& reward);
 	CQuestTask* GetTask(int id);
 	std::vector<CQuestTask*> GetTasks();
 	std::vector<QuestReward_s> GetRewards();
 
-	void ApplyProgress(CUser* user, UserQuestProgress progress);
+	void ApplyProgress(CUser* user, UserQuestProgress& progress);
 
 	void OnMinuteTick(CGameMatchUserStat* userStat, CGameMatch* gameMatch);
-	void OnKillEvent(CGameMatchUserStat* userStat, CGameMatch* gameMatch, GameMatch_KillEvent killEvent);
+	void OnKillEvent(CGameMatchUserStat* userStat, CGameMatch* gameMatch, GameMatch_KillEvent& killEvent);
 
 	void OnBombExplode(CGameMatchUserStat* userStat, CGameMatch* gameMatch);
 	void OnBombDefuse(CGameMatchUserStat* userStat, CGameMatch* gameMatch);
@@ -102,7 +102,7 @@ public:
 	void OnGameMatchLeave(CUser* user);
 	void OnMatchEndEvent(CGameMatchUserStat* userStat, CGameMatch* gameMatch, int userTeam);
 
-	void OnTaskDone(CUser* user, UserQuestTaskProgress taskProgress, CQuestTask* task);
+	void OnTaskDone(CUser* user, UserQuestTaskProgress& taskProgress, CQuestTask* task);
 	bool IsAllTaskFinished(CUser* user);
 
 private:

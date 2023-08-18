@@ -32,8 +32,6 @@ CCSVTable* g_pMapListTable;
 CDedicatedServerManager* g_pDedicatedServerManager;
 CRankManager* g_pRankManager;
 
-using ordered_json = nlohmann::ordered_json;
-
 CServerInstance::CServerInstance()
 {
 	m_nNextClientIndex = 1;
@@ -1047,6 +1045,9 @@ void CServerInstance::OnPackets(CExtendedSocket* s, CReceivePacket* msg, vector<
 			break;
 		case PacketId::UserSurvey:
 			g_pUserManager->OnUserSurveyPacket(msg, s);
+			break;
+		case PacketId::Addon:
+			g_pUserManager->OnAddonPacket(msg, s);
 			break;
 		default:
 			g_pConsole->Warn("Unimplemented packet: %d\n", msg->GetID());

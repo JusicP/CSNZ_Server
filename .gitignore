@@ -1,7 +1,18 @@
-﻿/src/Debug
-/src/Release
-/src/ReleasePublic
-/src/.vs
-/.vs
-/src/out
+﻿# msvc
+src/Debug
+src/Release
+src/ReleasePublic
+src/.vs
+.vs
+
+# cmake
+src/out
 src/CMakeSettings.json
+
+# srv bin files
+bin/*.exe
+bin/*.manifest
+bin/*.ilk
+bin/*.pdb
+bin/*.log
+bin/*.db3

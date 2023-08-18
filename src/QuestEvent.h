@@ -34,14 +34,14 @@ public:
 
 	bool Event_Internal(CUser* user);
 	void IncrementCount(CUser* user, int count = 0, bool setForce = false);
-	void Done(CUser* user, UserQuestTaskProgress progress);
+	void Done(CUser* user, UserQuestTaskProgress& progress);
 	void SetNotice(int goal, std::string userMsg);
 	void SetRewardID(int rewardID);
 	void AddCondition(CQuestEventBaseCondition* condition);
-	void ApplyProgress(CUser* user, UserQuestTaskProgress progress);
+	void ApplyProgress(CUser* user, UserQuestTaskProgress& progress);
 
 	void OnMinuteTick(CGameMatchUserStat* userStat, CGameMatch* gameMatch);
-	void OnKillEvent(CGameMatchUserStat* userStat, CGameMatch* gameMatch, GameMatch_KillEvent killEvent);
+	void OnKillEvent(CGameMatchUserStat* userStat, CGameMatch* gameMatch, GameMatch_KillEvent& killEvent);
 
 	void OnBombExplode(CGameMatchUserStat* userStat, CGameMatch* gameMatch);
 	void OnBombDefuse(CGameMatchUserStat* userStat, CGameMatch* gameMatch);

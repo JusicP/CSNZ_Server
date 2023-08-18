@@ -24,6 +24,7 @@ enum OutRoomPacketType
 	PlayerLeaveIngame = 10,
 	UserInviteList = 12,
 	SetUserTeam = 13,
+	ZBAddonSurvey = 35,
 };
 
 CPacketManager::CPacketManager()
@@ -426,12 +427,10 @@ unsigned char rawData4[1290] = {
 	0x76, 0x65, 0x6E, 0x74, 0x2E, 0x00
 };
 
-void CPacketManager::SendUMsgNotice(CExtendedSocket* socket, Notice_s notice, bool openDailyRewardsDialogOnClose)
+void CPacketManager::SendUMsgNotice(CExtendedSocket* socket, Notice_s& notice, bool openDailyRewardsDialogOnClose)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::UMsg);
 	msg->BuildHeader();
-
-	//msg->WriteData(rawData4, 1290);
 
 	msg->WriteUInt8(UMsgPacketType::Notice);
 
@@ -463,7 +462,7 @@ void CPacketManager::SendUMsgExpiryNotice(CExtendedSocket* socket, vector<int>& 
 	socket->Send(msg);
 }
 
-void CPacketManager::SendUMsgRewardNotice(CExtendedSocket* socket, RewardNotice reward, string title, string description, bool inGame, bool scen)
+void CPacketManager::SendUMsgRewardNotice(CExtendedSocket* socket, RewardNotice& reward, string title, string description, bool inGame, bool scen)
 {
 	string titleMsg;
 	string text;
@@ -664,7 +663,7 @@ void CPacketManager::SendUMsgRewardNotice(CExtendedSocket* socket, RewardNotice 
 	msg->WriteString(titleMsg);
 	msg->WriteString(text);
 
-	msg->WriteUInt8(0); // additional str?
+	msg->WriteUInt8(0); // additional str
 	for (int i = 0; i < 0; i++)
 	{
 		msg->WriteString("fuck");
@@ -1243,6 +1242,40 @@ void CPacketManager::SendMetadataRandomWeaponList(CExtendedSocket* socket)
 	CSendPacket* msg = CreatePacket(socket, PacketId::Metadata);
 	msg->BuildHeader();
 
+	//unsigned char* buf = (unsigned char*)m_pRandomWeaponList->buffer;
+	//std::vector<unsigned char> vec(buf, buf + m_pRandomWeaponList->size);
+	//Buffer bufer(vec);
+	//bufer.readInt8();
+
+	//int size = bufer.readUInt32_LE();
+	//for (int i = 0; i < size; i++)
+	//{
+	//	int itemID = bufer.readUInt32_LE(); // itemID
+	//	int size_2 = bufer.readUInt32_LE();
+	//	printf("(1): itemID: %d\n", itemID);
+	//	for (int j = 0; j < size_2; j++)
+	//	{
+	//		int unk2 = bufer.readUInt8(); // 0, 1, 2, 3, 4, 5
+	//		int unk3 = bufer.readUInt32_LE(); // weird numbers (111, 222, 444, ...)
+	//		int unk4 = bufer.readUInt32_LE(); // 0, 50, 100
+	//		printf("(2): %d, %d, %d\n", unk2, unk3, unk4);
+	//	}
+	//}
+
+	//msg->WriteUInt8(kPacket_Metadata_RandomWeaponList);
+	//msg->WriteUInt32(0); // size
+	//for (int i = 0; i < 0; i++)
+	//{
+	//	msg->WriteUInt32(0); // itemID
+	//	msg->WriteUInt32(0); // size_2
+	//	for (int j = 0; j < 0; j++)
+	//	{
+	//		msg->WriteUInt8(0); // 0, 1, 2, 3, 4, 5
+	//		msg->WriteUInt32(0); // weird numbers (111, 222, 444, ...)
+	//		msg->WriteUInt32(0); // 0, 50, 100
+	//	}
+	//}
+
 	msg->WriteData(m_pRandomWeaponList->buffer, m_pRandomWeaponList->size);
 
 	socket->Send(msg);
@@ -1622,7 +1655,7 @@ void CPacketManager::SendItemEquipTattoo(CExtendedSocket* socket)
 	socket->Send(msg);
 }
 
-void CPacketManager::SendItemDailyRewardsUpdate(CExtendedSocket* socket, UserDailyRewards dailyRewards)
+void CPacketManager::SendItemDailyRewardsUpdate(CExtendedSocket* socket, UserDailyRewards& dailyRewards)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Item);
 	msg->BuildHeader();
@@ -1646,7 +1679,7 @@ void CPacketManager::SendItemDailyRewardsUpdate(CExtendedSocket* socket, UserDai
 	socket->Send(msg);
 }
 
-void CPacketManager::SendItemDailyRewardsSpinResult(CExtendedSocket* socket, RewardItem item)
+void CPacketManager::SendItemDailyRewardsSpinResult(CExtendedSocket* socket, RewardItem& item)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Item);
 	msg->BuildHeader();
@@ -1663,7 +1696,7 @@ void CPacketManager::SendItemDailyRewardsSpinResult(CExtendedSocket* socket, Rew
 	socket->Send(msg);
 }
 
-void CPacketManager::SendItemOpenDecoderResult(CExtendedSocket* socket, ItemBoxOpenResult result)
+void CPacketManager::SendItemOpenDecoderResult(CExtendedSocket* socket, ItemBoxOpenResult& result)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Item);
 	msg->BuildHeader();
@@ -1725,7 +1758,7 @@ void CPacketManager::SendItemOpenDecoderErrorReply(CExtendedSocket* socket, Item
 	socket->Send(msg);
 }
 
-void CPacketManager::SendItemEnhanceResult(CExtendedSocket* socket, EnhResult result)
+void CPacketManager::SendItemEnhanceResult(CExtendedSocket* socket, EnhResult& result)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Item);
 	msg->BuildHeader();
@@ -3269,6 +3302,22 @@ void CPacketManager::SendRoomVoteKickResult(CExtendedSocket* socket, bool kick, 
 	socket->Send(msg);
 }
 
+void CPacketManager::SendRoomZBAddonSurvey(CExtendedSocket* socket, vector<int>& addons)
+{
+	CSendPacket* msg = CreatePacket(socket, PacketId::Room);
+	msg->BuildHeader();
+
+	msg->WriteUInt8(OutRoomPacketType::ZBAddonSurvey);
+
+	msg->WriteUInt8(addons.size());
+	for (auto addonID : addons)
+	{
+		msg->WriteUInt16(addonID);
+	}
+
+	socket->Send(msg);
+}
+
 void CPacketManager::SendDefaultItems(CExtendedSocket* socket, vector<CUserInventoryItem>& items)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Inventory_DefaultItems);
@@ -3424,15 +3473,19 @@ void CPacketManager::SendHostGameStart(CExtendedSocket* socket, int userId)
 	socket->Send(msg);
 }
 
-void CPacketManager::SendHostUnk(CExtendedSocket* socket)
+void CPacketManager::SendHostZBAddon(CExtendedSocket* socket, int userID, vector<int>& addons)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Host);
 	msg->BuildHeader();
 
-	msg->WriteUInt8(103);
-	msg->WriteUInt8(3);
-	msg->WriteUInt32(403);
-	msg->WriteUInt32(403);
+	msg->WriteUInt8(11); // set zb addon
+
+	msg->WriteUInt32(userID);
+	msg->WriteUInt16(addons.size());
+	for (auto addonID : addons)
+	{
+		msg->WriteUInt16(addonID);
+	}
 
 	socket->Send(msg);
 }
@@ -6922,7 +6975,7 @@ void CPacketManager::SendRankUserInfo(CExtendedSocket* socket, int userID, CUser
 	msg->WriteUInt64(character.exp);
 	msg->WriteUInt8(1); // 0 - Don't show location, 1 - Show location
 	msg->WriteUInt32(character.nation);
-	msg->WriteString("Region name"); // Region name
+	msg->WriteString(character.regionName); // Region name
 	msg->WriteString(character.clanName);
 	msg->WriteUInt32(character.clanMarkID);
 	msg->WriteUInt32(character.battles);
@@ -6933,6 +6986,20 @@ void CPacketManager::SendRankUserInfo(CExtendedSocket* socket, int userID, CUser
 	msg->WriteUInt8(character.leagueID);
 	msg->WriteUInt8(character.tier[character.leagueID]); // tier
 	msg->WriteUInt8(0); // unk
+
+	socket->Send(msg);
+}
+
+void CPacketManager::SendAddonPacket(CExtendedSocket* socket, vector<int>& addons)
+{
+	CSendPacket* msg = CreatePacket(socket, PacketId::Addon);
+	msg->BuildHeader();
+
+	msg->WriteUInt16(addons.size());
+	for (auto addonID : addons)
+	{
+		msg->WriteUInt16(addonID);
+	}
 
 	socket->Send(msg);
 }

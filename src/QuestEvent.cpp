@@ -1,5 +1,7 @@
 #include "QuestEvent.h"
 
+using namespace std;
+
 CQuestEventBaseCondition::CQuestEventBaseCondition(CQuestEventTask* task, int id, int goal)
 {
 	m_pTask = task;
@@ -84,12 +86,12 @@ void CQuestEventTask::IncrementCount(CUser* user, int count, bool setForce)
 	}
 }
 
-void CQuestEventTask::Done(CUser* user, UserQuestTaskProgress progress)
+void CQuestEventTask::Done(CUser* user, UserQuestTaskProgress& progress)
 {
 	m_pQuest->OnTaskDone(user, progress, this);
 }
 
-void CQuestEventTask::SetNotice(int goal, std::string userMsg)
+void CQuestEventTask::SetNotice(int goal, string userMsg)
 {
 	m_nNoticeGoal = goal;
 	m_szNoticeUserMsg = userMsg;
@@ -105,7 +107,7 @@ void CQuestEventTask::AddCondition(CQuestEventBaseCondition* condition)
 	m_Conditions.push_back(condition);
 }
 
-void CQuestEventTask::ApplyProgress(CUser* user, UserQuestTaskProgress progress)
+void CQuestEventTask::ApplyProgress(CUser* user, UserQuestTaskProgress& progress)
 {
 	if (g_pUserDatabase->UpdateQuestEventTaskProgress(user->GetID(), m_pQuest->GetID(), progress) <= 0)
 		return;
@@ -123,7 +125,7 @@ void CQuestEventTask::OnMinuteTick(CGameMatchUserStat* userStat, CGameMatch* gam
 	}
 }
 
-void CQuestEventTask::OnKillEvent(CGameMatchUserStat* userStat, CGameMatch* gameMatch, GameMatch_KillEvent killEvent)
+void CQuestEventTask::OnKillEvent(CGameMatchUserStat* userStat, CGameMatch* gameMatch, GameMatch_KillEvent& killEvent)
 {
 	for (auto condition : m_Conditions)
 	{
@@ -321,7 +323,7 @@ void CQuestEvent::AddTask(CQuestEventTask* task)
 
 CQuestEventTask* CQuestEvent::GetTask(int id)
 {
-	std::vector<CQuestEventTask*>::iterator taskIt = find_if(m_Tasks.begin(), m_Tasks.end(),
+	vector<CQuestEventTask*>::iterator taskIt = find_if(m_Tasks.begin(), m_Tasks.end(),
 		[id](CQuestEventTask* task) { return id == task->GetID(); });
 
 	if (taskIt != m_Tasks.end())
@@ -330,7 +332,7 @@ CQuestEventTask* CQuestEvent::GetTask(int id)
 	return NULL;
 }
 
-std::vector<CQuestEventTask*>& CQuestEvent::GetTasks()
+vector<CQuestEventTask*>& CQuestEvent::GetTasks()
 {
 	return m_Tasks;
 }

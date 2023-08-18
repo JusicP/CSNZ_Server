@@ -20,6 +20,7 @@ public:
 	bool OnUserSurveyPacket(CReceivePacket* msg, CExtendedSocket* socket);
 	bool OnBanPacket(CReceivePacket* msg, CExtendedSocket* socket);
 	bool OnMessengerPacket(CReceivePacket* msg, CExtendedSocket* socket);
+	bool OnAddonPacket(CReceivePacket* msg, CExtendedSocket* socket);
 
 	void OnSecondTick();
 

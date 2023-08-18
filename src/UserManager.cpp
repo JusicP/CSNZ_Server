@@ -1043,6 +1043,28 @@ bool CUserManager::OnMessengerPacket(CReceivePacket* msg, CExtendedSocket* socke
 	return true;
 }
 
+bool CUserManager::OnAddonPacket(CReceivePacket* msg, CExtendedSocket* socket)
+{
+	LOG_PACKET;
+
+	CUser* user = GetUserBySocket(socket);
+	if (user == NULL)
+		return false;
+
+	CRoom* room = user->GetCurrentRoom();
+	if (room == NULL)
+		return false;
+
+	CRoomUser* roomData = user->GetRoomData();
+	if (roomData == NULL)
+		return false;
+
+	if (!roomData->m_Addons.empty())
+		g_pPacketManager->SendAddonPacket(user->GetExtendedSocket(), roomData->m_Addons);
+
+	return true;
+}
+
 void CUserManager::OnUserSurveyAnswerRequest(CReceivePacket* msg, CUser* user)
 {
 	UserSurveyAnswer answer;

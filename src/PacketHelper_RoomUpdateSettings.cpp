@@ -1,89 +1,13 @@
 #include "PacketHelper_RoomUpdateSettings.h"
 
+CPacketHelper_RoomUpdateSettings::CPacketHelper_RoomUpdateSettings()
+{
+	Init();
+}
+
 CPacketHelper_RoomUpdateSettings::CPacketHelper_RoomUpdateSettings(Buffer& inPacket) // unfinished
 {
-	lowFlag = 0;
-	lowMidFlag = 0;
-	highMidFlag = 0;
-	highFlag = 0;
-
-	unk00 = 0;
-	unk01 = 0;
-	unk02 = 0;
-	unk03 = 0;
-	unk04 = 0;
-	unk05 = "";
-	unk06 = 0;
-	unk07 = 0;
-	unk08 = 0;
-	unk09 = 0;
-	unk10 = 0;
-	unk11 = 0;
-	unk12 = 0;
-	unk13 = 0;
-	unk14 = 0;
-	unk15 = 0;
-	unk16 = 0;
-	unk17 = 0;
-	unk18 = 0;
-	unk19 = 0;
-	unk20 = 0;
-	unk21 = 0;
-	unk22 = 0;
-	unk23 = 0;
-	unk24 = 0;
-	unk25 = 0;
-	unk26 = 0;
-	unk27 = 0;
-	unk28 = 0;
-	unk29 = 0;
-	unk30 = 0;
-	unk31 = 0;
-	unk32 = 0;
-	unk33 = 0;
-	unk34 = "";
-	unk35 = 0;
-	unk36 = 0;
-	unk37 = 0;
-	unk38 = 0;
-	unk39 = 0;
-	unk40 = 0;
-	unk41 = 0;
-	unk42 = 0;
-	unk43 = 0;
-	unk44 = 0;
-	unk45 = 0;
-	unk46 = 0;
-	unk47 = 0;
-	unk48 = 0;
-	unk49 = 0;
-	unk50 = 0;
-	unk51 = 0;
-	unk52 = 0;
-	unk53 = 0;
-	unk54 = 0;
-	unk55 = 0;
-	unk56 = 0;
-	unk57 = 0;
-	unk58 = 0;
-	unk59 = 0;
-	unk60 = 0;
-	unk61 = 0;
-	unk62 = 0;
-	unk63 = 0;
-	teamSwitch = 0;
-	unk65 = 0;
-	unk66 = 0;
-	unk67 = 0;
-	unk68 = 0;
-	isZbCompetitive = 0;
-	unk70 = 0;
-	unk71 = 0;
-	unk72 = 0;
-	unk73 = 0;
-	unk74 = 0;
-	unk75 = 0;
-	unk76 = 0;
+	Init();
 
 	// TODO: implement 128-bit bitwise operations...
 	lowFlag = inPacket.readUInt32_LE();
@@ -338,4 +262,90 @@ CPacketHelper_RoomUpdateSettings::CPacketHelper_RoomUpdateSettings(Buffer& inPac
 	{
 		g_pConsole->Warn("CPacketHelper_RoomUpdateSettings: got high flag!\n");
 	}
+}
+
+void CPacketHelper_RoomUpdateSettings::Init()
+{
+	lowFlag = 0;
+	lowMidFlag = 0;
+	highMidFlag = 0;
+	highFlag = 0;
+
+	unk00 = 0;
+	unk01 = 0;
+	unk02 = 0;
+	unk03 = 0;
+	unk04 = 0;
+	unk05 = "";
+	unk06 = 0;
+	unk07 = 0;
+	unk08 = 0;
+	unk09 = 0;
+	unk10 = 0;
+	unk11 = 0;
+	unk12 = 0;
+	unk13 = 0;
+	unk14 = 0;
+	unk15 = 0;
+	unk16 = 0;
+	unk17 = 0;
+	unk18 = 0;
+	unk19 = 0;
+	unk20 = 0;
+	unk21 = 0;
+	unk22 = 0;
+	unk23 = 0;
+	unk24 = 0;
+	unk25 = 0;
+	unk26 = 0;
+	unk27 = 0;
+	unk28 = 0;
+	unk29 = 0;
+	unk30 = 0;
+	unk31 = 0;
+	unk32 = 0;
+	unk33 = 0;
+	unk34 = "";
+	unk35 = 0;
+	unk36 = 0;
+	unk37 = 0;
+	unk38 = 0;
+	unk39 = 0;
+	unk40 = 0;
+	unk41 = 0;
+	unk42 = 0;
+	unk43 = 0;
+	unk44 = 0;
+	unk45 = 0;
+	unk46 = 0;
+	unk47 = 0;
+	unk48 = 0;
+	unk49 = 0;
+	unk50 = 0;
+	unk51 = 0;
+	unk52 = 0;
+	unk53 = 0;
+	unk54 = 0;
+	unk55 = 0;
+	unk56 = 0;
+	unk57 = 0;
+	unk58 = 0;
+	unk59 = 0;
+	unk60 = 0;
+	unk61 = 0;
+	unk62 = 0;
+	unk63 = 0;
+	teamSwitch = 0;
+	unk65 = 0;
+	unk66 = 0;
+	unk67 = 0;
+	unk68 = 0;
+	isZbCompetitive = 0;
+	unk70 = 0;
+	unk71 = 0;
+	unk72 = 0;
+	unk73 = 0;
+	unk74 = 0;
+	unk75 = 0;
+	unk76 = 0;
 }

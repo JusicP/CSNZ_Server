@@ -115,7 +115,7 @@ void CPacketHelper_FullUserInfo::Build(Buffer& buf, int userID, const CUserChara
 
 	if (character.flag & UFLAG_LOCATION)
 	{
-		buf.writeStr("Region name");
+		buf.writeStr(character.regionName);
 
 		buf.writeUInt16_LE(character.nation);
 		buf.writeUInt16_LE(character.city);

@@ -951,6 +951,7 @@ public:
 	int win;
 	int kills;
 	int deaths;
+	std::string regionName; // TODO: add to table
 	int nation;
 	int city;
 	int town;
@@ -1214,6 +1215,7 @@ enum InRoomType
 	UserInviteRequest = 19,
 	RoomListRequest = 22,
 	JoinRoomRequest = 23,
+	SetZBAddons = 35,
 };
 
 enum UMsgReceiveType

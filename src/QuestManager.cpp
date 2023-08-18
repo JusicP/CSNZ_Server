@@ -42,7 +42,6 @@ void CQuestManager::Shutdown()
 	m_ClanQuests.clear();
 }
 
-
 void CQuestManager::LoadQuests()
 {
 }
@@ -317,7 +316,7 @@ void CQuestManager::OnQuestFinished(CUser* user, CQuest* quest, UserQuestProgres
 
 		// move it to new func?
 		int dailyQuestsCount = 0;
-		for (auto& quest : m_Quests)
+		for (auto quest : m_Quests)
 		{
 			if (quest->GetType() == QuestType::QUEST_DAILY)
 				dailyQuestsCount++;

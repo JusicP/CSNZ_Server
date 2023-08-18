@@ -5,7 +5,9 @@
 class CPacketHelper_RoomUpdateSettings
 {
 public:
+	CPacketHelper_RoomUpdateSettings();
 	CPacketHelper_RoomUpdateSettings(Buffer& inPacket);
+	void Init();
 
 public:
 	int lowFlag;
