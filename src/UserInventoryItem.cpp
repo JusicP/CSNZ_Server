@@ -7,7 +7,7 @@ CUserInventoryItem::CUserInventoryItem()
 	Reset();
 }
 
-CUserInventoryItem::CUserInventoryItem(int slot, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, std::string paintIDList, int partSlot1, int partSlot2, int lockStatus)
+CUserInventoryItem::CUserInventoryItem(int slot, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, std::vector<int> paintIDList, int partSlot1, int partSlot2, int lockStatus)
 {
 	Init(slot, itemID, count, status, inUse, obtainDate, expiryDate, isClanItem, enhanceLvl, enhanceExp, enhanceValue, paintID, paintIDList, partSlot1, partSlot2, lockStatus);
 }
@@ -15,10 +15,10 @@ CUserInventoryItem::CUserInventoryItem(int slot, int itemID, int count, int stat
 // for sqlite 
 CUserInventoryItem::CUserInventoryItem(int userID, int slot, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, std::string paintIDList, int partSlot1, int partSlot2, int lockStatus)
 {
-	Init(slot, itemID, count, status, inUse, obtainDate, expiryDate, isClanItem, enhanceLvl, enhanceExp, enhanceValue, paintID, paintIDList, partSlot1, partSlot2, lockStatus);
+	Init(slot, itemID, count, status, inUse, obtainDate, expiryDate, isClanItem, enhanceLvl, enhanceExp, enhanceValue, paintID, deserialize_array_int(paintIDList), partSlot1, partSlot2, lockStatus);
 }
 
-void CUserInventoryItem::Init(int slot, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, std::string paintIDList, int partSlot1, int partSlot2, int lockStatus)
+void CUserInventoryItem::Init(int slot, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, std::vector<int> paintIDList, int partSlot1, int partSlot2, int lockStatus)
 {
 	m_nSlot = slot;
 	m_nItemID = itemID;
@@ -47,7 +47,7 @@ void CUserInventoryItem::Reset()
 	m_nObtainDate = 0;
 	m_nExpiryDate = 0;
 	m_nPaintID = 0;
-	m_nPaintIDList = "";
+	m_nPaintIDList.clear();
 	m_nIsClanItem = 0;
 	m_nEnhancementLevel = 0;
 	m_nEnhancementExp = 0;
@@ -57,7 +57,7 @@ void CUserInventoryItem::Reset()
 	m_nLockStatus = 0;
 }
 
-void CUserInventoryItem::PushItem(std::vector<CUserInventoryItem>& vec, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, std::string paintIDList, int partSlot1, int partSlot2, int lockStatus)
+void CUserInventoryItem::PushItem(std::vector<CUserInventoryItem>& vec, int itemID, int count, int status, int inUse, int obtainDate, int expiryDate, int isClanItem, int enhanceLvl, int enhanceExp, int enhanceValue, int paintID, std::vector<int> paintIDList, int partSlot1, int partSlot2, int lockStatus)
 {
 	vec.push_back(CUserInventoryItem(0, itemID, count, status, inUse, obtainDate, expiryDate, isClanItem, enhanceLvl, enhanceExp, enhanceValue, paintID, paintIDList, partSlot1, partSlot2, lockStatus));
 }

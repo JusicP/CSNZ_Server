@@ -24,7 +24,7 @@ enum OutRoomPacketType
 	PlayerLeaveIngame = 10,
 	UserInviteList = 12,
 	SetUserTeam = 13,
-	ZBAddonSurvey = 35,
+	WeaponSurvey = 35,
 };
 
 CPacketManager::CPacketManager()
@@ -744,105 +744,97 @@ void CPacketManager::SendStatistic(CExtendedSocket* socket)
 
 void CPacketManager::SendInventoryAdd(CExtendedSocket* socket, vector<CUserInventoryItem>& items, int curSlot)
 {
-	// temp solution for inventory packet with len > 65535
-	int cycles = ceil((float)items.size() / 1000.0);
-	int itemsNextStart = 0;
-	int itemsNextStartMax = 0;
 	int itemsToSend = items.size();
-	int itemsToSendLeft = items.size();
-	for (int i = 0; i < cycles; i++)
+	if (itemsToSend)
 	{
-		itemsNextStart = itemsNextStartMax;
-		if (itemsToSendLeft > 1000)
+		int itemStart = 0;
+		do
 		{
-			itemsToSend = 1000;
-			itemsNextStartMax += 1000;
-		}
-		else
-		{
-			itemsToSend = itemsToSendLeft;
-			itemsNextStartMax += itemsToSendLeft;
-		}
-
-		itemsToSendLeft -= itemsToSend;
-
-		CSendPacket* msg = CreatePacket(socket, PacketId::Inventory);
-		msg->BuildHeader();
-		msg->WriteUInt32(0);
-		msg->WriteUInt16(itemsToSend);
-		for (int i = itemsNextStart; i < itemsNextStartMax; i++)
-		{
-			CUserInventoryItem& item = items[i];
-			if (curSlot)
+			vector<unsigned char> buf;
+			int itemsSent = 0;
+			for (int i = itemStart; i < itemsToSend; i++)
 			{
-				msg->WriteUInt16(curSlot++);
+				Buffer tempBuf;
+				CUserInventoryItem& item = items[i];
+				if (curSlot)
+				{
+					tempBuf.writeUInt16_LE(curSlot++);
+				}
+				else
+				{
+					tempBuf.writeUInt16_LE(item.GetGameSlot());
+				}
+
+				tempBuf.writeUInt8(item.m_nItemID != 0); // not empty slot
+				if (item.m_nItemID != 0)
+				{
+					tempBuf.writeUInt16_LE(item.m_nItemID);
+					tempBuf.writeUInt16_LE(item.m_nCount);
+					tempBuf.writeUInt8(item.m_nStatus);
+					tempBuf.writeUInt8(item.m_nInUse);
+					tempBuf.writeUInt32_LE(item.m_nObtainDate);
+					tempBuf.writeUInt32_LE(item.m_nExpiryDate);
+
+					tempBuf.writeUInt16_LE(item.m_nPaintID);
+					tempBuf.writeUInt16_LE(item.m_nPaintIDList.size());
+					for (auto paintID : item.m_nPaintIDList)
+					{
+						tempBuf.writeUInt16_LE(paintID);
+					}
+
+					tempBuf.writeUInt16_LE(item.m_nEnhancementLevel);
+					tempBuf.writeUInt32_LE(item.m_nEnhancementExp);
+					tempBuf.writeUInt32_LE(item.m_nEnhanceValue);
+
+					tempBuf.writeUInt8(0); // is storage item
+					tempBuf.writeUInt32_LE(0); // itemID or timestamp
+
+					tempBuf.writeUInt8(item.GetPartCount());
+					if (item.m_nPartSlot1)
+					{
+						tempBuf.writeUInt8(0);
+						tempBuf.writeUInt16_LE(item.m_nPartSlot1);
+					}
+					if (item.m_nPartSlot2)
+					{
+						tempBuf.writeUInt8(1);
+						tempBuf.writeUInt16_LE(item.m_nPartSlot2);
+					}
+
+					tempBuf.writeUInt8(item.m_nInUse);
+
+					// unk shit #2
+					tempBuf.writeUInt8(0); // bound flag (idk what is it)
+					tempBuf.writeUInt8(item.m_nLockStatus); // 0 - locked, 1 - unlocked, 2 - special item
+
+					// unk shit
+					tempBuf.writeUInt32_LE(0); // unk
+					tempBuf.writeUInt8(0); // unk array size
+					for (int i = 0; i < 0; i++)
+					{
+						tempBuf.writeUInt8(i++);
+						tempBuf.writeUInt16_LE(0);
+					}
+				}
+
+				if (buf.size() + tempBuf.getBuffer().size() > 0xFFF6) // 0xFFF6 = PACKET_MAX_SIZE - PACKET_HEADER_SIZE - 4 bytes (0) - 2 bytes (itemsSent)
+					break;
+
+				buf.insert(buf.end(), tempBuf.getBuffer().begin(), tempBuf.getBuffer().end());
+				itemsSent++;
 			}
-			else
-			{
-				msg->WriteUInt16(item.GetGameSlot());
-			}
 
-			msg->WriteUInt8(item.m_nItemID != 0); // not empty slot
-			if (item.m_nItemID != 0)
-			{
-				msg->WriteUInt16(item.m_nItemID);
-				msg->WriteUInt16(item.m_nCount);
-				msg->WriteUInt8(item.m_nStatus);
-				msg->WriteUInt8(item.m_nInUse);
-				msg->WriteUInt32(item.m_nObtainDate);
-				msg->WriteUInt32(item.m_nExpiryDate);
+			CSendPacket* msg = CreatePacket(socket, PacketId::Inventory);
+			msg->BuildHeader();
 
-				msg->WriteUInt16(item.m_nPaintID);
+			msg->WriteUInt32(0);
+			msg->WriteUInt16(itemsSent);
+			msg->WriteData(buf.data(), buf.size());
 
-				std::stringstream iss(item.m_nPaintIDList);
-				std::vector<int> paintIDs;
-				int pID;
+			socket->Send(msg);
 
-				while (iss >> pID)
-					paintIDs.push_back(pID);
-
-				msg->WriteUInt16(paintIDs.size());
-				for (auto paintID : paintIDs)
-				{
-					msg->WriteUInt16(paintID);
-				}
-
-				msg->WriteUInt16(item.m_nEnhancementLevel);
-				msg->WriteUInt32(item.m_nEnhancementExp);
-				msg->WriteUInt32(item.m_nEnhanceValue);
-
-				msg->WriteUInt8(0); // is storage item
-				msg->WriteUInt32(0); // itemID or timestamp
-
-				msg->WriteUInt8(item.GetPartCount());
-				if (item.m_nPartSlot1)
-				{
-					msg->WriteUInt8(0);
-					msg->WriteUInt16(item.m_nPartSlot1);
-				}
-				if (item.m_nPartSlot2)
-				{
-					msg->WriteUInt8(1);
-					msg->WriteUInt16(item.m_nPartSlot2);
-				}
-
-				msg->WriteUInt8(item.m_nInUse);
-
-				// unk shit #2
-				msg->WriteUInt8(0); // bound flag (idk what is it)
-				msg->WriteUInt8(item.m_nLockStatus); // 0 - locked, 1 - unlocked, 2 - special item
-
-				// unk shit
-				msg->WriteUInt32(0); // unk
-				msg->WriteUInt8(0); // unk array size
-				for (int i = 0; i < 0; i++)
-				{
-					msg->WriteUInt8(i++);
-					msg->WriteUInt16(0);
-				}
-			}
-		}
-		socket->Send(msg);
+			itemStart += itemsSent;
+		} while (itemStart != itemsToSend);
 	}
 }
 
@@ -2195,7 +2187,7 @@ void CPacketManager::SendShopRecommendedProducts(CExtendedSocket* socket, vector
 
 	msg->WriteUInt8(ShopPacketType::UpdateRecommendedProducts);
 	msg->WriteUInt32(products.size()); // page
-	for (auto product : products)
+	for (auto& product : products)
 	{
 		msg->WriteString("Test");
 		msg->WriteString("Test2");
@@ -3302,17 +3294,17 @@ void CPacketManager::SendRoomVoteKickResult(CExtendedSocket* socket, bool kick, 
 	socket->Send(msg);
 }
 
-void CPacketManager::SendRoomZBAddonSurvey(CExtendedSocket* socket, vector<int>& addons)
+void CPacketManager::SendRoomWeaponSurvey(CExtendedSocket* socket, vector<int>& weapons)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Room);
 	msg->BuildHeader();
 
-	msg->WriteUInt8(OutRoomPacketType::ZBAddonSurvey);
+	msg->WriteUInt8(OutRoomPacketType::WeaponSurvey);
 
-	msg->WriteUInt8(addons.size());
-	for (auto addonID : addons)
+	msg->WriteUInt8(weapons.size());
+	for (auto weaponID : weapons)
 	{
-		msg->WriteUInt16(addonID);
+		msg->WriteUInt16(weaponID);
 	}
 
 	socket->Send(msg);
@@ -3337,16 +3329,8 @@ void CPacketManager::SendDefaultItems(CExtendedSocket* socket, vector<CUserInven
 			msg->WriteUInt32(item.m_nExpiryDate);
 
 			msg->WriteUInt16(item.m_nPaintID);
-
-			std::stringstream iss(item.m_nPaintIDList);
-			std::vector<int> paintIDs;
-			int pID;
-
-			while (iss >> pID)
-				paintIDs.push_back(pID);
-
-			msg->WriteUInt16(paintIDs.size());
-			for (auto paintID : paintIDs)
+			msg->WriteUInt16(item.m_nPaintIDList.size());
+			for (auto paintID : item.m_nPaintIDList)
 			{
 				msg->WriteUInt16(paintID);
 			}
@@ -3478,7 +3462,7 @@ void CPacketManager::SendHostZBAddon(CExtendedSocket* socket, int userID, vector
 	CSendPacket* msg = CreatePacket(socket, PacketId::Host);
 	msg->BuildHeader();
 
-	msg->WriteUInt8(11); // set zb addon
+	msg->WriteUInt8(HostPacketType::SetZBAddons);
 
 	msg->WriteUInt32(userID);
 	msg->WriteUInt16(addons.size());

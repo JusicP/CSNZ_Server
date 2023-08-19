@@ -520,6 +520,10 @@ int CItemManager::AddItem(int userID, CUser* user, int itemID, int count, int du
 			// extend item expriry date
 			for (auto& itemToExtend : itemsWithSameID)
 			{
+				// itemToExtend should not be extended if it has enhancements or parts
+				if (itemToExtend.m_nEnhanceValue || itemToExtend.m_nPartSlot1 || itemToExtend.m_nPartSlot2)
+					continue;
+
 				// TODO: check for return value
 				if (ExtendItem(userID, user, itemToExtend, duration, true)) // TEST THIS
 					return ITEM_ADD_SUCCESS;
@@ -551,7 +555,7 @@ int CItemManager::AddItem(int userID, CUser* user, int itemID, int count, int du
 			CUserInventoryItem item;
 
 			// push item to vector after adding item to db!
-			item.PushItem(items, itemID, count, 0, 1, currentTimestamp, duration, 0, 0, 0, 0, 0, "", 0, 0, 0); // push new items to inventory
+			item.PushItem(items, itemID, count, 0, 1, currentTimestamp, duration, 0, 0, 0, 0, 0, {}, 0, 0, 0); // push new items to inventory
 
 			if (g_pUserDatabase->AddInventoryItem(userID, items[0]) <= 0)
 				return ITEM_ADD_DB_ERROR;
@@ -650,7 +654,7 @@ int CItemManager::AddItem(int userID, CUser* user, int itemID, int count, int du
 	vector<CUserInventoryItem> items;
 
 	// push new item
-	item.PushItem(items, itemID, count, itemStatus, itemInUse, currentTimestamp, duration, 0, 0, 0, 0, 0, "", 0, 0, 0); // push new items to inventory
+	item.PushItem(items, itemID, count, itemStatus, itemInUse, currentTimestamp, duration, 0, 0, 0, 0, 0, {}, 0, 0, 0); // push new items to inventory
 
 	// add new item to db
 	// TODO: check for return value
@@ -719,13 +723,20 @@ int CItemManager::AddItems(int userID, CUser* user, vector<RewardItem>& items)
 				// extend item expriry date
 				for (auto& itemToExtend : itemsWithSameID)
 				{
+					// itemToExtend should not be extended if it has enhancements or parts
+					if (itemToExtend.m_nEnhanceValue || itemToExtend.m_nPartSlot1 || itemToExtend.m_nPartSlot2)
+						continue;
+
 					// TODO: check for return value
 					if (ExtendItem(userID, user, itemToExtend, duration, true)) // TEST THIS
 					{
 						lastResult = ITEM_ADD_SUCCESS;
-						continue;
+						break;
 					}
 				}
+
+				if (lastResult == ITEM_ADD_SUCCESS)
+					continue;
 			}
 		}
 		else if (duration)
@@ -750,7 +761,7 @@ int CItemManager::AddItems(int userID, CUser* user, vector<RewardItem>& items)
 				CUserInventoryItem item;
 
 				// push item to vector after adding item to db!
-				item.PushItem(updatedItems, itemID, count, 0, 1, currentTimestamp, duration, 0, 0, 0, 0, 0, "", 0, 0, 0); // push new items to inventory
+				item.PushItem(updatedItems, itemID, count, 0, 1, currentTimestamp, duration, 0, 0, 0, 0, 0, {}, 0, 0, 0); // push new items to inventory
 
 				// add new item to db
 				// TODO: check for return value
@@ -847,7 +858,7 @@ int CItemManager::AddItems(int userID, CUser* user, vector<RewardItem>& items)
 		CUserInventoryItem item;
 		
 		// push item to vector after adding item to db!
-		item.PushItem(updatedItems, itemID, count, itemStatus, itemInUse, currentTimestamp, duration, 0, 0, 0, 0, 0, "", 0, 0, 0); // push new items to inventory
+		item.PushItem(updatedItems, itemID, count, itemStatus, itemInUse, currentTimestamp, duration, 0, 0, 0, 0, 0, {}, 0, 0, 0); // push new items to inventory
 
 		// add new item to db
 		// TODO: check for return value
@@ -920,7 +931,7 @@ int CItemManager::UseItem(CUser* user, int slot, int additionalArg, int addition
 			bool extend = false;
 			vector<CUserInventoryItem> items;
 			g_pUserDatabase->GetInventoryItemsByID(user->GetID(), item.m_nItemID, items);
-			for (auto i : items)
+			for (auto& i : items)
 			{
 				if (i.m_nStatus == 1)
 				{
@@ -1849,17 +1860,18 @@ bool CItemManager::OnWeaponPaintRequest(CUser* user, CReceivePacket* msg)
 	if (!weapon.m_nItemID || !paint.m_nItemID)
 		return false;
 
-	// TODO: Make check for valid paint item
-	string className = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(paint.m_nItemID));
+	string weaponClassName = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(weapon.m_nItemID));
+	string paintClassName = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(paint.m_nItemID));
 
-	if (className != "WeaponPaintItem" || className == "WeaponPaintRemoveItem")
+	if (weaponClassName != "Equipment" || paintClassName != "WeaponPaintItem")
+		return false;
+
+	// If paint is already in the list, don't use it
+	if (std::find(weapon.m_nPaintIDList.begin(), weapon.m_nPaintIDList.end(), paint.m_nItemID) != weapon.m_nPaintIDList.end())
 		return false;
 
 	weapon.m_nPaintID = paint.m_nItemID;
-
-	if (!weapon.m_nPaintIDList.empty())
-		weapon.m_nPaintIDList += " ";
-	weapon.m_nPaintIDList += to_string(paint.m_nItemID);
+	weapon.m_nPaintIDList.push_back(paint.m_nItemID);
 
 	g_pUserDatabase->UpdateInventoryItem(user->GetID(), weapon);
 
@@ -1889,10 +1901,14 @@ bool CItemManager::OnWeaponPaintSwitchRequest(CUser* user, CReceivePacket* msg)
 	if (!weapon.m_nItemID)
 		return false;
 
-	// TODO: Make check for valid paint item
-	string className = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(paintID));
+	string weaponClassName = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(weapon.m_nItemID));
+	string paintClassName = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(paintID));
 
-	if (className != "WeaponPaintItem" && className != "WeaponPaintRemoveItem")
+	if (weaponClassName != "Equipment" || paintClassName != "WeaponPaintItem")
+		return false;
+
+	// If paint isn't in the list, don't switch
+	if (std::find(weapon.m_nPaintIDList.begin(), weapon.m_nPaintIDList.end(), paintID) == weapon.m_nPaintIDList.end())
 		return false;
 
 	weapon.m_nPaintID = paintID;
@@ -1965,6 +1981,12 @@ bool CItemManager::OnPartEquipRequest(CUser* user, CReceivePacket* msg)
 		if (!weapon.m_nItemID || !part.m_nItemID)
 			return false;
 
+		string weaponClassName = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(weapon.m_nItemID));
+		string partClassName = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(part.m_nItemID));
+
+		if (weaponClassName != "Equipment" || partClassName != "WeaponParts")
+			return false;
+
 		if (partID == 0)
 			weapon.m_nPartSlot1 = part.m_nItemID;
 		else if (partID == 1)
@@ -2021,11 +2043,7 @@ bool CItemManager::OnSwitchInUseRequest(CUser* user, CReceivePacket* msg)
 
 	item.m_nStatus = updateStatus;
 
-	if (item.m_nExpiryDate > 0)
-	{
-		int currentTimestamp = g_pServerInstance->GetCurrentTime();
-		item.m_nExpiryDate = currentTimestamp + item.m_nExpiryDate * CSO_24_HOURS_IN_MINUTES;
-	}
+	item.ConvertDurationToExpiryDate();
 
 	g_pUserDatabase->UpdateInventoryItem(user->GetID(), item);
 

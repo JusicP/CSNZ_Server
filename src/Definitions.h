@@ -145,6 +145,7 @@ enum HostPacketType
 	OnUpdateWinCounter = 9,
 	OnUpdateScore = 10,
 	OnGameEvent = 11,
+	SetZBAddons = 11,
 	OnUserWeapon = 13, // Or OnUpdateWeapon? not very sure what to name :D
 	OnUpdateClass = 14,
 	OnUserSpawn = 16, // Spawn Location
@@ -1215,7 +1216,7 @@ enum InRoomType
 	UserInviteRequest = 19,
 	RoomListRequest = 22,
 	JoinRoomRequest = 23,
-	SetZBAddons = 35,
+	SetZBAddonsRequest = 35,
 };
 
 enum UMsgReceiveType

@@ -259,6 +259,33 @@ bool CHostManager::OnUpdateUserStatus(CReceivePacket* msg, CExtendedSocket* sock
 	if (status == 1)
 	{
 		destRoom->GetGameMatch()->Connect(destUser);
+
+		// send zbs addon info
+		if (destRoom->GetSettings()->gameMode == 15)
+		{
+			vector<int> addons;
+			g_pUserDatabase->GetAddons(userID, addons);
+
+			if (!addons.empty())
+			{
+				g_pPacketManager->SendHostZBAddon(socket, userID, addons);
+
+				bool updated = 0;
+				int i = 0;
+				for (auto itemID : addons)
+				{
+					vector<CUserInventoryItem> items;
+					if (!g_pUserDatabase->GetInventoryItemsByID(userID, itemID, items))
+					{
+						updated = 1;
+						addons.erase(addons.begin() + i);
+					}
+				}
+
+				if (updated)
+					g_pUserDatabase->SetAddons(userID, addons);
+			}
+		}
 	}
 	else
 	{
@@ -505,27 +532,6 @@ bool CHostManager::OnUpdateClass(CReceivePacket* msg, CExtendedSocket* socket)
 	int unk3 = msg->ReadInt8();
 
 	destRoom->GetGameMatch()->OnUpdateClass(destUser, classItemID);
-
-	// send zbs addon info
-	if (destRoom->GetSettings()->gameMode == 15)
-	{
-		vector<int> realAddonList;
-
-		vector<int> addons;
-		g_pUserDatabase->GetAddons(destUser->GetID(), addons);
-
-		for (auto itemID : addons)
-		{
-			CUserInventoryItem item;
-			if (g_pUserDatabase->GetFirstActiveItemByItemID(destUser->GetID(), itemID, item) == 1
-				&& g_pItemManager->OnItemUse(destUser, item))
-			{
-				realAddonList.push_back(itemID);
-			}
-		}
-
-		g_pPacketManager->SendHostZBAddon(socket, destUser->GetID(), realAddonList);
-	}
 
 	return true;
 }

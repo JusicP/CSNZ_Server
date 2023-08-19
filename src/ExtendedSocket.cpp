@@ -2,6 +2,7 @@
 #include "SendPacket.h"
 
 using namespace std;
+#define PACKET_MAX_SIZE 0x10000
 #define PACKET_HEADER_SIZE 4
 
 CExtendedSocket::CExtendedSocket()
@@ -133,9 +134,9 @@ CReceivePacket* CExtendedSocket::Read()
 
 int CExtendedSocket::Send(const vector<unsigned char>& buffer)
 {
-	if (buffer.size() > USHRT_MAX + PACKET_HEADER_SIZE)
+	if (buffer.size() > PACKET_MAX_SIZE)
 	{
-		g_pConsole->Error("CExtendedSocket::Send() buffer.size(): %d > USHRT_MAX!!!, ID: %d, seq: %d. Packet not sent.\n", buffer.size(), buffer[4], buffer[1]);
+		g_pConsole->Error("CExtendedSocket::Send() buffer.size(): %d > PACKET_MAX_SIZE!!!, ID: %d, seq: %d. Packet not sent.\n", buffer.size(), buffer[4], buffer[1]);
 		m_nSequence--;
 		return 0;
 	}

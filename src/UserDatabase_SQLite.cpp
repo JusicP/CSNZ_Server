@@ -632,7 +632,7 @@ int CUserDatabaseSQLite::AddInventoryItem(int userID, CUserInventoryItem& item)
 			queryInsertNewInvItem.bind(11, item.m_nEnhancementExp);
 			queryInsertNewInvItem.bind(12, item.m_nEnhanceValue);
 			queryInsertNewInvItem.bind(13, item.m_nPaintID);
-			queryInsertNewInvItem.bind(14, item.m_nPaintIDList);
+			queryInsertNewInvItem.bind(14, serialize_array_int(item.m_nPaintIDList));
 			queryInsertNewInvItem.bind(15, item.m_nPartSlot1);
 			queryInsertNewInvItem.bind(16, item.m_nPartSlot2);
 			queryInsertNewInvItem.bind(17, item.m_nLockStatus);
@@ -653,7 +653,7 @@ int CUserDatabaseSQLite::AddInventoryItem(int userID, CUserInventoryItem& item)
 			queryUpdateItem.bind(9, item.m_nEnhancementExp);
 			queryUpdateItem.bind(10, item.m_nEnhanceValue);
 			queryUpdateItem.bind(11, item.m_nPaintID);
-			queryUpdateItem.bind(12, item.m_nPaintIDList);
+			queryUpdateItem.bind(12, serialize_array_int(item.m_nPaintIDList));
 			queryUpdateItem.bind(13, item.m_nPartSlot1);
 			queryUpdateItem.bind(14, item.m_nPartSlot2);
 			queryUpdateItem.bind(15, item.m_nLockStatus);
@@ -751,7 +751,7 @@ int CUserDatabaseSQLite::AddInventoryItems(int userID, std::vector<CUserInventor
 				queryInsertNewInvItem.bind(11, item.m_nEnhancementExp);
 				queryInsertNewInvItem.bind(12, item.m_nEnhanceValue);
 				queryInsertNewInvItem.bind(13, item.m_nPaintID);
-				queryInsertNewInvItem.bind(14, item.m_nPaintIDList);
+				queryInsertNewInvItem.bind(14, serialize_array_int(item.m_nPaintIDList));
 				queryInsertNewInvItem.bind(15, item.m_nPartSlot1);
 				queryInsertNewInvItem.bind(16, item.m_nPartSlot2);
 				queryInsertNewInvItem.bind(17, item.m_nLockStatus);
@@ -772,7 +772,7 @@ int CUserDatabaseSQLite::AddInventoryItems(int userID, std::vector<CUserInventor
 				queryUpdateItem.bind(9, item.m_nEnhancementExp);
 				queryUpdateItem.bind(10, item.m_nEnhanceValue);
 				queryUpdateItem.bind(11, item.m_nPaintID);
-				queryUpdateItem.bind(12, item.m_nPaintIDList);
+				queryUpdateItem.bind(12, serialize_array_int(item.m_nPaintIDList));
 				queryUpdateItem.bind(13, item.m_nPartSlot1);
 				queryUpdateItem.bind(14, item.m_nPartSlot2);
 				queryUpdateItem.bind(15, item.m_nLockStatus);
@@ -814,7 +814,7 @@ int CUserDatabaseSQLite::UpdateInventoryItem(int userID, CUserInventoryItem item
 		query.bind(9, item.m_nEnhancementExp);
 		query.bind(10, item.m_nEnhanceValue);
 		query.bind(11, item.m_nPaintID);
-		query.bind(12, item.m_nPaintIDList);
+		query.bind(12, serialize_array_int(item.m_nPaintIDList));
 		query.bind(13, item.m_nPartSlot1);
 		query.bind(14, item.m_nPartSlot2);
 		query.bind(15, item.m_nLockStatus);
@@ -977,7 +977,7 @@ int CUserDatabaseSQLite::ProcessInventory(time_t curTime)
 		map<int, int> expiredItems;
 		while (query.executeStep())
 		{
-			CUserInventoryItem item(query.getColumn(1), query.getColumn(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0);
+			CUserInventoryItem item(query.getColumn(1), query.getColumn(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {}, 0, 0, 0);
 			int userID = query.getColumn(0);
 
 			CUser* user = g_pUserManager->GetUserById(userID);
@@ -3420,7 +3420,7 @@ int CUserDatabaseSQLite::SetAddons(int userID, vector<int>& addons)
 		query.exec();
 
 		{
-			SQLite::Statement query(m_Database, OBFUSCATE("INSERT INTO UserAddon VALUES(?, ?)"));
+			SQLite::Statement query(m_Database, OBFUSCATE("INSERT INTO UserAddon VALUES (?, ?)"));
 
 			for (auto itemID : addons)
 			{
@@ -3430,6 +3430,7 @@ int CUserDatabaseSQLite::SetAddons(int userID, vector<int>& addons)
 				{
 					return -1;
 				}
+				query.reset();
 				query.clearBindings();
 			}
 		}

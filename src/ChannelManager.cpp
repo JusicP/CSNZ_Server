@@ -86,7 +86,7 @@ bool CChannelManager::OnRoomRequest(CReceivePacket* msg, CExtendedSocket* socket
 		break;
 	case 27:
 		break;
-	case InRoomType::SetZBAddons:
+	case InRoomType::SetZBAddonsRequest:
 		return OnRoomSetZBAddonRequest(msg, user);
 	default:
 		g_pConsole->Warn("Unknown room request %d\n", type);
@@ -1361,21 +1361,29 @@ bool CChannelManager::OnRoomSetZBAddonRequest(CReceivePacket* msg, CUser* user)
 		return false;
 	}
 
-	vector<int> addons;
 	int size = msg->ReadUInt16();
+	if (size > 6)
+	{
+		return false;
+	}
+
+	vector<int> addons;
 	for (int i = 0; i < size; i++)
 	{
-		addons.push_back(msg->ReadUInt16());
+		int itemID = msg->ReadUInt16();
+
+		if (g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(itemID)) == "zbsaddonitem")
+		{
+			vector<CUserInventoryItem> items;
+			if (g_pUserDatabase->GetInventoryItemsByID(user->GetID(), itemID, items) == 1
+				&& g_pItemManager->OnItemUse(user, items[0]))
+			{
+				addons.push_back(itemID);
+			}
+		}
 	}
 
 	g_pUserDatabase->SetAddons(user->GetID(), addons);
-
-	// TODO: check if addons is real
-
-	// update addon list on client side
-	g_pPacketManager->SendAddonPacket(user->GetExtendedSocket(), addons);
-
-	//g_pPacketManager->SendRoomZBAddonSurvey(user->GetExtendedSocket(), addons);
 
 	return true;
 }

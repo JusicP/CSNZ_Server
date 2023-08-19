@@ -138,7 +138,7 @@ public:
 	void SendRoomKick(CExtendedSocket* socket, int userID);
 	void SendRoomInitiateVoteKick(CExtendedSocket* socket, int userID, int destUserID, int reason);
 	void SendRoomVoteKickResult(CExtendedSocket* socket, bool kick, int userID, int reason);
-	void SendRoomZBAddonSurvey(CExtendedSocket* socket, std::vector<int>& addons);
+	void SendRoomWeaponSurvey(CExtendedSocket* socket, std::vector<int>& weapons);
 	
 	void SendHostOnItemUse(CExtendedSocket* socket, int userId, int itemId);
 	void SendHostServerJoin(CExtendedSocket* socket, int ipAddress, bool bigEndian, int port, int userId);

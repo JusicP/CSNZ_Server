@@ -15,7 +15,7 @@ CUserManager::CUserManager(int maxPlayers)
 	users.reserve(maxPlayers);
 
 	for (size_t i = 0; i < g_pServerConfig->defUser.defaultItems.size(); i++)
-		m_DefaultItems.push_back(CUserInventoryItem(i, g_pServerConfig->defUser.defaultItems[i], 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0));
+		m_DefaultItems.push_back(CUserInventoryItem(i, g_pServerConfig->defUser.defaultItems[i], 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, {}, 0, 0, 0));
 }
 
 bool CUserManager::OnLoginPacket(CReceivePacket* msg, CExtendedSocket* socket)
@@ -262,12 +262,11 @@ bool CUserManager::OnFavoriteSetLoadout(CReceivePacket* msg, CUser* user)
 	{
 		if (loadoutID > LOADOUT_COUNT)
 		{
-			g_pConsole->Log(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid loadout %d\n"), character.curLoadout);
+			g_pConsole->Log(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid loadout %d\n"), loadoutID);
 			return false;
 		}
 
 		// change current loadout
-		CUserCharacterExtended character;
 		character.flag = EXT_UFLAG_CURLOADOUT;
 		character.curLoadout = loadoutID;
 		g_pUserDatabase->UpdateCharacterExtended(user->GetID(), character);
@@ -292,15 +291,36 @@ bool CUserManager::OnFavoriteSetLoadout(CReceivePacket* msg, CUser* user)
 			return false;
 		}
 
+		vector<CUserInventoryItem> items;
+		g_pUserDatabase->GetInventoryItemsByID(user->GetID(), itemID, items);
+
+		if (items.empty())
+			return false;
+
+		string className = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(itemID));
+
+		if (className != "Equipment")
+			return false;
+
 		g_pUserDatabase->UpdateLoadout(user->GetID(), character.curLoadout, slot, itemID);
 		return true;
 	}
 	else if (loadoutType == 0)
 	{
+		vector<CUserInventoryItem> items;
+		g_pUserDatabase->GetInventoryItemsByID(user->GetID(), itemID, items);
+
+		if (items.empty())
+			return false;
+
+		string className = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(itemID));
+
+		if (className != "Class")
+			return false;
+
 		// change bg character...
-		CUserCharacterExtended character;
 		character.flag = EXT_UFLAG_CHARACTERID;
-		character.characterID = loadoutID;
+		character.characterID = itemID;
 		g_pUserDatabase->UpdateCharacterExtended(user->GetID(), character);
 	}
 	else
@@ -1054,8 +1074,9 @@ bool CUserManager::OnAddonPacket(CReceivePacket* msg, CExtendedSocket* socket)
 	vector<int> addons;
 	g_pUserDatabase->GetAddons(user->GetID(), addons);
 
+	// update addon list on client side
 	if (!addons.empty())
-		g_pPacketManager->SendAddonPacket(user->GetExtendedSocket(), addons);
+		g_pPacketManager->SendAddonPacket(socket, addons);
 
 	return true;
 }
