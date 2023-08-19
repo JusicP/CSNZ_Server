@@ -1904,12 +1904,17 @@ bool CItemManager::OnWeaponPaintSwitchRequest(CUser* user, CReceivePacket* msg)
 	string weaponClassName = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(weapon.m_nItemID));
 	string paintClassName = g_pItemTable->GetRowValueByItemID<string>("ClassName", to_string(paintID));
 
-	if (weaponClassName != "Equipment" || paintClassName != "WeaponPaintItem")
+	if (weaponClassName != "Equipment" || paintClassName != "WeaponPaintItem" && paintClassName != "WeaponPaintRemoveItem")
 		return false;
 
-	// If paint isn't in the list, don't switch
-	if (std::find(weapon.m_nPaintIDList.begin(), weapon.m_nPaintIDList.end(), paintID) == weapon.m_nPaintIDList.end())
-		return false;
+	if (paintClassName != "WeaponPaintRemoveItem")
+	{
+		// If paint isn't in the list, don't switch
+		if (std::find(weapon.m_nPaintIDList.begin(), weapon.m_nPaintIDList.end(), paintID) == weapon.m_nPaintIDList.end())
+			return false;
+	}
+	else
+		paintID = 0;
 
 	weapon.m_nPaintID = paintID;
 
