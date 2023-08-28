@@ -17,7 +17,7 @@ public:
 	void OnEmptyRoomCallback(CRoom* room);
 	void SendLobbyMessageToAllUser(std::string senderName, std::string msg);
 	void UpdateUserInfo(CUser* user, const CUserCharacter& character);
-	CRoom* CreateRoom(CUser* host, IRoomOptions_s options);
+	CRoom* CreateRoom(CUser* host, CRoomSettings settings);
 	CRoom* GetRoomById(int id);
 	CUser* GetUserById(int userID);
 	bool RemoveRoomById(int roomID);

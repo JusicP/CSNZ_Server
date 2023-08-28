@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RoomSettings.h"
-#include "PacketHelper_RoomUpdateSettings.h"
+#include "ReceivePacket.h"
 #include "Definitions.h"
 
 class CGameMatch;
@@ -27,7 +27,7 @@ public:
 class CRoom
 {
 public:
-	CRoom(int roomId, CUser* hostUser, class CChannel* channel, IRoomOptions_s optionsRoomCallback);
+	CRoom(int roomId, CUser* hostUser, class CChannel* channel, CRoomSettings settings);
 	~CRoom();
 
 	int GetNumOfPlayers();
@@ -52,14 +52,8 @@ public:
 	void SetUserToTeam(CUser* user, RoomTeamNum newTeam);
 	enum RoomStatus GetStatus();
 	void SetStatus(RoomStatus newStatus);
-	bool CanCountdown(CUser* user);
-	bool IsGlobalCountdownInProgress();
 	enum RoomReadyStatus ToggleUserReadyStatus(CUser* user);
 	void ResetStatusIngameUsers();
-	void ProgressCountdown(int hostNextNum);
-	int GetCountdown();
-	bool IsCountdownInProgress();
-	void StopCountdown();
 	bool CanStartGame();
 	void OnUserRemoved(CUser* user);
 	void SendRemovedUser(CUser* deletedUser);
@@ -68,7 +62,7 @@ public:
 	void UserGameJoin(CUser* user);
 	void EndGame();
 	bool FindAndUpdateNewHost();
-	CRoomSettings* UpdateSettings(CPacketHelper_RoomUpdateSettings newSettings);
+	void UpdateSettings(CRoomSettings newSettings);
 	void OnUserMessage(CReceivePacket* msg, CUser* user);
 	void OnUserTeamMessage(CReceivePacket* msg, CUser* user);
 	void OnGameStart();
@@ -87,7 +81,6 @@ public:
 	void SendStartMatch(CUser* host);
 	void SendCloseResultWindow(CUser* user);
 	void SendTeamChange(CUser* user, CUser* player, RoomTeamNum newTeamNum);
-	void SendCountdown(CUser* user, bool shouldCountdown);
 	void SendGameEnd(CUser* user);
 	void SendUserMessage(std::string senderName, std::string msg, CUser* user);
 	void SendRoomStatus(CUser* user);
@@ -116,8 +109,6 @@ private:
 
 	int m_nID;
 	RoomStatus m_Status;
-	bool m_bCountingDown;
-	int m_Countdown;
 };
 
 typedef struct IRoomOptions_s

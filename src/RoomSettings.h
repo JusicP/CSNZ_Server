@@ -1,17 +1,74 @@
 #pragma once
 
-struct unk50_data
+struct unk33_data
 {
 	int unk1;
 	int unk2;
+	int unk3;
+	int unk4;
+	int unk5;
+	int unk6;
+	int unk7;
+	int unk8;
+	int unk9;
+};
+
+struct mapPlaylist_data
+{
+	int unk1;
+	int mapId;
 };
 
 class CRoomSettings
 {
 public:
 	CRoomSettings();
-	CRoomSettings(struct IRoomOptions_s options);
+	CRoomSettings(Buffer& inPacket);
+	void Init();
+	int GetGameModeDefaultSetting(int gameModeId, std::string setting);
+	int GetMapSetting(int mapId, std::string setting);
+	int GetGameModeDefaultArmsRestriction(int gameModeId);
+	int GetMapDefaultArmsRestriction(int mapId);
+	int GetDefaultBuyTime(int gameModeId);
+	int GetDefaultTeamBalance(int gameModeId);
+	int GetDefaultFriendlyFire(int gameModeId);
+	int GetDefaultViewFlag(int gameModeId);
+	int GetDefaultFriendlyBots(int gameModeId);
+	int GetDefaultEnemyBots(int gameModeId);
+	int GetDefaultBotAdd(int gameModeId);
+	int GetDefaultStartingCash(int gameModeId);
+	int GetDefaultZbRespawn(int gameModeId);
+	int GetDefaultZbBalance(int gameModeId);
+	bool IsFunGameMode(int gameModeId);
+	bool IsPlayroomGameMode(int gameModeId);
+	bool IsVoxelGameMode(int gameModeId);
+	std::string GetGameModeNameByID(int gameModeId);
+	bool IsMapValid(int gameModeId, int mapId);
+	bool IsMapPlaylistAllowed(int gameModeId);
+	bool IsRandomMapAllowed(int gameModeId);
+	void LoadDefaultSettings(int gameModeId, int mapId);
+	void LoadZbCompetitiveSettings(int gameModeId);
+	void LoadNewSettings(int gameModeId, int mapId, CUser* user, int changeFlag = 0);
+	bool IsSettingValid(int gameModeId, std::string setting, int value);
+	bool IsLeagueRuleWinLimitValid(int winLimit);
+	bool IsBuyTimeValid(int gameModeId, int buyTime);
+	bool IsStartingCashValid(int gameModeId, int startingCash);
+	bool IsStartingCashValid(int startingCash);
+	bool IsZombieItem(int itemId);
+	bool IsZbLimitValid(std::vector<int> zbLimit);
+	bool IsMutationRestrictValid(std::vector<int> mutationRestrict);
+	bool IsMapPlaylistValid(std::vector<mapPlaylist_data> mapPlaylist);
+	bool IsMutationLimitValid(int mutationLimit);
+	bool CanChangeTeamBalance(int gameModeId);
+	bool CanChangeFriendlyFire(int gameModeId);
+	bool CheckSettings(CUser* user);
+	bool CheckNewSettings(CUser* user, CRoomSettings* roomSettings);
 
+public:
+	int lowFlag;
+	int lowMidFlag;
+	int highMidFlag;
+	int highFlag;
 	std::string roomName;
 	int unk00;
 	int unk01;
@@ -19,17 +76,17 @@ public:
 	int unk03;
 	int unk04;
 	std::string password;
-	int unk06;
+	int levelLimit;
 	int unk07;
-	int gameMode;
+	int gameModeId;
 	int mapId;
 	int maxPlayers;
 	int winLimit;
-	int neededKills;
+	int killLimit;
 	int gameTime;
 	int roundTime;
 	int armsRestriction;
-	int unk16;
+	int hostageKillLimit;
 	int freezeTime;
 	int buyTime;
 	int displayNickname;
@@ -39,19 +96,21 @@ public:
 	int flashlight;
 	int footsteps;
 	int unk25;
-	int unk26;
-	int unk27;
+	int tkPunish;
+	int autoKick;
 	int unk28;
 	int unk29;
-	int unk30;
+	int viewFlag;
 	int voiceChat;
 	int status; // isIngame
 	int unk33;
-	std::string unk34;
-	int unk35;
+	std::vector<unk33_data> unk33_vec;
+	int unk34;
+	std::string unk35;
 	int unk36;
 	int unk37;
 	int unk38;
+	int c4Timer;
 	int botDifficulty;
 	int friendlyBots;
 	int enemyBots;
@@ -59,40 +118,39 @@ public:
 	int botAdd;
 	int kdRule;
 	int startingCash;
-	int unk46;
-	int unk47;
-	int unk48;
-	int unk49;
-	int unk50;
-	std::vector<unk50_data> unk50_vec;
-	int unk51;
-	int enhancement;
-	int unk53;
+	int movingShot;
+	int ballNumber;
+	int statusSymbol;
+	int randomMap;
+	int mapPlaylistSize;
+	std::vector<mapPlaylist_data> mapPlaylist;
+	int mapPlaylistIndex;
+	int enhanceRestrict;
+	int sd;
 	int zsDifficulty;
-	int unk55;
 	int unk56;
-	int league;
+	int unk57;
+	int leagueRule;
 	int mannerLimit;
-	int unk59;
-	int unk60;
+	int mapId2;
+	int zbLimitFlag;
 	std::vector<int> zbLimit;
-	int unk61;
 	int unk62;
-	std::vector<int> unk62_vec;
 	int unk63;
+	std::vector<int> unk63_vec;
+	int unk64;
 	int teamSwitch;
-	int unk65;
-	int unk66;
-	int unk67;
-	int unk68;
-	int unk69;
+	int zbRespawn;
+	int zbBalance;
+	int gameRule;
+	int superRoom;
 	int isZbCompetitive;
-	int unk70;
-	int unk71;
-	int unk72;
+	int zbAutoHunting;
+	int integratedTeam;
 	int unk73;
-	int unk74;
-	std::vector<int> unk74_vec;
-	int unk75;
-	int unk76;
+	int fireBomb;
+	int mutationRestrictSize;
+	std::vector<int> mutationRestrict;
+	int mutationLimit;
+	int unk77;
 };

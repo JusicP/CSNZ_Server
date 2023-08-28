@@ -6,10 +6,9 @@
 
 using namespace std;
 
-#define DEFAULT_COUNTDOWN 6
 #define INVALID_ENT -1
 
-CRoom::CRoom(int roomId, CUser* hostUser, CChannel* channel, IRoomOptions_s optionsRoomCallback)
+CRoom::CRoom(int roomId, CUser* hostUser, CChannel* channel, CRoomSettings settings)
 {
 	m_nID = roomId;
 	m_pHostUser = hostUser;
@@ -18,11 +17,9 @@ CRoom::CRoom(int roomId, CUser* hostUser, CChannel* channel, IRoomOptions_s opti
 	m_pParentChannel = channel;
 
 	m_pSettings = new CRoomSettings();
+	UpdateSettings(settings);
 
 	m_Status = RoomStatus::STATUS_WAITING;
-
-	m_bCountingDown = false;
-	m_Countdown = DEFAULT_COUNTDOWN;
 
 	AddUser(m_pHostUser);
 
@@ -231,61 +228,7 @@ RoomStatus CRoom::GetStatus()
 void CRoom::SetStatus(RoomStatus newStatus)
 {
 	m_pSettings->status = newStatus;
-	m_pSettings->unk47 = newStatus == RoomStatus::STATUS_INGAME ? 3 : 0;
-}
-
-bool CRoom::CanCountdown(CUser* user)
-{
-	return user == m_pHostUser && m_Status == RoomStatus::STATUS_WAITING;
-}
-
-void CRoom::ProgressCountdown(int hostNextNum)
-{
-	if (m_Countdown > DEFAULT_COUNTDOWN || m_Countdown < 0)
-	{
-		g_pConsole->Warn("CRoom::ProgressCountdown: invalid countdown\n");
-		m_Countdown = 0;
-	}
-
-	if (m_bCountingDown == false)
-	{
-		m_bCountingDown = true;
-	}
-
-	if (m_Countdown != hostNextNum)
-	{
-		g_pConsole->Warn("CRoom::ProgressCountdown: client's countdown does not match server's\n");
-	}
-
-	m_Countdown--;
-}
-
-int CRoom::GetCountdown()
-{
-	if (m_bCountingDown == false)
-	{
-		g_pConsole->Warn("CRoom::GetCountdown: tried to get countdown without counting down\n");
-		return 0;
-	}
-
-	if (m_Countdown > DEFAULT_COUNTDOWN || m_Countdown < 0)
-	{
-		g_pConsole->Warn("CRoom::GetCountdown: server's countdown is out of bounds %d\n", m_Countdown);
-		m_Countdown = 0;
-	}
-
-	return m_Countdown;
-}
-
-bool CRoom::IsGlobalCountdownInProgress()
-{
-	return m_bCountingDown;
-}
-
-void CRoom::StopCountdown()
-{
-	m_bCountingDown = false;
-	m_Countdown = DEFAULT_COUNTDOWN;
+	m_pSettings->statusSymbol = newStatus == RoomStatus::STATUS_INGAME ? 3 : 0;
 }
 
 void CRoom::SendJoinNewRoom(CUser* user)
@@ -293,314 +236,231 @@ void CRoom::SendJoinNewRoom(CUser* user)
 	g_pPacketManager->SendRoomCreateAndJoin(user->GetExtendedSocket(), this);
 }
 
-CRoomSettings* CRoom::UpdateSettings(CPacketHelper_RoomUpdateSettings newSettings)
+void CRoom::UpdateSettings(CRoomSettings newSettings)
 {
-	CRoomSettings* updatedSet = new CRoomSettings();
+	m_pSettings->lowFlag |= newSettings.lowFlag;
+	m_pSettings->lowMidFlag |= newSettings.lowMidFlag;
+	m_pSettings->highMidFlag |= newSettings.highMidFlag;
+	m_pSettings->highFlag |= newSettings.highFlag;
 
-	if (newSettings.lowFlag & ROOM_LOW_NAME) {
-		updatedSet->roomName = newSettings.roomName;
+	if (newSettings.lowFlag & ROOM_LOW_ROOMNAME) {
 		m_pSettings->roomName = newSettings.roomName;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_UNK) {
-		updatedSet->unk00 = newSettings.unk00;
 		m_pSettings->unk00 = newSettings.unk00;
 	}
-	if (newSettings.lowFlag & ROOM_LOW_UNK2) {
+	if (newSettings.lowFlag & ROOM_LOW_CLANBATTLE) {
 		m_pSettings->unk01 = newSettings.unk01;
 		m_pSettings->unk02 = newSettings.unk02;
 		m_pSettings->unk03 = newSettings.unk03;
 		m_pSettings->unk04 = newSettings.unk04;
-		updatedSet->unk01 = newSettings.unk01;
-		updatedSet->unk02 = newSettings.unk02;
-		updatedSet->unk03 = newSettings.unk03;
-		updatedSet->unk04 = newSettings.unk04;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_PASSWORD) {
-		updatedSet->password = newSettings.unk05;
-		m_pSettings->password = newSettings.unk05;
+		m_pSettings->password = newSettings.password;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_LEVELLIMIT) {
-		m_pSettings->unk06 = newSettings.unk06;
-		updatedSet->unk06 = newSettings.unk06;
+		m_pSettings->levelLimit = newSettings.levelLimit;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_UNK7) {
 		m_pSettings->unk07 = newSettings.unk07;
-		updatedSet->unk07 = newSettings.unk07;
 	}
-	if (newSettings.lowFlag & ROOM_LOW_GAMEMODE) {
-		m_pSettings->gameMode = newSettings.unk08;
-		updatedSet->gameMode = newSettings.unk08;
+	if (newSettings.lowFlag & ROOM_LOW_GAMEMODEID) {
+		m_pSettings->gameModeId = newSettings.gameModeId;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_MAPID) {
-		m_pSettings->mapId = newSettings.unk09;
-		updatedSet->mapId = newSettings.unk09;
+		m_pSettings->mapId = newSettings.mapId;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_MAXPLAYERS) {
-		m_pSettings->maxPlayers = newSettings.unk10;
-		updatedSet->maxPlayers = newSettings.unk10;
+		m_pSettings->maxPlayers = newSettings.maxPlayers;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_WINLIMIT) {
-		m_pSettings->winLimit = newSettings.unk11;
-		updatedSet->winLimit = newSettings.unk11;
+		m_pSettings->winLimit = newSettings.winLimit;
 	}
-	if (newSettings.lowFlag & ROOM_LOW_NEEDEDKILLS) {
-		m_pSettings->neededKills = newSettings.unk12;
-		updatedSet->neededKills = newSettings.unk12;
+	if (newSettings.lowFlag & ROOM_LOW_KILLLIMIT) {
+		m_pSettings->killLimit = newSettings.killLimit;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_GAMETIME) {
-		m_pSettings->gameTime = newSettings.unk13;
-		updatedSet->gameTime = newSettings.unk13;
+		m_pSettings->gameTime = newSettings.gameTime;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_ROUNDTIME) {
-		m_pSettings->roundTime = newSettings.unk14;
-		updatedSet->roundTime = newSettings.unk14;
+		m_pSettings->roundTime = newSettings.roundTime;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_ARMSRESTRICTION) {
-		m_pSettings->armsRestriction = newSettings.unk15;
-		updatedSet->armsRestriction = newSettings.unk15;
+		m_pSettings->armsRestriction = newSettings.armsRestriction;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_HOSTAGEKILLLIMIT) {
-		m_pSettings->unk16 = newSettings.unk16;
-		updatedSet->unk16 = newSettings.unk16;
+		m_pSettings->hostageKillLimit = newSettings.hostageKillLimit;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_FREEZETIME) {
-		m_pSettings->freezeTime = newSettings.unk17;
-		updatedSet->freezeTime = newSettings.unk17;
+		m_pSettings->freezeTime = newSettings.freezeTime;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_BUYTIME) {
-		m_pSettings->buyTime = newSettings.unk18;
-		updatedSet->buyTime = newSettings.unk18;
+		m_pSettings->buyTime = newSettings.buyTime;
 	}
-	if (newSettings.lowFlag & ROOM_LOW_DISPLAYGAMENAME) {
-		m_pSettings->displayNickname = newSettings.unk19;
-		updatedSet->displayNickname = newSettings.unk19;
+	if (newSettings.lowFlag & ROOM_LOW_DISPLAYNICKNAME) {
+		m_pSettings->displayNickname = newSettings.displayNickname;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_TEAMBALANCE) {
-		m_pSettings->teamBalance = newSettings.unk20;
-		updatedSet->teamBalance = newSettings.unk20;
+		m_pSettings->teamBalance = newSettings.teamBalance;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_UNK21) {
 		m_pSettings->unk21 = newSettings.unk21;
-		updatedSet->unk21 = newSettings.unk21;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_FRIENDLYFIRE) {
-		m_pSettings->friendlyFire = newSettings.unk22;
-		updatedSet->friendlyFire = newSettings.unk22;
+		m_pSettings->friendlyFire = newSettings.friendlyFire;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_FLASHLIGHT) {
-		m_pSettings->flashlight = newSettings.unk23;
-		updatedSet->flashlight = newSettings.unk23;
+		m_pSettings->flashlight = newSettings.flashlight;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_FOOTSTEPS) {
-		m_pSettings->footsteps = newSettings.unk24;
-		updatedSet->footsteps = newSettings.unk24;
+		m_pSettings->footsteps = newSettings.footsteps;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_UNK25) {
 		m_pSettings->unk25 = newSettings.unk25;
-		updatedSet->unk25 = newSettings.unk25;
 	}
-	if (newSettings.lowFlag & ROOM_LOW_UNK26) {
-		m_pSettings->unk26 = newSettings.unk26;
-		updatedSet->unk26 = newSettings.unk26;
+	if (newSettings.lowFlag & ROOM_LOW_TKPUNISH) {
+		m_pSettings->tkPunish = newSettings.tkPunish;
 	}
-	if (newSettings.lowFlag & ROOM_LOW_UNK27) {
-		m_pSettings->unk27 = newSettings.unk27;
-		updatedSet->unk27 = newSettings.unk27;
+	if (newSettings.lowFlag & ROOM_LOW_AUTOKICK) {
+		m_pSettings->autoKick = newSettings.autoKick;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_UNK28) {
 		m_pSettings->unk28 = newSettings.unk28;
-		updatedSet->unk28 = newSettings.unk28;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_UNK29) {
 		m_pSettings->unk29 = newSettings.unk29;
-		updatedSet->unk29 = newSettings.unk29;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_VIEWFLAG) {
-		m_pSettings->unk30 = newSettings.unk30;
-		updatedSet->unk30 = newSettings.unk30;
+		m_pSettings->viewFlag = newSettings.viewFlag;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_VOICECHAT) {
-		m_pSettings->voiceChat = newSettings.unk31;
-		updatedSet->voiceChat = newSettings.unk31;
+		m_pSettings->voiceChat = newSettings.voiceChat;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_STATUS) {
-		m_pSettings->status = newSettings.unk32;
-		updatedSet->status = newSettings.unk32;
+		m_pSettings->status = newSettings.status;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_UNK33) {
 		m_pSettings->unk33 = newSettings.unk33;
-		updatedSet->unk33 = newSettings.unk33;
+		m_pSettings->unk33_vec = newSettings.unk33_vec;
 	}
 
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK) {
+	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK34) {
 		m_pSettings->unk34 = newSettings.unk34;
 		m_pSettings->unk35 = newSettings.unk35;
 		m_pSettings->unk36 = newSettings.unk36;
 		m_pSettings->unk37 = newSettings.unk37;
-
-		updatedSet->unk34 = newSettings.unk34;
-		updatedSet->unk35 = newSettings.unk35;
-		updatedSet->unk36 = newSettings.unk36;
-		updatedSet->unk37 = newSettings.unk37;
+		m_pSettings->unk38 = newSettings.unk38;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_C4TIMER) {
-		m_pSettings->unk38 = newSettings.unk38;
-		updatedSet->unk38 = newSettings.unk38;
+		m_pSettings->c4Timer = newSettings.c4Timer;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_BOT) {
-		m_pSettings->botDifficulty = newSettings.unk39;
-		m_pSettings->friendlyBots = newSettings.unk40;
-		m_pSettings->enemyBots = newSettings.unk41;
-		m_pSettings->botBalance = newSettings.unk42;
-		m_pSettings->botAdd = newSettings.unk43;
-
-		updatedSet->botDifficulty = newSettings.unk39;
-		updatedSet->friendlyBots = newSettings.unk40;
-		updatedSet->enemyBots = newSettings.unk41;
-		updatedSet->botBalance = newSettings.unk42;
-		updatedSet->botAdd = newSettings.unk43;
+		m_pSettings->botDifficulty = newSettings.botDifficulty;
+		m_pSettings->friendlyBots = newSettings.friendlyBots;
+		m_pSettings->enemyBots = newSettings.enemyBots;
+		m_pSettings->botBalance = newSettings.botBalance;
+		m_pSettings->botAdd = newSettings.botAdd;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_KDRULE) {
-		m_pSettings->kdRule = newSettings.unk44;
-		updatedSet->kdRule = newSettings.unk44;
+		m_pSettings->kdRule = newSettings.kdRule;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_STARTINGCASH) {
-		m_pSettings->startingCash = newSettings.unk45;
-		updatedSet->startingCash = newSettings.unk45;
+		m_pSettings->startingCash = newSettings.startingCash;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_MOVINGSHOT) {
-		m_pSettings->unk46 = newSettings.unk46;
-		updatedSet->unk46 = newSettings.unk46;
+		m_pSettings->movingShot = newSettings.movingShot;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK47) {
-		m_pSettings->unk47 = newSettings.unk47;
-		updatedSet->unk47 = newSettings.unk47;
+	if (newSettings.lowMidFlag & ROOM_LOWMID_BALLNUMBER) {
+		m_pSettings->ballNumber = newSettings.ballNumber;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_STATUSSYMBOL) {
-		m_pSettings->unk48 = newSettings.unk48;
-		updatedSet->unk48 = newSettings.unk48;
+		m_pSettings->statusSymbol = newSettings.statusSymbol;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_RANDOMMAP) {
-		m_pSettings->unk49 = newSettings.unk49;
-		updatedSet->unk49 = newSettings.unk49;
+		m_pSettings->randomMap = newSettings.randomMap;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_MULTIPLEMAPS) {
-		m_pSettings->unk50 = newSettings.unk50;
-		m_pSettings->unk50_vec = newSettings.unk50_vec;
-		updatedSet->unk50 = newSettings.unk50;
-		updatedSet->unk50_vec = newSettings.unk50_vec;
+	if (newSettings.lowMidFlag & ROOM_LOWMID_MAPPLAYLIST) {
+		m_pSettings->mapPlaylistSize = newSettings.mapPlaylistSize;
+		m_pSettings->mapPlaylist = newSettings.mapPlaylist;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK51) {
-		m_pSettings->unk51 = newSettings.unk51;
-		updatedSet->unk51 = newSettings.unk51;
+	if (newSettings.lowMidFlag & ROOM_LOWMID_MAPPLAYLISTINDEX) {
+		m_pSettings->mapPlaylistIndex = newSettings.mapPlaylistIndex;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_WPNENHANCERESTRICT) {
-		m_pSettings->enhancement = newSettings.unk52;
-		updatedSet->enhancement = newSettings.unk52;
+	if (newSettings.lowMidFlag & ROOM_LOWMID_ENHANCERESTRICT) {
+		m_pSettings->enhanceRestrict = newSettings.enhanceRestrict;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_SD) {
-		m_pSettings->unk53 = newSettings.unk53;
-		updatedSet->unk53 = newSettings.unk53;
+		m_pSettings->sd = newSettings.sd;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_ZSDIFFICULTY) {
-		m_pSettings->zsDifficulty = newSettings.unk54;
-		m_pSettings->unk55 = newSettings.unk55;
+		m_pSettings->zsDifficulty = newSettings.zsDifficulty;
 		m_pSettings->unk56 = newSettings.unk56;
-
-		updatedSet->zsDifficulty = newSettings.unk54;
-		updatedSet->unk55 = newSettings.unk55;
-		updatedSet->unk56 = newSettings.unk56;
+		m_pSettings->unk57 = newSettings.unk57;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_LEAGUERULE) {
-		m_pSettings->league = newSettings.unk57;
-		updatedSet->league = newSettings.unk57;
+		m_pSettings->leagueRule = newSettings.leagueRule;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_MANNERLIMIT) {
-		m_pSettings->mannerLimit = newSettings.unk58;
-		updatedSet->mannerLimit = newSettings.unk58;
+		m_pSettings->mannerLimit = newSettings.mannerLimit;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK59) {
-		m_pSettings->unk59 = newSettings.unk59;
-		updatedSet->unk59 = newSettings.unk59;
+	if (newSettings.lowMidFlag & ROOM_LOWMID_MAPID2) {
+		m_pSettings->mapId2 = newSettings.mapId2;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_ZBLIMIT) {
-		m_pSettings->unk60 = newSettings.unk60;
-		updatedSet->unk60 = newSettings.unk60;
-
+		m_pSettings->zbLimitFlag = newSettings.zbLimitFlag;
 		m_pSettings->zbLimit = newSettings.zbLimit;
-		updatedSet->zbLimit = newSettings.zbLimit;
-	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK61) {
-		m_pSettings->unk61 = newSettings.unk61;
-		updatedSet->unk61 = newSettings.unk61;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK62) {
 		m_pSettings->unk62 = newSettings.unk62;
-		m_pSettings->unk62_vec = newSettings.unk62_vec;
-		updatedSet->unk62 = newSettings.unk62;
-		updatedSet->unk62_vec = newSettings.unk62_vec;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK63) {
 		m_pSettings->unk63 = newSettings.unk63;
-		updatedSet->unk63 = newSettings.unk63;
+		m_pSettings->unk63_vec = newSettings.unk63_vec;
+	}
+	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK64) {
+		m_pSettings->unk64 = newSettings.unk64;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_TEAMSWITCH) {
 		m_pSettings->teamSwitch = newSettings.teamSwitch;
-		updatedSet->teamSwitch = newSettings.teamSwitch;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK65) {
-		m_pSettings->unk65 = newSettings.unk65;
-		updatedSet->unk65 = newSettings.unk65;
+	if (newSettings.lowMidFlag & ROOM_LOWMID_ZBRESPAWN) {
+		m_pSettings->zbRespawn = newSettings.zbRespawn;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK66) {
-		m_pSettings->unk66 = newSettings.unk66;
-		updatedSet->unk66 = newSettings.unk66;
+	if (newSettings.lowMidFlag & ROOM_LOWMID_ZBBALANCE) {
+		m_pSettings->zbBalance = newSettings.zbBalance;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK67) {
-		m_pSettings->unk67 = newSettings.unk67;
-		updatedSet->unk67 = newSettings.unk67;
+	if (newSettings.lowMidFlag & ROOM_LOWMID_GAMERULE) {
+		m_pSettings->gameRule = newSettings.gameRule;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK68) {
-		m_pSettings->unk68 = newSettings.unk68;
-		updatedSet->unk68 = newSettings.unk68;
+	if (newSettings.lowMidFlag & ROOM_LOWMID_SUPERROOM) {
+		m_pSettings->superRoom = newSettings.superRoom;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_ISZBCOMPETITIVE) {
 		m_pSettings->isZbCompetitive = newSettings.isZbCompetitive;
-		updatedSet->isZbCompetitive = newSettings.isZbCompetitive;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK70) {
-		m_pSettings->unk70 = newSettings.unk70;
-		updatedSet->unk70 = newSettings.unk70;
+	if (newSettings.lowMidFlag & ROOM_LOWMID_ZBAUTOHUNTING) {
+		m_pSettings->zbAutoHunting = newSettings.zbAutoHunting;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK71) {
-		m_pSettings->unk71 = newSettings.unk71;
-		updatedSet->unk71 = newSettings.unk71;
+	if (newSettings.lowMidFlag & ROOM_LOWMID_INTEGRATEDTEAM) {
+		m_pSettings->integratedTeam = newSettings.integratedTeam;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK72) {
-		m_pSettings->unk72 = newSettings.unk72;
-		updatedSet->unk72 = newSettings.unk72;
-	}
-
-	if (newSettings.highMidFlag & ROOM_HIGHMID_UNK73) {
+	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK73) {
 		m_pSettings->unk73 = newSettings.unk73;
-		updatedSet->unk73 = newSettings.unk73;
-	}
-	if (newSettings.highMidFlag & ROOM_HIGHMID_UNK74) {
-		m_pSettings->unk74 = newSettings.unk74;
-		m_pSettings->unk74_vec = newSettings.unk74_vec;
-		updatedSet->unk74 = newSettings.unk74;
-		m_pSettings->unk74_vec = newSettings.unk74_vec;
-	}
-	if (newSettings.highMidFlag & ROOM_HIGHMID_UNK75) {
-		m_pSettings->unk75 = newSettings.unk75;
-		updatedSet->unk75 = newSettings.unk75;
-	}
-	if (newSettings.highMidFlag & ROOM_HIGHMID_UNK76) {
-		m_pSettings->unk76 = newSettings.unk76;
-		updatedSet->unk76 = newSettings.unk76;
 	}
 
-	return updatedSet;
+	if (newSettings.highMidFlag & ROOM_HIGHMID_FIREBOMB) {
+		m_pSettings->fireBomb = newSettings.fireBomb;
+	}
+	if (newSettings.highMidFlag & ROOM_HIGHMID_MUTATIONRESTRICT) {
+		m_pSettings->mutationRestrictSize = newSettings.mutationRestrictSize;
+		m_pSettings->mutationRestrict = newSettings.mutationRestrict;
+	}
+	if (newSettings.highMidFlag & ROOM_HIGHMID_MUTATIONLIMIT) {
+		m_pSettings->mutationLimit = newSettings.mutationLimit;
+	}
+	if (newSettings.highFlag & ROOM_HIGH_UNK77) {
+		m_pSettings->unk77 = newSettings.unk77;
+	}
 }
 
 void CRoom::OnUserMessage(CReceivePacket* msg, CUser* user)
@@ -622,16 +482,11 @@ void CRoom::OnUserMessage(CReceivePacket* msg, CUser* user)
 		{
 			if (isNumber(results[1]))
 			{
-				int lowFlag = ROOM_LOW_GAMEMODE;
-				int newGameMode = stoi(results[1]);
-
-				CRoomSettings newRoomSettings;
-				newRoomSettings.gameMode = newGameMode;
-				m_pSettings->gameMode = newGameMode;
+				m_pSettings->gameModeId = stoi(results[1]);
 
 				for (auto u : m_Users) // send gamemode update to all users
 				{
-					g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), &newRoomSettings, lowFlag, 0);
+					g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), m_pSettings, ROOM_LOW_GAMEMODEID);
 				}
 			}
 			else
@@ -656,16 +511,12 @@ void CRoom::OnUserMessage(CReceivePacket* msg, CUser* user)
 		{
 			if (isNumber(results[1]))
 			{
-				int lowFlag = ROOM_LOW_MAPID;
-				int mapId = stoi(results[1]);
-
-				CRoomSettings newRoomSettings;
-				newRoomSettings.mapId = mapId;
-				m_pSettings->mapId = mapId;
+				m_pSettings->mapId = stoi(results[1]);
+				m_pSettings->mapId2 = m_pSettings->mapId;
 
 				for (auto u : m_Users)
 				{
-					g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), &newRoomSettings, lowFlag, 0);
+					g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), m_pSettings, ROOM_LOW_MAPID, ROOM_LOWMID_MAPID2);
 				}
 			}
 			else
@@ -691,22 +542,13 @@ void CRoom::OnUserMessage(CReceivePacket* msg, CUser* user)
 		{
 			if (isNumber(results[1]) && isNumber(results[2]))
 			{
-				int lowMidFlag = ROOM_LOWMID_BOT;
-
-				newEnemyBotsCount = stoi(results[1]);
-				newFriendlyBotsCount = stoi(results[2]);
-
-				CRoomSettings newRoomSettings;
-				newRoomSettings.enemyBots = newEnemyBotsCount;
-				newRoomSettings.friendlyBots = newFriendlyBotsCount;
-				newRoomSettings.botAdd = 1;
-				m_pSettings->enemyBots = newEnemyBotsCount;
-				m_pSettings->friendlyBots = newFriendlyBotsCount;
+				m_pSettings->enemyBots = stoi(results[1]);
+				m_pSettings->friendlyBots = stoi(results[2]);
 				m_pSettings->botAdd = 1;
 
 				for (auto u : m_Users)
 				{
-					g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), &newRoomSettings, 0, lowMidFlag);
+					g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), m_pSettings, 0, ROOM_LOWMID_BOT);
 				}
 			}
 		}
@@ -856,7 +698,6 @@ void CRoom::SendStartMatch(CUser* host)
 		if (m_pServer)
 		{
 			g_pPacketManager->SendRoomCreateAndJoin(m_pServer->GetSocket(), this);
-			g_pPacketManager->SendRoomUpdateSettings(m_pServer->GetSocket(), m_pSettings, 0x40 | 0x80);
 			g_pPacketManager->SendHostGameStart(m_pServer->GetSocket(), m_pServer->GetPort());
 
 			g_pPacketManager->SendHostGameStart(host->GetExtendedSocket(), m_pServer->GetPort());
@@ -899,14 +740,7 @@ void CRoom::SendUserMessage(string senderName, string msg, CUser* user)
 
 void CRoom::SendRoomStatus(CUser* user)
 {
-	int lowFlag = ROOM_LOW_STATUS;
-	int lowMidFlag = ROOM_LOWMID_STATUSSYMBOL;
-
-	CRoomSettings newSettings = CRoomSettings();
-	newSettings.status = m_pSettings->status;
-	newSettings.unk47 = m_pSettings->unk47;
-
-	g_pPacketManager->SendRoomUpdateSettings(user->GetExtendedSocket(), &newSettings, lowFlag, lowMidFlag);
+	g_pPacketManager->SendRoomUpdateSettings(user->GetExtendedSocket(), m_pSettings, ROOM_LOW_STATUS, ROOM_LOWMID_STATUSSYMBOL);
 }
 
 void CRoom::SendPlayerLeaveIngame(CUser* user)
@@ -949,6 +783,7 @@ void CRoom::SendRemovedUser(CUser* deletedUser)
 void CRoom::UpdateHost(CUser* newHost)
 {
 	m_pHostUser = newHost;
+
 	for (auto u : m_Users)
 	{
 		g_pPacketManager->SendRoomSetHost(u->GetExtendedSocket(), newHost);
@@ -957,6 +792,33 @@ void CRoom::UpdateHost(CUser* newHost)
 	if (m_pGameMatch && m_pServer == NULL)
 	{
 		m_pGameMatch->OnHostChanged(newHost);
+	}
+
+	CUserInventoryItem item;
+	m_pSettings->superRoom = g_pUserDatabase->GetFirstActiveItemByItemID(newHost->GetID(), 8357 /* superRoom */, item);
+
+	for (auto u : m_Users)
+	{
+		g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), m_pSettings, 0, ROOM_LOWMID_SUPERROOM);
+	}
+
+	CUserInventoryItem item2;
+	m_pSettings->c4Timer = g_pUserDatabase->GetFirstActiveItemByItemID(newHost->GetID(), 112 /* c4Timer */, item2);
+
+	for (auto u : m_Users)
+	{
+		g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), m_pSettings, 0, ROOM_LOWMID_C4TIMER);
+	}
+
+	if (m_pSettings->gameModeId == 3 || m_pSettings->gameModeId == 4 || m_pSettings->gameModeId == 5 || m_pSettings->gameModeId == 15 || m_pSettings->gameModeId == 24)
+	{
+		CUserInventoryItem item;
+		m_pSettings->sd = g_pUserDatabase->GetFirstActiveItemByItemID(newHost->GetID(), 439 /* BigHeadEvent */, item);
+
+		for (auto u : m_Users)
+		{
+			g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), m_pSettings, 0, ROOM_LOWMID_SD);
+		}
 	}
 }
 
@@ -975,14 +837,13 @@ bool CRoom::FindAndUpdateNewHost()
 void CRoom::HostStartGame()
 {
 	// set random map for zb competitive
-	if (m_pSettings->gameMode == 45 && m_pSettings->isZbCompetitive)
+	if (m_pSettings->isZbCompetitive)
 	{
 		vector<int> zbCompetitiveMaps;
 		vector<int> column = g_pMapListTable->GetColumn<int>(";map_name");
 		for (auto mapID : column)
 		{
-			int isZbCompetitive = g_pMapListTable->GetCell<int>("zb_competitive", to_string(mapID));
-			if (isZbCompetitive)
+			if (g_pMapListTable->GetCell<int>("zb_competitive", std::to_string(mapID)))
 			{
 				zbCompetitiveMaps.push_back(mapID);
 			}
@@ -990,21 +851,17 @@ void CRoom::HostStartGame()
 
 		Randomer randomMap(zbCompetitiveMaps.size() - 1);
 		m_pSettings->mapId = zbCompetitiveMaps[randomMap()];
-
-		CRoomSettings newRoomSettings;
-		newRoomSettings.mapId = m_pSettings->mapId;
+		m_pSettings->mapId2 = m_pSettings->mapId;
 
 		for (auto u : m_Users)
 		{
-			g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), &newRoomSettings, ROOM_LOW_MAPID);
+			g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), m_pSettings, ROOM_LOW_MAPID, ROOM_LOWMID_MAPID2);
 		}
 	}
 
-	StopCountdown(); // TODO
-
 	if (!m_pGameMatch)
 	{
-		m_pGameMatch = new CGameMatch(this, m_pSettings->gameMode, m_pSettings->mapId);
+		m_pGameMatch = new CGameMatch(this, m_pSettings->gameModeId, m_pSettings->mapId);
 	}
 	else
 	{
@@ -1063,6 +920,29 @@ void CRoom::EndGame()
 	}
 
 	SendReadyStatusToAll();
+
+	if (m_pSettings->mapPlaylistSize)
+	{
+		for (int i = 0; i <= m_pSettings->mapPlaylistSize - 1; i++)
+		{
+			if (m_pSettings->mapId == m_pSettings->mapPlaylist[i].mapId)
+			{
+				int nextMap = i + 1;
+				if (nextMap == m_pSettings->mapPlaylistSize)
+					nextMap = 0;
+
+				m_pSettings->mapId = m_pSettings->mapPlaylist[nextMap].mapId;
+				m_pSettings->mapId2 = m_pSettings->mapId;
+				m_pSettings->mapPlaylistIndex = nextMap + 1;
+
+				for (auto u : m_Users)
+				{
+					g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), m_pSettings, ROOM_LOW_MAPID, ROOM_LOWMID_MAPID2 | ROOM_LOWMID_MAPPLAYLISTINDEX);
+				}
+				break;
+			}
+		}
+	}
 
 	delete m_pGameMatch;
 	m_pGameMatch = NULL;

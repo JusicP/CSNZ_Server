@@ -261,7 +261,7 @@ bool CHostManager::OnUpdateUserStatus(CReceivePacket* msg, CExtendedSocket* sock
 		destRoom->GetGameMatch()->Connect(destUser);
 
 		// send zbs addon info
-		if (destRoom->GetSettings()->gameMode == 15)
+		if (destRoom->GetSettings()->gameModeId == 15)
 		{
 			vector<int> addons;
 			g_pUserDatabase->GetAddons(userID, addons);

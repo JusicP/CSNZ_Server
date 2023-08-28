@@ -73,6 +73,7 @@ extern class CQuestManager* g_pQuestManager;
 extern class CMiniGameManager* g_pMiniGameManager;
 extern class CCSVTable* g_pItemTable;
 extern class CCSVTable* g_pMapListTable;
+extern class CCSVTable* g_pGameModeListTable;
 extern class CDedicatedServerManager* g_pDedicatedServerManager;
 extern class CClanManager* g_pClanManager;
 extern class CRankManager* g_pRankManager;

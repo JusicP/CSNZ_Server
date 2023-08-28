@@ -1,16 +1,4 @@
 {
 	"weaponProp": [
-			{
-			"ingameID": 388,
-			"weaponProp": 
-			{
-				"DamageZombie": 792,
-				"DamageScenario": 1308,
-				"SplashDamageZombie": 396,
-				"SplashDamageScenario": 654,
-				"BombDamageZombie": 792,
-				"BombDamageScenario": 1308
-			}
-		}	
     ]		
 }

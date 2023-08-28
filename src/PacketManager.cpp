@@ -56,7 +56,7 @@ CPacketManager::CPacketManager()
 		g_pConsole->Error("CPacketManager(): CreateZip() returned NULL. Some metadata not loaded\n");
 	}
 
-	if (ZipAdd(m_hMapListZip, "maplist.csv", "Data/maplist.csv", 0, ZIP_FILENAME)
+	if (ZipAdd(m_hMapListZip, "MapList.csv", "Data/MapList.csv", 0, ZIP_FILENAME)
 		|| ZipAdd(m_hClientTableZip, "ClientTable.csv", "Data/ClientTable.csv", 0, ZIP_FILENAME)
 		|| ZipAdd(m_hWeaponPartsZip, "weaponparts.csv", "Data/weaponparts.csv", 0, ZIP_FILENAME)
 		|| ZipAdd(m_hMatchingZip, "MatchOption.csv", "Data/MatchOption.csv", 0, ZIP_FILENAME)
@@ -1866,19 +1866,6 @@ void CPacketManager::SendLobbyUserLeft(CExtendedSocket* socket, CUser* user)
 	socket->Send(msg);
 }
 
-int GetRoomListValidFullFlag(bool highFlag)
-{
-	if (!highFlag)
-	{
-		return RLFLAG_NAME | RLFLAG_UNK | RLFLAG_HASPASSWORD | RLFLAG_LEVELLIMIT | RLFLAG_GAMEMODE | RLFLAG_MAPID | RLFLAG_PLAYERS | RLFLAG_MAXPLAYERS | RLFLAG_ARMSRESTRICTION |
-			RLFLAG_HOSTPLAYER | RLFLAG_UNK2 | RLFLAG_HOSTNETINFO | RLFLAG_CLANBATTLE | RLFLAG_UNK3 | RLFLAG_STATUS | RLFLAG_UNK4 |
-			RLFLAG_UNK5 | RLFLAG_UNK6 | RLFLAG_UNK7 | RLFLAG_UNK8 | RLFLAG_UNK9 | RLFLAG_UNK10 | RLFLAG_UNK11 | RLFLAG_UNK12 | RLFLAG_UNK13 |
-			RLFLAG_UNK14 | RLFLAG_UNK15 | RLFLAG_UNK16 | RLFLAG_UNK17 | RLFLAG_UNK18;
-	}
-
-	return RLHFLAG_UNK | RLHFLAG_UNK2 | RLHFLAG_UNK3;
-}
-
 void BuildRoomInfo(CSendPacket* msg, CRoom* room, int lFlag, int hFlag)
 {
 	msg->WriteUInt8(0);
@@ -1891,8 +1878,10 @@ void BuildRoomInfo(CSendPacket* msg, CRoom* room, int lFlag, int hFlag)
 	msg->WriteUInt32(lFlag);
 	msg->WriteUInt32(hFlag);
 
+	CRoomSettings* roomSettings = room->GetSettings();
+
 	if (lFlag & RLFLAG_NAME) {
-		msg->WriteString(room->GetSettings()->roomName);
+		msg->WriteString(roomSettings->roomName);
 	}
 	if (lFlag & RLFLAG_UNK) {
 		msg->WriteUInt8(0);
@@ -1901,25 +1890,25 @@ void BuildRoomInfo(CSendPacket* msg, CRoom* room, int lFlag, int hFlag)
 		msg->WriteUInt8(room->HasPassword());
 	}
 	if (lFlag & RLFLAG_LEVELLIMIT) {
-		msg->WriteUInt8(0);
+		msg->WriteUInt8(roomSettings->levelLimit);
 	}
 	if (lFlag & RLFLAG_GAMEMODE) {
-		msg->WriteUInt8(room->GetSettings()->gameMode);
+		msg->WriteUInt8(roomSettings->gameModeId);
 	}
 	if (lFlag & RLFLAG_MAPID) {
-		msg->WriteUInt16(room->GetSettings()->mapId);
+		msg->WriteUInt16(roomSettings->mapId);
 	}
 	if (lFlag & RLFLAG_PLAYERS) {
 		msg->WriteUInt8(room->GetNumOfPlayers());
 	}
 	if (lFlag & RLFLAG_MAXPLAYERS) {
-		msg->WriteUInt8(room->GetSettings()->maxPlayers);
+		msg->WriteUInt8(roomSettings->maxPlayers);
 	}
 	if (lFlag & RLFLAG_ARMSRESTRICTION) {
-		msg->WriteUInt8(room->GetSettings()->armsRestriction);
+		msg->WriteUInt8(roomSettings->armsRestriction);
 	}
-	if (lFlag & RLFLAG_HOSTPLAYER) {
-		msg->WriteUInt8(0);
+	if (lFlag & RLFLAG_SUPERROOM) {
+		msg->WriteUInt8(roomSettings->superRoom);
 	}
 	if (lFlag & RLFLAG_UNK2) {
 		msg->WriteUInt8(0);
@@ -1934,15 +1923,15 @@ void BuildRoomInfo(CSendPacket* msg, CRoom* room, int lFlag, int hFlag)
 		msg->WriteUInt8(0);
 		msg->WriteUInt8(0);
 	}
-	if (lFlag & RLFLAG_STATUS) {
-		msg->WriteUInt8(3);
+	if (lFlag & RLFLAG_STATUSSYMBOL) {
+		msg->WriteUInt8(roomSettings->statusSymbol == 3 ? 2 : 0);
 	}
 	if (lFlag & RLFLAG_UNK4) {
 		msg->WriteUInt8(0);
 		msg->WriteUInt8(0);
 	}
-	if (lFlag & RLFLAG_UNK5) {
-		msg->WriteUInt8(room->GetSettings()->unk47 == 3 ? 2 : 0);
+	if (lFlag & RLFLAG_KDRULE) {
+		msg->WriteUInt8(roomSettings->kdRule);
 	}
 	if (lFlag & RLFLAG_UNK6) {
 		msg->WriteUInt16(0);
@@ -1950,48 +1939,53 @@ void BuildRoomInfo(CSendPacket* msg, CRoom* room, int lFlag, int hFlag)
 	if (lFlag & RLFLAG_UNK7) {
 		msg->WriteUInt8(0);
 	}
-	if (lFlag & RLFLAG_UNK8) {
-		msg->WriteUInt8(0);
+	if (lFlag & RLFLAG_FRIENDLYFIRE) {
+		msg->WriteUInt8(roomSettings->friendlyFire);
 	}
 	if (lFlag & RLFLAG_UNK9) {
 		msg->WriteUInt8(0);
 	}
-	if (lFlag & RLFLAG_UNK10) {
-		msg->WriteUInt8(0);
+	if (lFlag & RLFLAG_RANDOMMAP) {
+		msg->WriteUInt8(roomSettings->randomMap);
 	}
-	if (lFlag & RLFLAG_UNK11) {
-		msg->WriteUInt8(0);
+	if (lFlag & RLFLAG_MAPPLAYLIST) {
+		msg->WriteUInt8(roomSettings->mapPlaylistSize);
+		for (size_t i = 0; i < roomSettings->mapPlaylistSize; i++)
+		{
+			msg->WriteUInt8(roomSettings->mapPlaylist[i].unk1);
+			msg->WriteUInt16(roomSettings->mapPlaylist[i].mapId);
+		}
 	}
 	if (lFlag & RLFLAG_UNK12) {
 		msg->WriteUInt8(0);
 	}
-	if (lFlag & RLFLAG_UNK13) {
-		msg->WriteUInt8(0);
+	if (lFlag & RLFLAG_SD) {
+		msg->WriteUInt8(roomSettings->sd);
 	}
-	if (lFlag & RLFLAG_UNK14) {
-		msg->WriteUInt8(0);
+	if (lFlag & RLFLAG_ZSDIFFICULTY) {
+		msg->WriteUInt8(roomSettings->zsDifficulty);
 	}
-	if (lFlag & RLFLAG_UNK15) {
-		msg->WriteUInt8(0);
+	if (lFlag & RLFLAG_LEAGUERULE) {
+		msg->WriteUInt8(roomSettings->leagueRule);
 	}
-	if (lFlag & RLFLAG_UNK16) {
-		msg->WriteUInt8(0);
+	if (lFlag & RLFLAG_MANNERLIMIT) {
+		msg->WriteUInt8(roomSettings->mannerLimit);
 	}
-	if (lFlag & RLFLAG_UNK17) {
-		msg->WriteUInt8(room->GetSettings()->unk60);
-		if (room->GetSettings()->zbLimit.size())
+	if (lFlag & RLFLAG_ZBLIMIT) {
+		msg->WriteUInt8(roomSettings->zbLimitFlag);
+		if (roomSettings->zbLimit.size() == 4)
 		{
-			msg->WriteUInt32(room->GetSettings()->zbLimit[0]);
-			msg->WriteUInt32(room->GetSettings()->zbLimit[1]);
-			msg->WriteUInt32(room->GetSettings()->zbLimit[2]);
-			msg->WriteUInt32(room->GetSettings()->zbLimit[3]);
+			for (int i = 0; i < 4; i++)
+			{
+				msg->WriteUInt32(roomSettings->zbLimit[i]);
+			}
 		}
 		else
 		{
-			msg->WriteUInt32(0);
-			msg->WriteUInt32(0);
-			msg->WriteUInt32(0);
-			msg->WriteUInt32(0);
+			for (int i = 0; i < 4; i++)
+			{
+				msg->WriteUInt32(0);
+			}
 		}
 	}
 	if (lFlag & RLFLAG_UNK18) {
@@ -2001,15 +1995,30 @@ void BuildRoomInfo(CSendPacket* msg, CRoom* room, int lFlag, int hFlag)
 	if (hFlag & RLHFLAG_UNK) {
 		msg->WriteUInt8(0);
 	}
-	if (hFlag & RLHFLAG_UNK2) {
-		msg->WriteUInt8(room->GetSettings()->isZbCompetitive);
+	if (hFlag & RLHFLAG_ISZBCOMPETITIVE) {
+		msg->WriteUInt8(roomSettings->isZbCompetitive);
 	}
-	if (hFlag & RLHFLAG_UNK3) {
+	if (hFlag & RLHFLAG_ZBAUTOHUNTING) {
+		msg->WriteUInt8(roomSettings->zbAutoHunting);
+	}
+	if (hFlag & RLHFLAG_UNK4) {
+		msg->WriteUInt8(0);
+	}
+	if (hFlag & RLHFLAG_UNK5) {
+		msg->WriteUInt8(0);
+	}
+	if (hFlag & RLHFLAG_FIREBOMB) {
+		msg->WriteUInt8(roomSettings->fireBomb);
+	}
+	if (hFlag & RLHFLAG_UNK7) {
+		msg->WriteUInt8(roomSettings->mutationRestrictSize);
+	}
+	if (hFlag & RLHFLAG_UNK8) {
 		msg->WriteUInt8(0);
 	}
 
 	// studio related
-	if (room->GetSettings()->mapId == 254)
+	if (roomSettings->mapId == 254)
 	{
 		msg->WriteUInt32(0); // some flags
 
@@ -2040,7 +2049,7 @@ void CPacketManager::SendRoomListFull(CExtendedSocket* socket, vector<CRoom*>& r
 
 	for (const auto room : rooms)
 	{
-		BuildRoomInfo(msg, room, GetRoomListValidFullFlag(false), GetRoomListValidFullFlag(true));
+		BuildRoomInfo(msg, room, RLFLAG_ALL, RLHFLAG_ALL);
 	}
 
 	socket->Send(msg);
@@ -2238,7 +2247,7 @@ void CPacketManager::SendSearchRoomNotice(CExtendedSocket* socket, CRoom* room, 
 
 	// short room info
 	CRoomSettings* roomSettings = room->GetSettings();
-	msg->WriteUInt8(roomSettings->gameMode);
+	msg->WriteUInt8(roomSettings->gameModeId);
 	msg->WriteUInt8(roomSettings->mapId);
 	msg->WriteUInt8(roomSettings->maxPlayers);
 	msg->WriteUInt8(9);
@@ -2325,210 +2334,6 @@ void CPacketManager::SendUserSurveyReply(CExtendedSocket* socket, int result)
 	socket->Send(msg);
 }
 
-void GetFlags(CRoomSettings* settings, int& lowFlag, int& lowMidFlag, int& highMidFlag, int& highFlag) // need to rewrite
-{
-	if (settings->roomName.empty() == NULL) {
-		lowFlag |= ROOM_LOW_NAME;
-	}
-	if (settings->unk00 != NULL) {
-		lowFlag |= ROOM_LOW_UNK;
-	}
-	if (settings->unk01 != NULL || settings->unk02 != NULL || settings->unk03 != NULL || settings->unk04 != NULL) {
-		lowFlag |= ROOM_LOW_UNK2;
-	}
-	if (settings->password.empty() == NULL) {
-		lowFlag |= ROOM_LOW_PASSWORD;
-	}
-	if (settings->unk06 != NULL) {
-		lowFlag |= ROOM_LOW_LEVELLIMIT;
-	}
-	if (settings->unk07 != NULL) {
-		lowFlag |= ROOM_LOW_UNK7;
-	}
-	if (settings->gameMode != NULL) {
-		lowFlag |= ROOM_LOW_GAMEMODE;
-	}
-	if (settings->mapId != NULL) {
-		lowFlag |= ROOM_LOW_MAPID;
-	}
-	if (settings->maxPlayers != NULL) {
-		lowFlag |= ROOM_LOW_MAXPLAYERS;
-	}
-	if (settings->winLimit != NULL) {
-		lowFlag |= ROOM_LOW_WINLIMIT;
-	}
-	if (settings->neededKills != NULL) {
-		lowFlag |= ROOM_LOW_NEEDEDKILLS;
-	}
-	if (settings->gameTime != NULL) {
-		lowFlag |= ROOM_LOW_GAMETIME;
-	}
-	if (settings->roundTime != NULL) {
-		lowFlag |= ROOM_LOW_ROUNDTIME;
-	}
-	if (settings->armsRestriction != NULL) {
-		lowFlag |= ROOM_LOW_ARMSRESTRICTION;
-	}
-	if (settings->unk16 != NULL) {
-		lowFlag |= ROOM_LOW_HOSTAGEKILLLIMIT;
-	}
-	if (settings->freezeTime != NULL) {
-		lowFlag |= ROOM_LOW_FREEZETIME;
-	}
-	if (settings->buyTime != NULL) {
-		lowFlag |= ROOM_LOW_BUYTIME;
-	}
-	if (settings->displayNickname != NULL) {
-		lowFlag |= ROOM_LOW_DISPLAYGAMENAME;
-	}
-	if (settings->teamBalance != NULL) {
-		lowFlag |= ROOM_LOW_TEAMBALANCE;
-	}
-	if (settings->unk21 != NULL) {
-		lowFlag |= ROOM_LOW_UNK21;
-	}
-	if (settings->friendlyFire != NULL) {
-		lowFlag |= ROOM_LOW_FRIENDLYFIRE;
-	}
-	if (settings->flashlight != NULL) {
-		lowFlag |= ROOM_LOW_FLASHLIGHT;
-	}
-	if (settings->footsteps != NULL) {
-		lowFlag |= ROOM_LOW_FOOTSTEPS;
-	}
-	if (settings->unk25 != NULL) {
-		lowFlag |= ROOM_LOW_UNK25;
-	}
-	if (settings->unk26 != NULL) {
-		lowFlag |= ROOM_LOW_UNK26;
-	}
-	if (settings->unk27 != NULL) {
-		lowFlag |= ROOM_LOW_UNK27;
-	}
-	if (settings->unk28 != NULL) {
-		lowFlag |= ROOM_LOW_UNK28;
-	}
-	if (settings->unk29 != NULL) {
-		lowFlag |= ROOM_LOW_UNK29;
-	}
-	if (settings->unk30 != NULL) {
-		lowFlag |= ROOM_LOW_VIEWFLAG;
-	}
-	if (settings->voiceChat != NULL) {
-		lowFlag |= ROOM_LOW_VOICECHAT;
-	}
-	if (settings->status != NULL) {
-		lowFlag |= ROOM_LOW_STATUS;
-	}
-	if (settings->unk33 != NULL) {
-		lowFlag |= ROOM_LOW_UNK33;
-	}
-
-	if (settings->unk34.empty() != NULL || settings->unk35 != NULL || settings->unk36 != NULL || settings->unk37 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK;
-	}
-	if (settings->unk38 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_C4TIMER;
-	}
-	if (settings->botDifficulty != NULL || settings->friendlyBots != NULL || settings->enemyBots != NULL || settings->botBalance != NULL || settings->botAdd != NULL) {
-		lowMidFlag |= ROOM_LOWMID_BOT;
-	}
-	if (settings->kdRule != NULL) {
-		lowMidFlag |= ROOM_LOWMID_KDRULE;
-	}
-	if (settings->startingCash != NULL) {
-		lowMidFlag |= ROOM_LOWMID_STARTINGCASH;
-	}
-	if (settings->unk46 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_MOVINGSHOT;
-	}
-	if (settings->unk47 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK47;
-	}
-	if (settings->unk48 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_STATUSSYMBOL;
-	}
-	if (settings->unk49 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_RANDOMMAP;
-	}
-	if (settings->unk50 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_MULTIPLEMAPS;
-	}
-	if (settings->unk51 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK51;
-	}
-	if (settings->enhancement != NULL) {
-		lowMidFlag |= ROOM_LOWMID_WPNENHANCERESTRICT;
-	}
-	if (settings->unk53 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_SD;
-	}
-	if (settings->zsDifficulty != NULL || settings->unk55 != NULL || settings->unk56 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_ZSDIFFICULTY;
-	}
-	if (settings->league != NULL) {
-		lowMidFlag |= ROOM_LOWMID_LEAGUERULE;
-	}
-	if (settings->mannerLimit != NULL) {
-		lowMidFlag |= ROOM_LOWMID_MANNERLIMIT;
-	}
-	if (settings->unk59 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK59;
-	}
-	if (settings->unk60 != NULL || !settings->zbLimit.empty()) {
-		lowMidFlag |= ROOM_LOWMID_ZBLIMIT;
-	}
-	if (settings->unk61 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK61;
-	}
-	if (settings->unk62 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK62;
-	}
-	if (settings->unk63 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK63;
-	}
-	if (settings->teamSwitch != NULL) {
-		lowMidFlag |= ROOM_LOWMID_TEAMSWITCH;
-	}
-	if (settings->unk65 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK65;
-	}
-	if (settings->unk66 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK66;
-	}
-	if (settings->unk67 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK67;
-	}
-	if (settings->unk68 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK68;
-	}
-	if (settings->isZbCompetitive != NULL) {
-		lowMidFlag |= ROOM_LOWMID_ISZBCOMPETITIVE;
-	}
-	if (settings->unk70 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK70;
-	}
-	if (settings->unk71 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK71;
-	}
-	if (settings->unk72 != NULL) {
-		lowMidFlag |= ROOM_LOWMID_UNK72;
-	}
-
-	if (settings->unk73 != NULL) {
-		highMidFlag |= ROOM_HIGHMID_UNK73;
-	}
-	if (settings->unk74 != NULL || !settings->unk74_vec.empty()) {
-		highMidFlag |= ROOM_HIGHMID_UNK74;
-	}
-	if (settings->unk75 != NULL) {
-		highMidFlag |= ROOM_HIGHMID_UNK75;
-	}
-	if (settings->unk76 != NULL) {
-		highMidFlag |= ROOM_HIGHMID_UNK76;
-	}
-}
-
 void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lowMid, int highMid, int high)
 {
 	int lowFlag = 0;
@@ -2542,29 +2347,27 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 		lowMidFlag = lowMid;
 		highMidFlag = highMid;
 		highFlag = high;
-
-		msg->WriteUInt32(lowFlag);
-		msg->WriteUInt32(lowMidFlag);
-		msg->WriteUInt32(highMidFlag);
-		msg->WriteUInt32(highFlag);
 	}
 	else
 	{
-		GetFlags(newSettings, lowFlag, lowMidFlag, highMidFlag, highFlag);
-
-		msg->WriteUInt32(lowFlag);
-		msg->WriteUInt32(lowMidFlag);
-		msg->WriteUInt32(highMidFlag);
-		msg->WriteUInt32(highFlag);
+		lowFlag = newSettings->lowFlag;
+		lowMidFlag = newSettings->lowMidFlag;
+		highMidFlag = newSettings->highMidFlag;
+		highFlag = newSettings->highFlag;
 	}
 
-	if (lowFlag & ROOM_LOW_NAME) {
+	msg->WriteUInt32(lowFlag);
+	msg->WriteUInt32(lowMidFlag);
+	msg->WriteUInt32(highMidFlag);
+	msg->WriteUInt32(highFlag);
+
+	if (lowFlag & ROOM_LOW_ROOMNAME) {
 		msg->WriteString(newSettings->roomName);
 	}
 	if (lowFlag & ROOM_LOW_UNK) {
 		msg->WriteUInt8(newSettings->unk00);
 	}
-	if (lowFlag & ROOM_LOW_UNK2) {
+	if (lowFlag & ROOM_LOW_CLANBATTLE) {
 		msg->WriteUInt8(newSettings->unk01);
 		msg->WriteUInt8(newSettings->unk02);
 		msg->WriteUInt8(newSettings->unk03);
@@ -2574,13 +2377,13 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 		msg->WriteString(newSettings->password);
 	}
 	if (lowFlag & ROOM_LOW_LEVELLIMIT) {
-		msg->WriteUInt8(2);
+		msg->WriteUInt8(newSettings->levelLimit);
 	}
 	if (lowFlag & ROOM_LOW_UNK7) {
 		msg->WriteUInt8(newSettings->unk07);
 	}
-	if (lowFlag & ROOM_LOW_GAMEMODE) {
-		msg->WriteUInt8(newSettings->gameMode);
+	if (lowFlag & ROOM_LOW_GAMEMODEID) {
+		msg->WriteUInt8(newSettings->gameModeId);
 	}
 	if (lowFlag & ROOM_LOW_MAPID) {
 		msg->WriteUInt16(newSettings->mapId);
@@ -2591,8 +2394,8 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 	if (lowFlag & ROOM_LOW_WINLIMIT) {
 		msg->WriteUInt8(newSettings->winLimit);
 	}
-	if (lowFlag & ROOM_LOW_NEEDEDKILLS) {
-		msg->WriteUInt16(newSettings->neededKills);
+	if (lowFlag & ROOM_LOW_KILLLIMIT) {
+		msg->WriteUInt16(newSettings->killLimit);
 	}
 	if (lowFlag & ROOM_LOW_GAMETIME) {
 		msg->WriteUInt8(newSettings->gameTime);
@@ -2604,7 +2407,7 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 		msg->WriteUInt8(newSettings->armsRestriction);
 	}
 	if (lowFlag & ROOM_LOW_HOSTAGEKILLLIMIT) {
-		msg->WriteUInt8(newSettings->unk16);
+		msg->WriteUInt8(newSettings->hostageKillLimit);
 	}
 	if (lowFlag & ROOM_LOW_FREEZETIME) {
 		msg->WriteUInt8(newSettings->freezeTime);
@@ -2612,7 +2415,7 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 	if (lowFlag & ROOM_LOW_BUYTIME) {
 		msg->WriteUInt8(newSettings->buyTime);
 	}
-	if (lowFlag & ROOM_LOW_DISPLAYGAMENAME) {
+	if (lowFlag & ROOM_LOW_DISPLAYNICKNAME) {
 		msg->WriteUInt8(newSettings->displayNickname);
 	}
 	if (lowFlag & ROOM_LOW_TEAMBALANCE) {
@@ -2633,11 +2436,11 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 	if (lowFlag & ROOM_LOW_UNK25) {
 		msg->WriteUInt8(newSettings->unk25);
 	}
-	if (lowFlag & ROOM_LOW_UNK26) {
-		msg->WriteUInt8(newSettings->unk26);
+	if (lowFlag & ROOM_LOW_TKPUNISH) {
+		msg->WriteUInt8(newSettings->tkPunish);
 	}
-	if (lowFlag & ROOM_LOW_UNK27) {
-		msg->WriteUInt8(newSettings->unk27);
+	if (lowFlag & ROOM_LOW_AUTOKICK) {
+		msg->WriteUInt8(newSettings->autoKick);
 	}
 	if (lowFlag & ROOM_LOW_UNK28) {
 		msg->WriteUInt8(newSettings->unk28);
@@ -2646,7 +2449,7 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 		msg->WriteUInt8(newSettings->unk29);
 	}
 	if (lowFlag & ROOM_LOW_VIEWFLAG) {
-		msg->WriteUInt8(newSettings->unk30);
+		msg->WriteUInt8(newSettings->viewFlag);
 	}
 	if (lowFlag & ROOM_LOW_VOICECHAT) {
 		msg->WriteUInt8(newSettings->voiceChat);
@@ -2656,31 +2459,47 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 	}
 	if (lowFlag & ROOM_LOW_UNK33) {
 		msg->WriteUInt8(newSettings->unk33);
-
-		// shiet
-		for (int i = 0; i < 2; i++)
+		if (newSettings->unk33_vec.size() == 2)
 		{
-			msg->WriteUInt32(0);
-			msg->WriteUInt32(0);
-			msg->WriteUInt8(0);
-			msg->WriteUInt16(0);
-			msg->WriteUInt8(0);
-			msg->WriteUInt8(0);
-			msg->WriteUInt16(0);
-			msg->WriteUInt8(0);
-			msg->WriteUInt8(0);
+			for (int i = 0; i < 2; i++)
+			{
+				msg->WriteUInt32(newSettings->unk33_vec[i].unk1);
+				msg->WriteUInt32(newSettings->unk33_vec[i].unk2);
+				msg->WriteUInt8(newSettings->unk33_vec[i].unk3);
+				msg->WriteUInt16(newSettings->unk33_vec[i].unk4);
+				msg->WriteUInt8(newSettings->unk33_vec[i].unk5);
+				msg->WriteUInt8(newSettings->unk33_vec[i].unk6);
+				msg->WriteUInt16(newSettings->unk33_vec[i].unk7);
+				msg->WriteUInt8(newSettings->unk33_vec[i].unk8);
+				msg->WriteUInt8(newSettings->unk33_vec[i].unk9);
+			}
+		}
+		else
+		{
+			for (int i = 0; i < 2; i++)
+			{
+				msg->WriteUInt32(0);
+				msg->WriteUInt32(0);
+				msg->WriteUInt8(0);
+				msg->WriteUInt16(0);
+				msg->WriteUInt8(0);
+				msg->WriteUInt8(0);
+				msg->WriteUInt16(0);
+				msg->WriteUInt8(0);
+				msg->WriteUInt8(0);
+			}
 		}
 	}
 
-	if (lowMidFlag & ROOM_LOWMID_UNK) {
-		msg->WriteUInt32(0);
-		msg->WriteString(newSettings->unk34);
-		msg->WriteUInt8(newSettings->unk35);
+	if (lowMidFlag & ROOM_LOWMID_UNK34) {
+		msg->WriteUInt32(newSettings->unk34);
+		msg->WriteString(newSettings->unk35);
 		msg->WriteUInt8(newSettings->unk36);
 		msg->WriteUInt8(newSettings->unk37);
+		msg->WriteUInt8(newSettings->unk38);
 	}
 	if (lowMidFlag & ROOM_LOWMID_C4TIMER) {
-		msg->WriteUInt8(newSettings->unk38);
+		msg->WriteUInt8(newSettings->c4Timer);
 	}
 	if (lowMidFlag & ROOM_LOWMID_BOT) {
 		msg->WriteUInt8(newSettings->botDifficulty);
@@ -2696,151 +2515,134 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 		msg->WriteUInt16(newSettings->startingCash);
 	}
 	if (lowMidFlag & ROOM_LOWMID_MOVINGSHOT) {
-		msg->WriteUInt8(newSettings->unk46);
+		msg->WriteUInt8(newSettings->movingShot);
 	}
-	if (lowMidFlag & ROOM_LOWMID_UNK47) {
-		msg->WriteUInt8(newSettings->unk47);
+	if (lowMidFlag & ROOM_LOWMID_BALLNUMBER) {
+		msg->WriteUInt8(newSettings->ballNumber);
 	}
 	if (lowMidFlag & ROOM_LOWMID_STATUSSYMBOL) {
-		msg->WriteUInt8(newSettings->unk48); // color
+		msg->WriteUInt8(newSettings->statusSymbol); // color
 	}
 	if (lowMidFlag & ROOM_LOWMID_RANDOMMAP) {
-		msg->WriteUInt8(newSettings->unk49);
+		msg->WriteUInt8(newSettings->randomMap);
 	}
-	if (lowMidFlag & ROOM_LOWMID_MULTIPLEMAPS) {
-		msg->WriteUInt8(newSettings->unk50_vec.size());
-		for (size_t i = 0; i < newSettings->unk50_vec.size(); i++)
+	if (lowMidFlag & ROOM_LOWMID_MAPPLAYLIST) {
+		msg->WriteUInt8(newSettings->mapPlaylistSize);
+		for (size_t i = 0; i < newSettings->mapPlaylistSize; i++)
 		{
-			msg->WriteUInt8(newSettings->unk50_vec[i].unk1);
-			msg->WriteUInt16(newSettings->unk50_vec[i].unk2);
+			msg->WriteUInt8(newSettings->mapPlaylist[i].unk1);
+			msg->WriteUInt16(newSettings->mapPlaylist[i].mapId);
 		}
 	}
-	if (lowMidFlag & ROOM_LOWMID_UNK51) {
-		msg->WriteUInt8(newSettings->unk51);
+	if (lowMidFlag & ROOM_LOWMID_MAPPLAYLISTINDEX) {
+		msg->WriteUInt8(newSettings->mapPlaylistIndex);
 	}
-	if (lowMidFlag & ROOM_LOWMID_WPNENHANCERESTRICT) {
-		msg->WriteUInt8(newSettings->enhancement);
+	if (lowMidFlag & ROOM_LOWMID_ENHANCERESTRICT) {
+		msg->WriteUInt8(newSettings->enhanceRestrict);
 	}
 	if (lowMidFlag & ROOM_LOWMID_SD) {
-		msg->WriteUInt8(newSettings->unk53);
+		msg->WriteUInt8(newSettings->sd);
 	}
 	if (lowMidFlag & ROOM_LOWMID_ZSDIFFICULTY) {
 		msg->WriteUInt8(newSettings->zsDifficulty);
-		msg->WriteUInt32(newSettings->unk55);
 		msg->WriteUInt32(newSettings->unk56);
+		msg->WriteUInt32(newSettings->unk57);
 	}
 	if (lowMidFlag & ROOM_LOWMID_LEAGUERULE) {
-		msg->WriteUInt8(newSettings->league);
+		msg->WriteUInt8(newSettings->leagueRule);
 	}
 	if (lowMidFlag & ROOM_LOWMID_MANNERLIMIT) {
 		msg->WriteUInt8(newSettings->mannerLimit);
 	}
-	if (lowMidFlag & ROOM_LOWMID_UNK59) {
-		msg->WriteUInt16(newSettings->unk59);
+	if (lowMidFlag & ROOM_LOWMID_MAPID2) {
+		msg->WriteUInt16(newSettings->mapId2);
 	}
 	if (lowMidFlag & ROOM_LOWMID_ZBLIMIT) {
-		msg->WriteUInt8(newSettings->unk60);
+		msg->WriteUInt8(newSettings->zbLimitFlag);
 		if (newSettings->zbLimit.size() == 4)
 		{
-			msg->WriteUInt32(newSettings->zbLimit[0]);
-			msg->WriteUInt32(newSettings->zbLimit[1]);
-			msg->WriteUInt32(newSettings->zbLimit[2]);
-			msg->WriteUInt32(newSettings->zbLimit[3]);
+			for (int i = 0; i < 4; i++)
+			{
+				msg->WriteUInt32(newSettings->zbLimit[i]);
+			}
 		}
 		else
 		{
-			msg->WriteUInt32(0);
-			msg->WriteUInt32(0);
-			msg->WriteUInt32(0);
-			msg->WriteUInt32(0);
+			for (int i = 0; i < 4; i++)
+			{
+				msg->WriteUInt32(0);
+			}
 		}
-	}
-	if (lowMidFlag & ROOM_LOWMID_UNK61) {
-		msg->WriteUInt32(newSettings->unk61);
-		// some shit should be here (studio mode related)
-		// if (newSettings->unk61)
 	}
 	if (lowMidFlag & ROOM_LOWMID_UNK62) {
-		msg->WriteUInt8(newSettings->unk62_vec.size());
-		for (size_t i = 0; i < newSettings->unk62_vec.size(); i++)
-		{
-			msg->WriteUInt16(newSettings->unk62_vec[i]);
-		}
+		msg->WriteUInt32(newSettings->unk62); // user char flag
+		// some shit should be here (studio mode related)
+		// if (newSettings->unk62)
 	}
 	if (lowMidFlag & ROOM_LOWMID_UNK63) {
 		msg->WriteUInt8(newSettings->unk63);
+		for (size_t i = 0; i < newSettings->unk63; i++)
+		{
+			msg->WriteUInt16(newSettings->unk63_vec[i]);
+		}
+	}
+	if (lowMidFlag & ROOM_LOWMID_UNK64) {
+		msg->WriteUInt8(newSettings->unk64);
 	}
 	if (lowMidFlag & ROOM_LOWMID_TEAMSWITCH) {
 		msg->WriteUInt8(newSettings->teamSwitch);
 	}
-	if (lowMidFlag & ROOM_LOWMID_UNK65) {
-		msg->WriteUInt8(newSettings->unk65);
+	if (lowMidFlag & ROOM_LOWMID_ZBRESPAWN) {
+		msg->WriteUInt8(newSettings->zbRespawn);
 	}
-	if (lowMidFlag & ROOM_LOWMID_UNK66) {
-		msg->WriteUInt8(newSettings->unk66);
+	if (lowMidFlag & ROOM_LOWMID_ZBBALANCE) {
+		msg->WriteUInt8(newSettings->zbBalance);
 	}
-	if (lowMidFlag & ROOM_LOWMID_UNK67) {
-		msg->WriteUInt8(newSettings->unk67);
+	if (lowMidFlag & ROOM_LOWMID_GAMERULE) {
+		msg->WriteUInt8(newSettings->gameRule);
 	}
-	if (lowMidFlag & ROOM_LOWMID_UNK68) {
-		msg->WriteUInt8(newSettings->unk68);
+	if (lowMidFlag & ROOM_LOWMID_SUPERROOM) {
+		msg->WriteUInt8(newSettings->superRoom);
 	}
 	if (lowMidFlag & ROOM_LOWMID_ISZBCOMPETITIVE) {
 		msg->WriteUInt8(newSettings->isZbCompetitive);
 	}
-	if (lowMidFlag & ROOM_LOWMID_UNK70) {
-		msg->WriteUInt8(newSettings->unk70);
+	if (lowMidFlag & ROOM_LOWMID_ZBAUTOHUNTING) {
+		msg->WriteUInt8(newSettings->zbAutoHunting);
 	}
-	if (lowMidFlag & ROOM_LOWMID_UNK71) {
-		msg->WriteUInt8(newSettings->unk71);
+	if (lowMidFlag & ROOM_LOWMID_INTEGRATEDTEAM) {
+		msg->WriteUInt8(newSettings->integratedTeam);
 	}
-	if (lowMidFlag & ROOM_LOWMID_UNK72) {
-		msg->WriteUInt8(newSettings->unk72);
-	}
-
-	if (highMidFlag & ROOM_HIGHMID_UNK73)
-	{
+	if (lowMidFlag & ROOM_LOWMID_UNK73) {
 		msg->WriteUInt8(newSettings->unk73);
 	}
-	if (highMidFlag & ROOM_HIGHMID_UNK74) {
-		msg->WriteUInt8(newSettings->unk74);
-		if (newSettings->unk74_vec.size() != 4)
+
+	if (highMidFlag & ROOM_HIGHMID_FIREBOMB) {
+		msg->WriteUInt8(newSettings->fireBomb);
+	}
+	if (highMidFlag & ROOM_HIGHMID_MUTATIONRESTRICT) {
+		msg->WriteUInt8(newSettings->mutationRestrictSize);
+		if (newSettings->mutationRestrict.size() == 4)
 		{
 			for (int i = 0; i < 4; i++)
 			{
-				msg->WriteUInt8(0);
+				msg->WriteUInt8(newSettings->mutationRestrict[i]);
 			}
 		}
 		else
 		{
 			for (int i = 0; i < 4; i++)
 			{
-				msg->WriteUInt8(newSettings->unk74_vec[i]);
+				msg->WriteUInt8(-1);
 			}
 		}
 	}
-	if (highMidFlag & ROOM_HIGHMID_UNK75) {
-		msg->WriteUInt8(newSettings->unk75);
+	if (highMidFlag & ROOM_HIGHMID_MUTATIONLIMIT) {
+		msg->WriteUInt8(newSettings->mutationLimit);
 	}
-	if (highMidFlag & ROOM_HIGHMID_UNK76) {
-		msg->WriteUInt8(newSettings->unk76);
+	if (highFlag & ROOM_HIGH_UNK77) {
+		msg->WriteUInt8(newSettings->unk77);
 	}
-}
-
-uint64_t GetRoomValidFullFlag(bool highFlag)
-{
-	if (!highFlag)
-	{
-		return ROOM_LOW_NAME | ROOM_LOW_UNK | ROOM_LOW_UNK2 | ROOM_LOW_PASSWORD | ROOM_LOW_LEVELLIMIT | ROOM_LOW_UNK7 | ROOM_LOW_GAMEMODE | ROOM_LOW_MAPID | ROOM_LOW_MAXPLAYERS |
-			ROOM_LOW_WINLIMIT | ROOM_LOW_NEEDEDKILLS | ROOM_LOW_GAMETIME | ROOM_LOW_ROUNDTIME | ROOM_LOW_ARMSRESTRICTION | ROOM_LOW_HOSTAGEKILLLIMIT | ROOM_LOW_FREEZETIME |
-			ROOM_LOW_BUYTIME | ROOM_LOW_DISPLAYGAMENAME | ROOM_LOW_TEAMBALANCE | ROOM_LOW_UNK21 | ROOM_LOW_FRIENDLYFIRE | ROOM_LOW_FLASHLIGHT | ROOM_LOW_FOOTSTEPS | ROOM_LOW_UNK25 | ROOM_LOW_UNK26 |
-			ROOM_LOW_UNK27 | ROOM_LOW_UNK28 | ROOM_LOW_UNK29 | ROOM_LOW_VIEWFLAG | ROOM_LOW_VOICECHAT | ROOM_LOW_STATUS | ROOM_LOW_UNK33;
-	}
-
-	return ROOM_LOWMID_UNK | ROOM_LOWMID_C4TIMER | ROOM_LOWMID_BOT | ROOM_LOWMID_KDRULE | ROOM_LOWMID_STARTINGCASH | ROOM_LOWMID_MOVINGSHOT | ROOM_LOWMID_UNK47 | ROOM_LOWMID_STATUSSYMBOL | ROOM_LOWMID_RANDOMMAP |
-		ROOM_LOWMID_MULTIPLEMAPS | ROOM_LOWMID_UNK51 | ROOM_LOWMID_WPNENHANCERESTRICT | ROOM_LOWMID_SD | ROOM_LOWMID_ZSDIFFICULTY | ROOM_LOWMID_LEAGUERULE | ROOM_LOWMID_MANNERLIMIT |
-		ROOM_LOWMID_UNK59 | ROOM_LOWMID_ZBLIMIT | ROOM_LOWMID_UNK61 | ROOM_LOWMID_UNK62 | ROOM_LOWMID_UNK63 | ROOM_LOWMID_TEAMSWITCH | ROOM_LOWMID_UNK65 | ROOM_LOWMID_UNK66 | ROOM_LOWMID_UNK67 |
-		ROOM_LOWMID_UNK68 | ROOM_LOWMID_ISZBCOMPETITIVE | ROOM_LOWMID_UNK70 | ROOM_LOWMID_UNK71 | ROOM_LOWMID_UNK72;
 }
 
 void CPacketManager::SendRoomCreateAndJoin(CExtendedSocket* socket, CRoom* roomInfo)
@@ -2856,7 +2658,8 @@ void CPacketManager::SendRoomCreateAndJoin(CExtendedSocket* socket, CRoom* roomI
 	msg->WriteUInt16(0xB5);
 	msg->WriteUInt8(0xFF);
 
-	WriteSettings(msg, roomInfo->GetSettings(), /*GetRoomValidFullFlag(false) & ~ROOM_LOW_UNK33*/ 0x7FFFFFFB, 0xFFFFFFFF &~ ROOM_LOWMID_UNK61/*0x7FFBFFFE*/, -1, -1);
+	CRoomSettings* roomSettings = roomInfo->GetSettings();
+	WriteSettings(msg, roomInfo->GetSettings(), roomSettings->lowFlag, roomSettings->lowMidFlag, roomSettings->highMidFlag, roomSettings->highFlag);
 
 	msg->WriteUInt8(roomInfo->GetUsers().size());
 	for (auto user : roomInfo->GetUsers())
@@ -3030,7 +2833,7 @@ void CPacketManager::SendRoomGameResult(CExtendedSocket* socket, CRoom* room, CG
 	msg->WriteUInt8(0);
 	msg->WriteUInt8(0);
 	msg->WriteUInt8(match->m_UserStats.size());
-	msg->WriteUInt8(room->GetSettings()->gameMode);
+	msg->WriteUInt8(room->GetSettings()->gameModeId);
 
 	for (auto stat : match->m_UserStats)
 	{
@@ -3071,7 +2874,7 @@ void CPacketManager::SendRoomGameResult(CExtendedSocket* socket, CRoom* room, CG
 		msg->WriteUInt8(0); // frag kills
 		msg->WriteUInt8(0); // knife kills
 
-		switch (room->GetSettings()->gameMode)
+		switch (room->GetSettings()->gameModeId)
 		{
 		case 0:
 		case 3:
@@ -3090,11 +2893,18 @@ void CPacketManager::SendRoomGameResult(CExtendedSocket* socket, CRoom* room, CG
 		case 20:
 		case 24:
 		case 32:
+		case 35:
+		case 36:
 		case 45:
+		case 54:
 			msg->WriteUInt8(0);
 			msg->WriteUInt8(0);
 			msg->WriteUInt8(0);
 			msg->WriteUInt8(0);
+			break;
+		case 10:
+			msg->WriteUInt16(0);
+			msg->WriteUInt16(0);
 			break;
 		case 11:
 		case 13:
@@ -3128,10 +2938,6 @@ void CPacketManager::SendRoomGameResult(CExtendedSocket* socket, CRoom* room, CG
 			msg->WriteUInt16(0);
 			msg->WriteUInt16(0);
 			break;
-		case 10:
-			msg->WriteUInt16(0);
-			msg->WriteUInt16(0);
-			break;
 		case 21:
 			msg->WriteUInt16(0);
 			msg->WriteUInt8(0);
@@ -3161,6 +2967,7 @@ void CPacketManager::SendRoomGameResult(CExtendedSocket* socket, CRoom* room, CG
 			msg->WriteUInt32(0);
 			break;
 		case 28:
+		case 52:
 			msg->WriteUInt32(0);
 			msg->WriteUInt32(0);
 			msg->WriteUInt32(0);
@@ -3189,10 +2996,6 @@ void CPacketManager::SendRoomGameResult(CExtendedSocket* socket, CRoom* room, CG
 			msg->WriteUInt8(0);
 			msg->WriteUInt32(0);
 			break;
-		case 38:
-		case 39:
-			msg->WriteUInt32(0);
-			break;
 		case 37:
 			msg->WriteUInt16(0);
 			msg->WriteUInt8(0);
@@ -3201,15 +3004,9 @@ void CPacketManager::SendRoomGameResult(CExtendedSocket* socket, CRoom* room, CG
 			msg->WriteUInt16(0);
 			msg->WriteUInt8(0);
 			break;
-		case 46:
-			msg->WriteUInt8(0);
-			msg->WriteUInt8(0);
-			break;
-		case 49:
-			msg->WriteUInt8(0);
-			msg->WriteUInt8(0);
-			msg->WriteUInt8(0);
-			msg->WriteUInt8(0);
+		case 38:
+		case 39:
+			msg->WriteUInt32(0);
 			break;
 		case 42:
 			msg->WriteUInt8(0);
@@ -3236,6 +3033,10 @@ void CPacketManager::SendRoomGameResult(CExtendedSocket* socket, CRoom* room, CG
 			msg->WriteUInt16(0);
 			msg->WriteUInt16(0);
 			break;
+		case 46:
+			msg->WriteUInt8(0);
+			msg->WriteUInt8(0);
+			break;
 		case 47:
 			msg->WriteUInt8(0);
 			msg->WriteUInt8(0);
@@ -3247,7 +3048,28 @@ void CPacketManager::SendRoomGameResult(CExtendedSocket* socket, CRoom* room, CG
 			msg->WriteUInt16(0);
 			msg->WriteUInt16(0);
 			break;
+		case 49:
+			msg->WriteUInt8(0);
+			msg->WriteUInt8(0);
+			msg->WriteUInt8(0);
+			msg->WriteUInt8(0);
+			break;
+		case 51:
+			msg->WriteUInt8(0);
+			msg->WriteUInt8(0);
+			break;
+		case 56:
+			msg->WriteUInt16(0);
+			msg->WriteUInt16(0);
+			msg->WriteUInt16(0);
+			msg->WriteUInt16(0);
+			msg->WriteUInt16(0);
+			msg->WriteUInt16(0);
+			msg->WriteUInt16(0);
+			break;
 		}
+
+		msg->WriteUInt8(0);
 	}
 
 	socket->Send(msg);

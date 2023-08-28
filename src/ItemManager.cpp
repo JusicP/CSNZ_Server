@@ -703,6 +703,49 @@ int CItemManager::AddItem(int userID, CUser* user, int itemID, int count, int du
 	if (user)
 		g_pPacketManager->SendInventoryAdd(user->GetExtendedSocket(), items);
 
+	if (itemID == 8357) // superRoom
+	{
+		CRoom* currentRoom = user->GetCurrentRoom();
+		if (currentRoom != NULL)
+		{
+			if (user == currentRoom->GetHostUser()) // it's the room host, so add the superRoom flag
+			{
+				CRoomSettings* roomSettings = currentRoom->GetSettings();
+
+				if (!roomSettings->superRoom)
+				{
+					roomSettings->superRoom = 1;
+
+					for (auto u : currentRoom->GetUsers())
+					{
+						g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SUPERROOM);
+					}
+				}
+			}
+		}
+	}
+	else if (itemID == 439) // BigHeadEvent
+	{
+		CRoom* currentRoom = user->GetCurrentRoom();
+		if (currentRoom != NULL)
+		{
+			if (user == currentRoom->GetHostUser()) // it's the room host, so add the sd flag
+			{
+				CRoomSettings* roomSettings = currentRoom->GetSettings();
+
+				if ((roomSettings->gameModeId == 3 || roomSettings->gameModeId == 4 || roomSettings->gameModeId == 5 || roomSettings->gameModeId == 15 || roomSettings->gameModeId == 24) && !roomSettings->sd)
+				{
+					roomSettings->sd = 1;
+
+					for (auto u : currentRoom->GetUsers())
+					{
+						g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SD);
+					}
+				}
+			}
+		}
+	}
+
 	return ITEM_ADD_SUCCESS;
 }
 
@@ -964,6 +1007,49 @@ int CItemManager::AddItems(int userID, CUser* user, vector<RewardItem>& items)
 			result = ITEM_ADD_DB_ERROR;
 			break;
 		}
+
+		if (itemID == 8357) // superRoom
+		{
+			CRoom* currentRoom = user->GetCurrentRoom();
+			if (currentRoom != NULL)
+			{
+				if (user == currentRoom->GetHostUser()) // it's the room host, so add the superRoom flag
+				{
+					CRoomSettings* roomSettings = currentRoom->GetSettings();
+
+					if (!roomSettings->superRoom)
+					{
+						roomSettings->superRoom = 1;
+
+						for (auto u : currentRoom->GetUsers())
+						{
+							g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SUPERROOM);
+						}
+					}
+				}
+			}
+		}
+		else if (itemID == 439) // BigHeadEvent
+		{
+			CRoom* currentRoom = user->GetCurrentRoom();
+			if (currentRoom != NULL)
+			{
+				if (user == currentRoom->GetHostUser()) // it's the room host, so add the sd flag
+				{
+					CRoomSettings* roomSettings = currentRoom->GetSettings();
+
+					if ((roomSettings->gameModeId == 3 || roomSettings->gameModeId == 4 || roomSettings->gameModeId == 5 || roomSettings->gameModeId == 15 || roomSettings->gameModeId == 24) && !roomSettings->sd)
+					{
+						roomSettings->sd = 1;
+
+						for (auto u : currentRoom->GetUsers())
+						{
+							g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SD);
+						}
+					}
+				}
+			}
+		}
 	}
 
 	if (result == ITEM_ADD_SUCCESS && g_pUserDatabase->CommitTransaction(trans) == true)
@@ -1147,6 +1233,81 @@ bool CItemManager::RemoveItem(int userID, CUser* user, CUserInventoryItem& item)
 					g_pPacketManager->SendInventoryAdd(user->GetExtendedSocket(), items);
 
 				break;
+			}
+		}
+	}
+
+	if (item.m_nItemID == 8357) // superRoom
+	{
+		CRoom* currentRoom = user->GetCurrentRoom();
+		if (currentRoom != NULL)
+		{
+			if (user == currentRoom->GetHostUser()) // it's the room host, so remove the superRoom flag
+			{
+				vector<CUserInventoryItem> itemsWithSameID;
+				g_pUserDatabase->GetInventoryItemsByID(userID, item.m_nItemID, itemsWithSameID);
+				if (itemsWithSameID.size() == 1)
+				{
+					CRoomSettings* roomSettings = currentRoom->GetSettings();
+					roomSettings->superRoom = 0;
+
+					for (auto u : currentRoom->GetUsers())
+					{
+						g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SUPERROOM);
+					}
+				}
+			}
+		}
+	}
+	else if (item.m_nItemID == 439) // BigHeadEvent
+	{
+		CRoom* currentRoom = user->GetCurrentRoom();
+		if (currentRoom != NULL)
+		{
+			if (user == currentRoom->GetHostUser()) // it's the room host, so remove the sd flag
+			{
+				vector<CUserInventoryItem> itemsWithSameID;
+				g_pUserDatabase->GetInventoryItemsByID(userID, item.m_nItemID, itemsWithSameID);
+				if (itemsWithSameID.size() == 1)
+				{
+					CRoomSettings* roomSettings = currentRoom->GetSettings();
+
+					if (roomSettings->sd)
+					{
+						roomSettings->sd = 0;
+
+						for (auto u : currentRoom->GetUsers())
+						{
+							g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SD);
+						}
+					}
+				}
+			}
+		}
+	}
+	else if (item.m_nItemID == 112) // C4Sound
+	{
+		CRoom* currentRoom = user->GetCurrentRoom();
+		if (currentRoom != NULL)
+		{
+			if (user == currentRoom->GetHostUser()) // it's the room host, so remove the c4Timer flag
+			{
+				vector<CUserInventoryItem> itemsWithSameID;
+				g_pUserDatabase->GetInventoryItemsByID(userID, item.m_nItemID, itemsWithSameID);
+				if (itemsWithSameID.size() == 1)
+				{
+					CRoomSettings* roomSettings = currentRoom->GetSettings();
+
+					if (roomSettings->c4Timer)
+					{
+						roomSettings->c4Timer = 0;
+
+						for (auto u : currentRoom->GetUsers())
+						{
+							g_pPacketManager->SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_C4TIMER);
+						}
+					}
+				}
 			}
 		}
 	}

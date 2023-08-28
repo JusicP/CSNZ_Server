@@ -23,10 +23,10 @@ bool CUserManager::OnLoginPacket(CReceivePacket* msg, CExtendedSocket* socket)
 	LOG_PACKET;
 
 	string steamID = msg->ReadString();
-	int size = msg->ReadUInt16(); // 493
-	vector<unsigned char> unk3 = msg->ReadArray(size); // auth ticket?
+	int size = msg->ReadUInt16();
+	vector<unsigned char> authSessionTicket = msg->ReadArray(size); // AuthSessionTicket - Reference: https://partner.steamgames.com/doc/features/auth
 	vector<unsigned char> hwid = msg->ReadArray(16);
-	int unk4 = msg->ReadUInt32(); // running nexon related executables
+	int pcBang = msg->ReadUInt32(); // PCBang (PC Cafe) identification by running executable
 	int ip = msg->ReadUInt32();
 	string locale = msg->ReadString();
 
