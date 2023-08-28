@@ -1613,7 +1613,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, CUser* user, int 
 
 		if (lowMidFlag & ROOM_LOWMID_INTEGRATEDTEAM)
 		{
-			if (!(gameModeId == 56 || gameModeId == 57) && integratedTeam != 0)
+			if (!(gameModeId == 2 || gameModeId == 5 || gameModeId == 56 || gameModeId == 57) && integratedTeam != 0)
 			{
 				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use integratedTeam, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_INTEGRATEDTEAM;
