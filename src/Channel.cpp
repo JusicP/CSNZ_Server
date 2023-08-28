@@ -174,7 +174,7 @@ CUser* CChannel::GetUserById(int userId)
 	return NULL;
 }
 
-CRoom* CChannel::CreateRoom(CUser* host, CRoomSettings settings)
+CRoom* CChannel::CreateRoom(CUser* host, CRoomSettings* settings)
 {
 	m_Rooms.push_back(new CRoom(m_nNextRoomID++, host, this, settings));
 	return m_Rooms[m_Rooms.size() - 1];

@@ -8,7 +8,7 @@ using namespace std;
 
 #define INVALID_ENT -1
 
-CRoom::CRoom(int roomId, CUser* hostUser, CChannel* channel, CRoomSettings settings)
+CRoom::CRoom(int roomId, CUser* hostUser, CChannel* channel, CRoomSettings* settings)
 {
 	m_nID = roomId;
 	m_pHostUser = hostUser;
@@ -16,8 +16,7 @@ CRoom::CRoom(int roomId, CUser* hostUser, CChannel* channel, CRoomSettings setti
 
 	m_pParentChannel = channel;
 
-	m_pSettings = new CRoomSettings();
-	UpdateSettings(settings);
+	m_pSettings = settings;
 
 	m_Status = RoomStatus::STATUS_WAITING;
 

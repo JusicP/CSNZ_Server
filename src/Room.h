@@ -27,7 +27,7 @@ public:
 class CRoom
 {
 public:
-	CRoom(int roomId, CUser* hostUser, class CChannel* channel, CRoomSettings settings);
+	CRoom(int roomId, CUser* hostUser, class CChannel* channel, CRoomSettings* settings);
 	~CRoom();
 
 	int GetNumOfPlayers();

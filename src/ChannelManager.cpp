@@ -864,15 +864,21 @@ bool CChannelManager::OnCommandHandler(CExtendedSocket* socket, CUser* user, str
 				CChannel* channel = user->GetCurrentChannel();
 				if (channel)
 				{
-					CRoomSettings roomSettings;
-					roomSettings.lowFlag |= ROOM_LOW_ROOMNAME | ROOM_LOW_PASSWORD | ROOM_LOW_GAMEMODEID | ROOM_LOW_MAPID | ROOM_LOW_MAXPLAYERS | ROOM_LOWMID_ZSDIFFICULTY | ROOM_LOWMID_MAPID2;
-					roomSettings.roomName = (char*)OBFUSCATE("GHOST ROOM NAME");
-					roomSettings.password = (char*)OBFUSCATE("r,=j$b5}a@dgN&^g0_!}['WH}l5i]#ugAhfQ ? dS; Qh1Ckk`R}bz, o[QMgp4]0");
-					roomSettings.gameModeId = 15;
-					roomSettings.mapId = 128;
-					roomSettings.maxPlayers = 10;
-					roomSettings.zsDifficulty = 1;
-					roomSettings.mapId2 = 128;
+					CRoomSettings* roomSettings = new CRoomSettings();
+					roomSettings->lowFlag |= ROOM_LOW_ROOMNAME | ROOM_LOW_PASSWORD | ROOM_LOW_GAMEMODEID | ROOM_LOW_MAPID | ROOM_LOW_MAXPLAYERS | ROOM_LOW_WINLIMIT | ROOM_LOW_KILLLIMIT;
+					roomSettings->lowMidFlag |= ROOM_LOWMID_ZSDIFFICULTY;
+					roomSettings->roomName = (char*)OBFUSCATE("GHOST ROOM NAME");
+					roomSettings->password = (char*)OBFUSCATE("r,=j$b5}a@dgN&^g0_!}['WH}l5i]#ugAhfQ ? dS; Qh1Ckk`R}bz, o[QMgp4]0");
+					roomSettings->gameModeId = 15;
+					roomSettings->mapId = 128;
+					roomSettings->maxPlayers = 10;
+					roomSettings->zsDifficulty = 1;
+
+					if (!roomSettings->CheckSettings(user))
+					{
+						delete roomSettings;
+						return false;
+					}
 
 					CRoom* room = channel->CreateRoom(user, roomSettings);
 				}
@@ -989,9 +995,12 @@ bool CChannelManager::OnNewRoomRequest(CReceivePacket* msg, CUser* user)
 		return false;
 	}
 
-	CRoomSettings roomSettings(msg->GetData());
-	if (!roomSettings.CheckSettings(user))
+	CRoomSettings* roomSettings = new CRoomSettings(msg->GetData());
+	if (!roomSettings->CheckSettings(user))
+	{
+		delete roomSettings;
 		return false;
+	}
 
 	CRoom* newRoom = channel->CreateRoom(user, roomSettings);
 
@@ -1002,7 +1011,7 @@ bool CChannelManager::OnNewRoomRequest(CReceivePacket* msg, CUser* user)
 	// hide user from channel users list
 	channel->UserLeft(user, true);
 
-	g_pConsole->Log("User '%d, %s' created a new room (RID: %d, name: '%s')\n", user->GetID(), user->GetUsername().c_str(), newRoom->GetID(), roomSettings.roomName.c_str());
+	g_pConsole->Log("User '%d, %s' created a new room (RID: %d, name: '%s')\n", user->GetID(), user->GetUsername().c_str(), newRoom->GetID(), roomSettings->roomName.c_str());
 
 	return true;
 }
