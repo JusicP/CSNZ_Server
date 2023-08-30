@@ -412,6 +412,13 @@ void CUserManager::SendLoginPacket(CUser* user, const CUserCharacter& character)
 	if (characterExtended.config.size())
 		g_pPacketManager->SendOption(socket, characterExtended.config);
 
+	std::vector<string> banList;
+	g_pUserDatabase->GetBanList(user->GetID(), banList);
+	g_pPacketManager->SendBanList(socket, banList);
+
+	g_pPacketManager->SendBanSettings(socket, characterExtended.banSettings);
+	g_pPacketManager->SendBanMaxSize(socket, BANLIST_MAX_SIZE);
+
 	SendMetadata(socket);
 
 	g_pPacketManager->SendGameMatchInfo(socket);
@@ -455,6 +462,8 @@ void CUserManager::SendLoginPacket(CUser* user, const CUserCharacter& character)
 			g_pPacketManager->SendUserSurvey(socket, survey);
 		}
 	}
+
+	g_pPacketManager->SendLeaguePacket(socket);
 }
 
 void CUserManager::SendMetadata(CExtendedSocket* socket)
@@ -1081,6 +1090,28 @@ bool CUserManager::OnAddonPacket(CReceivePacket* msg, CExtendedSocket* socket)
 	return true;
 }
 
+bool CUserManager::OnLeaguePacket(CReceivePacket* msg, CExtendedSocket* socket)
+{
+	LOG_PACKET;
+
+	CUser* user = GetUserBySocket(socket);
+	if (user == NULL)
+		return false;
+
+	int type = msg->ReadUInt8();
+	switch (type)
+	{
+	case 0:
+		g_pPacketManager->SendLeaguePacket(socket);
+		break;
+	default:
+		g_pConsole->Warn(OBFUSCATE("[User '%s'] Unknown Packet_League type %d (len: %d)\n"), user->GetLogName(), type, msg->GetLength());
+		break;
+	}
+
+	return true;
+}
+
 void CUserManager::OnUserSurveyAnswerRequest(CReceivePacket* msg, CUser* user)
 {
 	UserSurveyAnswer answer;
@@ -1169,7 +1200,7 @@ void CUserManager::OnBanAddNicknameRequest(CReceivePacket* msg, CUser* user)
 		g_pPacketManager->SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("BAN_ADD_FAIL_NICKNAME_NOT_EXIST"));
 		break;
 	case -2:
-		g_pPacketManager->SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("BAN_ADD_FAIL_NICKNAME_EXIST"));
+		g_pPacketManager->SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("BAN_ADD_FAIL_ID_EXIST"));
 		break;
 	case -3:
 		g_pPacketManager->SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("BAN_ADD_FAIL_MAX_NUMBER_EXCESS"));

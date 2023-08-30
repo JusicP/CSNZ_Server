@@ -933,7 +933,7 @@ void CRoomSettings::LoadDefaultSettings(int gameModeId, int mapId)
 	footsteps = 1;
 	unk25 = 0;
 	tkPunish = 0;
-	autoKick = 1;
+	autoKick = 0;
 	unk28 = 0;
 	unk29 = 0;
 	viewFlag = GetDefaultViewFlag(gameModeId);

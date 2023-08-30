@@ -52,6 +52,9 @@ public:
 	void UpdateTournament(int tournament);
 	int UpdateBanList(std::string gameName, bool remove = false);
 	void UpdateBanSettings(int settings);
+	void UpdateNameplate(int nameplateID);
+	void UpdateZbRespawnEffect(int zbRespawnEffect);
+	void UpdateKillerMarkEffect(int killerMarkEffect);
 
 	int CheckForLvlUp(int64_t exp);
 

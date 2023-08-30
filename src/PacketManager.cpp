@@ -820,7 +820,7 @@ void CPacketManager::SendInventoryAdd(CExtendedSocket* socket, vector<CUserInven
 				}
 			}
 
-			if ((buf.getBuffer().size() + msg->GetData().getBuffer().size()) >= (PACKET_MAX_SIZE - PACKET_HEADER_SIZE))
+			if ((buf.getBuffer().size() + msg->GetData().getBuffer().size()) > PACKET_MAX_SIZE)
 			{
 				buf.clear();
 				break;
@@ -6717,7 +6717,7 @@ void CPacketManager::SendClanChatMessage(CExtendedSocket* socket, string gameNam
 	socket->Send(msg);
 }
 
-void CPacketManager::SendBanList(CExtendedSocket* socket, vector<UserBanList>& banList)
+void CPacketManager::SendBanList(CExtendedSocket* socket, vector<string>& banList)
 {
 	CSendPacket* msg = g_pPacketManager->CreatePacket(socket, PacketId::Ban);
 	msg->BuildHeader();
@@ -6725,8 +6725,7 @@ void CPacketManager::SendBanList(CExtendedSocket* socket, vector<UserBanList>& b
 	msg->WriteUInt8(banList.size());
 	for (auto& ban : banList)
 	{
-		msg->WriteString(ban.gameName);
-		msg->WriteUInt8(ban.isNotExists);
+		msg->WriteString(ban);
 	}
 	socket->Send(msg);
 }
@@ -6746,6 +6745,15 @@ void CPacketManager::SendBanSettings(CExtendedSocket* socket, int settings)
 	msg->BuildHeader();
 	msg->WriteUInt8(BanPacketType::BanSettingsReply);
 	msg->WriteUInt8(settings);
+	socket->Send(msg);
+}
+
+void CPacketManager::SendBanMaxSize(CExtendedSocket* socket, int maxSize)
+{
+	CSendPacket* msg = g_pPacketManager->CreatePacket(socket, PacketId::Ban);
+	msg->BuildHeader();
+	msg->WriteUInt8(BanPacketType::BanListMaxSize);
+	msg->WriteUInt16(maxSize);
 	socket->Send(msg);
 }
 
@@ -6812,6 +6820,40 @@ void CPacketManager::SendAddonPacket(CExtendedSocket* socket, vector<int>& addon
 	{
 		msg->WriteUInt16(addonID);
 	}
+
+	socket->Send(msg);
+}
+
+void CPacketManager::SendLeaguePacket(CExtendedSocket* socket)
+{
+	CSendPacket* msg = CreatePacket(socket, PacketId::League);
+	msg->BuildHeader();
+
+	msg->WriteUInt8(0);
+
+	msg->WriteUInt8(5);
+	for (int i = 0; i < 5; i++)
+	{
+		msg->WriteUInt8(i); // league id
+		msg->WriteUInt8(1); // is league in progress
+		msg->WriteUInt16(1); // season number
+		msg->WriteUInt8(5); // grade id
+		msg->WriteUInt32(0); // unk
+	}
+
+	socket->Send(msg);
+}
+
+void CPacketManager::SendLeagueGaugePacket(CExtendedSocket* socket, int gameModeId)
+{
+	CSendPacket* msg = CreatePacket(socket, PacketId::League);
+	msg->BuildHeader();
+
+	msg->WriteUInt8(6);
+
+	msg->WriteUInt8(1); // size always 1
+	msg->WriteUInt8(gameModeId);
+	msg->WriteUInt8(0); // 0 - show league gauge in-game, 1 - don't show league gauge in-game
 
 	socket->Send(msg);
 }

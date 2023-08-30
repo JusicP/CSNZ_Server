@@ -1063,6 +1063,12 @@ void CServerInstance::OnPackets(CExtendedSocket* s, CReceivePacket* msg, vector<
 		case PacketId::Addon:
 			g_pUserManager->OnAddonPacket(msg, s);
 			break;
+		case PacketId::Ban:
+			g_pUserManager->OnBanPacket(msg, s);
+			break;
+		case PacketId::League:
+			g_pUserManager->OnLeaguePacket(msg, s);
+			break;
 		default:
 			g_pConsole->Warn("Unimplemented packet: %d\n", msg->GetID());
 			break;

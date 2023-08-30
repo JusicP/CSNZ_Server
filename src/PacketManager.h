@@ -215,9 +215,10 @@ public:
 	void SendClanKick(CExtendedSocket* socket);
 	void SendClanChatMessage(CExtendedSocket* socket, std::string gameName, std::string message);
 
-	void SendBanList(CExtendedSocket* socket, std::vector<UserBanList>& banList);
+	void SendBanList(CExtendedSocket* socket, std::vector<std::string>& banList);
 	void SendBanUpdateList(CExtendedSocket* socket, std::string gameName, bool remove = false);
 	void SendBanSettings(CExtendedSocket* socket, int settings);
+	void SendBanMaxSize(CExtendedSocket* socket, int maxSize);
 
 	void SendMessengerUserInfo(CExtendedSocket* socket, int userID, CUserCharacter& character);
 
@@ -225,6 +226,9 @@ public:
 	void SendRankUserInfo(CExtendedSocket* socket, int userID, CUserCharacter& character);
 
 	void SendAddonPacket(CExtendedSocket* socket, std::vector<int>& addons);
+
+	void SendLeaguePacket(CExtendedSocket* socket);
+	void SendLeagueGaugePacket(CExtendedSocket* socket, int gameModeId);
 
 private:
 	BinMetadata* LoadBinaryMetadata(const char* fileName);

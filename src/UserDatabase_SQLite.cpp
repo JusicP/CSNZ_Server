@@ -9,7 +9,7 @@
 
 using namespace std;
 
-#define LAST_DB_VERSION 2
+#define LAST_DB_VERSION 3
 #define MAX_USER_REGISTRATIONS_PER_IP 3
 
 //#define OBFUSCATE(data) (string)AY_OBFUSCATE_KEY(data, 'F')
@@ -1168,7 +1168,7 @@ int CUserDatabaseSQLite::CreateCharacter(int userID, string gameName)
 		DefaultUser defUser = g_pServerConfig->defUser;
 
 		SQLite::Transaction transcation(m_Database);
-		SQLite::Statement insertCharacter(m_Database, OBFUSCATE("INSERT INTO UserCharacter VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+		SQLite::Statement insertCharacter(m_Database, OBFUSCATE("INSERT INTO UserCharacter VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
 		insertCharacter.bind(1, userID);
 		insertCharacter.bind(2, gameName);
 		insertCharacter.bind(3, (int64_t)defUser.exp);
@@ -1191,9 +1191,10 @@ int CUserDatabaseSQLite::CreateCharacter(int userID, string gameName)
 		insertCharacter.bind(20, OBFUSCATE("0,0,0,0,0"));
 		insertCharacter.bind(21, 0); // clan
 		insertCharacter.bind(22, 0); // tournament hud
+		insertCharacter.bind(23, 0); // nameplateID
 		insertCharacter.exec();
 
-		SQLite::Statement insertCharacterExtended(m_Database, OBFUSCATE("INSERT INTO UserCharacterExtended VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+		SQLite::Statement insertCharacterExtended(m_Database, OBFUSCATE("INSERT INTO UserCharacterExtended VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
 		insertCharacterExtended.bind(1, userID);
 		insertCharacterExtended.bind(2, defUser.gameMaster);
 		insertCharacterExtended.bind(3, 100); // gachapon kills
@@ -1205,6 +1206,8 @@ int CUserDatabaseSQLite::CreateCharacter(int userID, string gameName)
 		insertCharacterExtended.bind(9, ""); // 2nd password
 		insertCharacterExtended.bind(10, 0); // security question
 		insertCharacterExtended.bind(11, ""); // security answer
+		insertCharacterExtended.bind(12, 0); // zbRespawnEffect
+		insertCharacterExtended.bind(13, 0); // killerMarkEffect
 		insertCharacterExtended.exec();
 
 		for (int i = 0; i < (int)defUser.loadouts.m_Loadouts.size(); i++)
@@ -1368,6 +1371,10 @@ int CUserDatabaseSQLite::GetCharacter(int userID, CUserCharacter& character)
 		{
 			query << OBFUSCATE("mileagePoints, ");
 		}
+		if (character.flag & UFLAG_NAMEPLATE)
+		{
+			query << OBFUSCATE("nameplateID, ");
+		}
 		query << OBFUSCATE("FROM UserCharacter WHERE userID = ?");
 
 		string queryStr = query.str();
@@ -1448,6 +1455,10 @@ int CUserDatabaseSQLite::GetCharacter(int userID, CUserCharacter& character)
 			if (character.flag & UFLAG_UNK19)
 			{
 				character.mileagePoints = statement.getColumn(index++);
+			}
+			if (character.flag & UFLAG_NAMEPLATE)
+			{
+				character.nameplateID = statement.getColumn(index++);
 			}
 		}
 		else
@@ -1555,6 +1566,10 @@ int CUserDatabaseSQLite::UpdateCharacter(int userID, CUserCharacter& character)
 		{
 			query << OBFUSCATE("mileagePoints = ?, ");
 		}
+		if (character.flag & UFLAG_NAMEPLATE)
+		{
+			query << OBFUSCATE("nameplateID = ?, ");
+		}
 		query << OBFUSCATE("WHERE userID = ?");
 
 		string queryStr = query.str();
@@ -1648,6 +1663,10 @@ int CUserDatabaseSQLite::UpdateCharacter(int userID, CUserCharacter& character)
 		{
 			statement.bind(index++, character.mileagePoints);
 		}
+		if (character.flag & UFLAG_NAMEPLATE)
+		{
+			statement.bind(index++, character.nameplateID);
+		}
 
 		statement.bind(index++, userID);
 
@@ -1707,6 +1726,14 @@ int CUserDatabaseSQLite::GetCharacterExtended(int userID, CUserCharacterExtended
 		{
 			query << OBFUSCATE("securityQuestion, securityAnswer, ");
 		}
+		if (character.flag & EXT_UFLAG_ZBRESPAWNEFFECT)
+		{
+			query << OBFUSCATE("zbRespawnEffect, ");
+		}
+		if (character.flag & EXT_UFLAG_KILLERMARKEFFECT)
+		{
+			query << OBFUSCATE("killerMarkEffect, ");
+		}
 		query << OBFUSCATE("FROM UserCharacterExtended WHERE userID = ?");
 
 		string queryStr = query.str();
@@ -1757,6 +1784,14 @@ int CUserDatabaseSQLite::GetCharacterExtended(int userID, CUserCharacterExtended
 				character.securityQuestion = statement.getColumn(index++);
 				SQLite::Column securityAnswer = statement.getColumn(index++);
 				character.securityAnswer.assign((unsigned char*)securityAnswer.getBlob(), (unsigned char*)securityAnswer.getBlob() + securityAnswer.getBytes());
+			}
+			if (character.flag & EXT_UFLAG_ZBRESPAWNEFFECT)
+			{
+				character.zbRespawnEffect = statement.getColumn(index++);
+			}
+			if (character.flag & EXT_UFLAG_KILLERMARKEFFECT)
+			{
+				character.killerMarkEffect = statement.getColumn(index++);
 			}
 		}
 	}
@@ -1814,6 +1849,14 @@ int CUserDatabaseSQLite::UpdateCharacterExtended(int userID, CUserCharacterExten
 		{
 			query << OBFUSCATE("securityQuestion = ?, securityAnswer = ?, ");
 		}
+		if (character.flag & EXT_UFLAG_ZBRESPAWNEFFECT)
+		{
+			query << OBFUSCATE("zbRespawnEffect = ?, ");
+		}
+		if (character.flag & EXT_UFLAG_KILLERMARKEFFECT)
+		{
+			query << OBFUSCATE("killerMarkEffect = ?, ");
+		}
 		query << OBFUSCATE("WHERE userID = ?");
 
 		string queryStr = query.str();
@@ -1861,6 +1904,14 @@ int CUserDatabaseSQLite::UpdateCharacterExtended(int userID, CUserCharacterExten
 			statement.bind(index++, character.securityQuestion);
 			void* securityAnswer = character.securityAnswer.data();
 			statement.bind(index++, securityAnswer, character.securityAnswer.size());
+		}
+		if (character.flag & EXT_UFLAG_ZBRESPAWNEFFECT)
+		{
+			statement.bind(index++, character.zbRespawnEffect);
+		}
+		if (character.flag & EXT_UFLAG_KILLERMARKEFFECT)
+		{
+			statement.bind(index++, character.killerMarkEffect);
 		}
 
 		statement.bind(index++, userID);
@@ -3003,7 +3054,7 @@ int CUserDatabaseSQLite::UpdateUserRank(int userID, CUserCharacter& character)
 
 // gets ban list
 // returns 0 == database error, 1 on success
-int CUserDatabaseSQLite::GetBanList(int userID, vector<UserBanList>& banList)
+int CUserDatabaseSQLite::GetBanList(int userID, vector<string>& banList)
 {
 	try
 	{
@@ -3011,10 +3062,7 @@ int CUserDatabaseSQLite::GetBanList(int userID, vector<UserBanList>& banList)
 		query.bind(1, userID);
 		while (query.executeStep())
 		{
-			UserBanList ban;
-			ban.gameName = (const char*)query.getColumn(0);
-			ban.isNotExists = (char)query.getColumn(1);
-			banList.push_back(ban);
+			banList.push_back((const char*)query.getColumn(0));
 		}
 	}
 	catch (exception& e)

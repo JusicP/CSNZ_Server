@@ -197,7 +197,7 @@ bool CChannelManager::OnWhisperMessage(CReceivePacket* msg, CUser* userSender)
 	if (!userDest)
 	{
 		// send no user reply
-		g_pPacketManager->SendUMsgSystemReply(socket, 1, "MSG_TELL_USER_NOT_FOUND", vector<string>{ userNameDest });
+		g_pPacketManager->SendUMsgSystemReply(socket, UMsgPacketType::SystemReply_Red, "MSG_TELL_USER_NOT_FOUND", vector<string>{ userNameDest });
 	}
 	else if (userDest->GetExtendedSocket() == socket)
 	{
@@ -206,9 +206,29 @@ bool CChannelManager::OnWhisperMessage(CReceivePacket* msg, CUser* userSender)
 	}
 	else
 	{
-		g_pPacketManager->SendUMsgWhisperMessage(socket, message, userNameDest, userSender, 0);
-		CUserCharacter character = userSender->GetCharacter(UFLAG_GAMENAME);
-		g_pPacketManager->SendUMsgWhisperMessage(userDest->GetExtendedSocket(), message, character.gameName, userDest, 1);
+		CUserCharacterExtended characterExtendedSender = userSender->GetCharacterExtended(EXT_UFLAG_BANSETTINGS);
+
+		if (characterExtendedSender.banSettings & 4)
+		{
+			// you can't send whisper message if you're blocking all whisper
+			g_pPacketManager->SendUMsgSystemReply(socket, UMsgPacketType::SystemReply_Red, "MSG_TELL_SENDER_USING_BAN_CHAT_ALL");
+		}
+		else
+		{
+			CUserCharacterExtended characterExtendedDest = userDest->GetCharacterExtended(EXT_UFLAG_BANSETTINGS);
+
+			if (characterExtendedDest.banSettings & 4)
+			{
+				// you can't send whisper message if dest is blocking all whisper
+				g_pPacketManager->SendUMsgSystemReply(socket, UMsgPacketType::SystemReply_Red, "MSG_TELL_LISTENER_USING_BAN_CHAT_ALL");
+			}
+			else
+			{
+				g_pPacketManager->SendUMsgWhisperMessage(socket, message, userNameDest, userSender, 0);
+				CUserCharacter character = userSender->GetCharacter(UFLAG_GAMENAME);
+				g_pPacketManager->SendUMsgWhisperMessage(userDest->GetExtendedSocket(), message, character.gameName, userDest, 1);
+			}
+		}
 	}
 
 	return true;
@@ -1058,7 +1078,7 @@ bool CChannelManager::OnJoinRoomRequest(CReceivePacket* msg, CUser* user)
 		}
 	}
 
-	CUserCharacterExtended hostCharacterExtended = user->GetCharacterExtended(EXT_UFLAG_BANSETTINGS);
+	CUserCharacterExtended hostCharacterExtended = room->GetHostUser()->GetCharacterExtended(EXT_UFLAG_BANSETTINGS);
 	if (hostCharacterExtended.banSettings & 1 && g_pUserDatabase->IsInBanList(room->GetHostUser()->GetID(), user->GetID()))
 	{
 		g_pPacketManager->SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("ROOM_JOIN_FAILED_BAN"));
@@ -1259,6 +1279,9 @@ bool CChannelManager::OnGameStartRequest(CUser* user)
 		g_pConsole->Warn("User '%d, %s' isn't in room or channel but he tried to start room match.\n", user->GetID(), user->GetUsername().c_str());
 		return false;
 	}
+
+	CRoomSettings* roomSettings = currentRoom->GetSettings();
+	g_pPacketManager->SendLeagueGaugePacket(user->GetExtendedSocket(), roomSettings->gameModeId);
 
 	// send to the host game start request
 	if (currentRoom->GetHostUser() == user)

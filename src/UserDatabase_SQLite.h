@@ -85,7 +85,7 @@ public:
 	int UpdateBingoPrizeSlot(int userID, std::vector<UserBingoPrizeSlot>& prizes, bool remove = false);
 	int GetUserRank(int userID, CUserCharacter& character); // to review
 	int UpdateUserRank(int userID, CUserCharacter& character); // to review
-	int GetBanList(int userID, std::vector<UserBanList>& banList);
+	int GetBanList(int userID, std::vector<std::string>& banList);
 	int UpdateBanList(int userID, std::string gameName, bool remove = false);
 	bool IsInBanList(int userID, int destUserID);
 	bool IsSurveyAnswered(int userID, int surveyID);

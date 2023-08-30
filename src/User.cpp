@@ -176,7 +176,7 @@ void CUser::UpdateClientUserInfo(int flag, CUserCharacter character)
 {
 	if (m_pCurrentChannel)
 	{
-		if (flag & UFLAG_GAMENAME || flag & UFLAG_EXP || flag & UFLAG_LEVEL || flag & UFLAG_UNK2 || flag & UFLAG_GAMENAME || flag & UFLAG_GAMENAME2 || flag & UFLAG_STAT || flag & UFLAG_LOCATION || flag & UFLAG_RANK || flag & UFLAG_ACHIEVEMENT || flag & UFLAG_TITLES || flag & UFLAG_CLAN || flag & UFLAG_TOURNAMENT)
+		if (flag & UFLAG_GAMENAME || flag & UFLAG_EXP || flag & UFLAG_LEVEL || flag & UFLAG_GAMENAME2 || flag & UFLAG_STAT || flag & UFLAG_LOCATION || flag & UFLAG_RANK || flag & UFLAG_ACHIEVEMENT || flag & UFLAG_TITLES || flag & UFLAG_CLAN || flag & UFLAG_TOURNAMENT || flag & UFLAG_NAMEPLATE)
 		{
 			m_pCurrentChannel->UpdateUserInfo(this, character);
 		}
@@ -308,7 +308,7 @@ void CUser::UpdateExp(int64_t exp)
 	g_pUserDatabase->UpdateCharacter(m_nID, character);
 
 	// update userinfo on client side
-	UpdateClientUserInfo(UFLAG_EXP | UFLAG_LEVEL | UFLAG_UNK2, character);
+	UpdateClientUserInfo(UFLAG_EXP | UFLAG_LEVEL, character);
 }
 
 int CUser::UpdatePasswordBoxes(int passwordBoxes)
@@ -381,9 +381,38 @@ int CUser::UpdateBanList(string gameName, bool remove)
 
 void CUser::UpdateBanSettings(int settings)
 {
-	CUserCharacterExtended characterExt;
+	CUserCharacterExtended characterExt = {};
 	characterExt.flag = EXT_UFLAG_BANSETTINGS;
 	characterExt.banSettings = settings;
+
+	g_pUserDatabase->UpdateCharacterExtended(m_nID, characterExt);
+}
+
+void CUser::UpdateNameplate(int nameplateID)
+{
+	CUserCharacter character = {};
+	character.flag = UFLAG_NAMEPLATE;
+	character.nameplateID = nameplateID;
+
+	g_pUserDatabase->UpdateCharacter(m_nID, character);
+
+	UpdateClientUserInfo(UFLAG_NAMEPLATE, character);
+}
+
+void CUser::UpdateZbRespawnEffect(int zbRespawnEffect)
+{
+	CUserCharacterExtended characterExt = {};
+	characterExt.flag = EXT_UFLAG_ZBRESPAWNEFFECT;
+	characterExt.zbRespawnEffect = zbRespawnEffect;
+
+	g_pUserDatabase->UpdateCharacterExtended(m_nID, characterExt);
+}
+
+void CUser::UpdateKillerMarkEffect(int killerMarkEffect)
+{
+	CUserCharacterExtended characterExt = {};
+	characterExt.flag = EXT_UFLAG_KILLERMARKEFFECT;
+	characterExt.killerMarkEffect = killerMarkEffect;
 
 	g_pUserDatabase->UpdateCharacterExtended(m_nID, characterExt);
 }

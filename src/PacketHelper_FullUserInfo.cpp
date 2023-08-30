@@ -44,10 +44,10 @@ void CPacketHelper_FullUserInfo::Build(Buffer& buf, int userID, const CUserChara
 {
 	buf.writeInt32_LE(character.flag);
 
-	if (character.flag & UFLAG_UNK1)
+	if (character.flag & UFLAG_NAMEPLATE)
 	{
 		buf.writeUInt8(0);
-		buf.writeUInt32_LE(0); // что это?
+		buf.writeUInt32_LE(character.nameplateID);
 	}
 
 	if (character.flag & UFLAG_GAMENAME)
@@ -180,7 +180,7 @@ void CPacketHelper_FullUserInfo::Build(Buffer& buf, int userID, const CUserChara
 		buf.writeUInt16_LE(character.passwordBoxes); // кол-во код боксов
 	}
 
-	if (character.flag & UFLAG_UNK5)
+	if (character.flag & UFLAG_UNK11)
 	{
 		buf.writeUInt32_LE(0);
 	}

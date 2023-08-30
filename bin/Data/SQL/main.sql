@@ -1,4 +1,4 @@
-PRAGMA user_version = 2;
+PRAGMA user_version = 3;
 CREATE TABLE IF NOT EXISTS "UserDist" (
 	"userIDNext" INT,
 	"clanIDNext" INT
@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS "UserCharacter" (
 	"titles"			VARCHAR(32) DEFAULT '0,0,0,0,0',
 	"clanID"			INT DEFAULT 0,
 	"tournament"		INT DEFAULT 0,
+	"nameplateID"		INT DEFAULT 0,
 	FOREIGN KEY("userID") REFERENCES "User"("userID") ON DELETE CASCADE,
 	PRIMARY KEY("userID")
 );
@@ -55,6 +56,8 @@ CREATE TABLE IF NOT EXISTS "UserCharacterExtended" (
 	"_2ndPassword"				BLOB DEFAULT '',
 	"securityQuestion"			INT DEFAULT 0,
 	"securityAnswer"			BLOB DEFAULT '',
+	"zbRespawnEffect"			INT DEFAULT 0,
+	"killerMarkEffect"			INT DEFAULT 0,
 	FOREIGN KEY("userID") REFERENCES "UserCharacter"("userID") ON DELETE CASCADE,
 	PRIMARY KEY("userID")
 );

@@ -771,7 +771,7 @@ enum RoomStatus
 };
 
 /*USER STUFF*/
-#define	UFLAG_UNK1				(1<<0)
+#define	UFLAG_NAMEPLATE			(1<<0)
 #define	UFLAG_GAMENAME			(1<<1)
 #define	UFLAG_GAMENAME2			(1<<2)
 #define	UFLAG_LEVEL				(1<<3)
@@ -828,11 +828,6 @@ enum UserStatus
 	STATUS_MENU = 0,
 	STATUS_INROOM = 1,
 	STATUS_PLAYING = 2
-};
-struct UserBanList
-{
-	std::string gameName;
-	bool isNotExists;
 };
 struct UserRestoreData
 {
@@ -967,9 +962,9 @@ public:
 	int clanMarkID;
 	std::string clanName;
 	int tournament;
-	std::vector<UserBanList> banList;
 	int banSettings;
 	int mileagePoints;
+	int nameplateID;
 };
 
 // internal user data(last login time, config data etc)
@@ -1008,6 +1003,8 @@ public:
 	std::vector<unsigned char> _2ndPassword;
 	int securityQuestion;
 	std::vector<unsigned char> securityAnswer;
+	int zbRespawnEffect;
+	int killerMarkEffect;
 };
 
 class CUserQuestStats
@@ -1156,6 +1153,8 @@ struct ClanUserJoinRequest
 #define	CFLAG_MAXMEMBERCOUNT				(1<<16)
 #define CFLAG_CHRONICLE				(1<<17)
 
+#define BANLIST_MAX_SIZE 200
+
 enum BanPacketType
 {
 	BanList = 0,
@@ -1165,6 +1164,7 @@ enum BanPacketType
 	BanRemoveNicknameReply = 2,
 	RequestBanSettings = 2,
 	BanSettingsReply = 3,
+	BanListMaxSize = 4,
 };
 
 struct UserBan
