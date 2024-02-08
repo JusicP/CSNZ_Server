@@ -9,9 +9,10 @@ ThreadId GetCurrentThreadID()
 #endif
 }
 
-CThread::CThread(const Handler& function)
+CThread::CThread(const Handler& function, void* data)
 {
     m_Object = function;
+	m_pData = data;
 #ifdef WIN32
     m_hHandle = 0;
 #endif
@@ -34,13 +35,13 @@ bool CThread::Start()
     }
 
 #ifdef WIN32
-    m_hHandle = CreateThread(0, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(m_Object), this, 0, &m_ID);
+    m_hHandle = CreateThread(0, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(m_Object), m_pData, 0, &m_ID);
     if (m_hHandle == 0)
     {
         return false;
     }
 #else
-    int result = pthread_create(&m_ID, NULL, m_Object, NULL);
+    int result = pthread_create(&m_ID, NULL, m_Object, m_pData);
     if (result != 0)
     {
         return false;

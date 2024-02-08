@@ -152,7 +152,7 @@ ThreadId GetCurrentThreadID();
 class CThread
 {
 public:
-	CThread(const Handler& function);
+	CThread(const Handler& function, void* data = NULL);
 	~CThread();
 
 	bool Start();
@@ -171,4 +171,5 @@ private:
 	HANDLE m_hHandle;
 #endif
 	ThreadId m_ID;
+	void* m_pData;
 };
