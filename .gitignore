@@ -16,3 +16,7 @@ bin/*.ilk
 bin/*.pdb
 bin/*.log
 bin/*.db3
+bin/Logs
+bin/platforms
+
+Releases
