@@ -3,12 +3,6 @@
 #include "interface/iextendedsocket.h"
 #include "common/buffer.h"
 
-#define MAX_SEQUENCE 255
-#define MAX_RECEIVE_LEN 15000
-
-#define PACKET_MAX_SIZE 0x10000
-#define PACKET_HEADER_SIZE 4
-
 struct GuestData_s
 {
 	bool isGuest;
@@ -23,10 +17,13 @@ class CSendPacket;
 class CReceivePacket;
 struct WOLFSSL_EVP_CIPHER_CTX;
 
+/**
+ * Class that extends socket object to store additional information such as IP, some statistics, etc
+ */
 class CExtendedSocket : public IExtendedSocket
 {
 public:
-	CExtendedSocket(unsigned int id);
+	CExtendedSocket(unsigned int id = 0);
 	~CExtendedSocket();
 
 	bool SetupCrypt();
@@ -66,8 +63,11 @@ private:
 	GuestData_s m_GuestData;
 
 	CReceivePacket* m_pMsg;
+	
+	// packet separation
 	int m_nPacketToReceiveFullSize;
 	int m_nPacketReceivedSize;
+	
 	int m_nReadResult;
 	int m_nNextExpectedSeq; // TODO: we need it?
 

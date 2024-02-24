@@ -7,6 +7,8 @@
 #include "user/userfastbuy.h"
 #include "user/userinventoryitem.h"
 
+#include "common/net/net.h"
+
 #include "zip.h"
 
 using namespace std;
@@ -172,7 +174,7 @@ void CPacketManager::Shutdown()
 
 CSendPacket* CPacketManager::CreatePacket(IExtendedSocket* socket, int msgID)
 {
-	return new CSendPacket(socket, msgID);
+	return new CSendPacket(socket->GetSeq(), msgID);
 }
 
 CBinMetadata* CPacketManager::LoadBinaryMetadata(const char* fileName, bool zip)

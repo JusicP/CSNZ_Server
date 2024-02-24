@@ -1,10 +1,5 @@
 #pragma once
 
-#define TCP_PACKET_SIGNATURE = 'U';
-#define UDP_HOLEPUNCHER_PACKET_SIGNATURE = 'W';
-#define UDP_HOLEPUNCHER2_PACKET_SIGNATURE = 'X';
-#define UDP_HOLEPUNCHER3_PACKET_SIGNATURE = '`';
-
 #include "user/userloadout.h"
 
 #include <string>

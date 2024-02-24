@@ -2,10 +2,13 @@
 
 #include "common/buffer.h"
 
+/**
+ * Class that represents outgoing packets.
+ */
 class CSendPacket
 {
 public:
-	CSendPacket(IExtendedSocket* socket, int packetID);
+	CSendPacket(int sequence, int packetID);
 	~CSendPacket();
 
 	std::vector<unsigned char> SetPacketLength();
@@ -18,20 +21,18 @@ public:
 	void WriteUInt16(unsigned int number, bool littleEndian = true);
 	void WriteUInt32(unsigned int number, bool littleEndian = true);
 	void WriteUInt64(unsigned long long number, bool littleEndian = true);
-	void WriteString(const std::string& message, bool writesize = false);
-	void WriteWString(const std::wstring& message);
+	void WriteString(const std::string& str);
+	void WriteWString(const std::wstring& str);
 	void WriteData(void* data, int len);
 	void WriteArray(const std::vector<unsigned char>& arr);
 	void SetWriteOffset(int offset);
 	void SetOverride(bool override);
 	bool IsBufferFull();
 	void BuildHeader();
-	void Send(std::vector<unsigned char>& data);
 
 public:
 	int m_nPacketID;
 	int m_nSequence;
 
-	IExtendedSocket* m_pSocket;
 	Buffer m_OutStream;
 };

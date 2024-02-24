@@ -2,6 +2,9 @@
 
 #include "common/buffer.h"
 
+/**
+ * Class that represents incoming packets.
+ */
 class CReceivePacket
 {
 public:

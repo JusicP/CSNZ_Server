@@ -2,11 +2,17 @@
 #include "sendpacket.h"
 #include "receivepacket.h"
 
+#include "common/net/net.h"
+
 #include <wolfssl/options.h>
 #include <wolfssl/openssl/evp.h>
 
 using namespace std;
 
+/**
+ * Constructor.
+ * @param id
+ */
 CExtendedSocket::CExtendedSocket(unsigned int id)
 {
 	memset(&m_GuestData, 0, sizeof(GuestData_s));
@@ -26,6 +32,10 @@ CExtendedSocket::CExtendedSocket(unsigned int id)
 	m_bCryptOutput = false;
 }
 
+/**
+ * Destructor.
+ * Deletes unsent and unreceived packets
+ */
 CExtendedSocket::~CExtendedSocket()
 {
 	if (m_pMsg)
@@ -47,7 +57,10 @@ CExtendedSocket::~CExtendedSocket()
 	}
 }
 
-// Setup packet cipher and create key
+/**
+ * Sets up packet cipher and create key
+ * @return True on success
+ */
 bool CExtendedSocket::SetupCrypt()
 {
 	if (m_pEncEVPCTX && m_pDecEVPCTX)
@@ -105,6 +118,10 @@ bool CExtendedSocket::SetupCrypt()
 	return true;
 }
 
+/**
+ * Increments current sequence and return it
+ * @return Sequence number used for sending 
+ */
 int CExtendedSocket::GetSeq()
 {
 	if (m_nSequence > MAX_SEQUENCE)
@@ -115,16 +132,27 @@ int CExtendedSocket::GetSeq()
 	return m_nSequence++;
 }
 
+/**
+ * Gets current sequence without incrementing
+ * @return Current packet sequence
+ */
 int CExtendedSocket::LoggerGetSeq()
 {
 	return m_nSequence;
 }
 
+/**
+ * Resets sequence counter
+ */
 void CExtendedSocket::ResetSeq()
 {
 	m_nSequence = 0;
 }
 
+/**
+ * Receives incoming packet or packets
+ * @return Pointer to received packet, NULL on error
+ */
 CReceivePacket* CExtendedSocket::Read()
 {
 	m_nReadResult = 0;
@@ -135,7 +163,7 @@ CReceivePacket* CExtendedSocket::Read()
 	if (!m_pMsg)
 	{
 		// first of all read the packet header to know is received packet is valid
-		recvResult = g_pNetwork->ReceiveMessage(m_Socket, (char*)packetDataBuf.data(), PACKET_HEADER_SIZE);
+		recvResult = recv(m_Socket, (char*)packetDataBuf.data(), PACKET_HEADER_SIZE, 0);
 		if (recvResult < PACKET_HEADER_SIZE)
 		{
 			g_pConsole->Warn("CExtendedSocket::Read(%s): result < PACKET_HEADER_SIZE, %d\n", GetIP().c_str(), GetNetworkError());
@@ -194,7 +222,7 @@ CReceivePacket* CExtendedSocket::Read()
 	}
 
 	packetDataBuf.resize(m_pMsg->GetLength());
-	recvResult = g_pNetwork->ReceiveMessage(m_Socket, (char*)packetDataBuf.data(), m_nPacketReceivedSize ? m_pMsg->GetLength() + PACKET_HEADER_SIZE - m_nPacketReceivedSize : m_pMsg->GetLength());
+	recvResult = recv(m_Socket, (char*)packetDataBuf.data(), m_nPacketReceivedSize ? m_pMsg->GetLength() + PACKET_HEADER_SIZE - m_nPacketReceivedSize : m_pMsg->GetLength(), 0);
 	if (recvResult <= 0)
 	{
 		g_pConsole->Warn("CExtendedSocket::Read(%s): result <= 0\n", GetIP().c_str(), GetNetworkError());
@@ -249,6 +277,11 @@ CReceivePacket* CExtendedSocket::Read()
 	return m_pMsg;
 }
 
+/**
+ * Sends packet (internal)
+ * @param buffer Data to be sent
+ * @return Number of bytes sent, SOCKET_ERROR on error
+ */
 int CExtendedSocket::Send(vector<unsigned char>& buffer)
 {
 	if (buffer.size() > PACKET_MAX_SIZE)
@@ -282,7 +315,7 @@ int CExtendedSocket::Send(vector<unsigned char>& buffer)
 
 	const char* bufData = reinterpret_cast<const char*>(&buffer[0]);
 
-	int bytesSent = g_pNetwork->SendMessage(m_Socket, bufData, buffer.size());
+	int bytesSent = send(m_Socket, bufData, buffer.size(), 0);
 	if (bytesSent != buffer.size())
 		return bytesSent;
 
@@ -297,7 +330,12 @@ int CExtendedSocket::Send(vector<unsigned char>& buffer)
 	return bytesSent;
 }
 
-// complicated shit
+/**
+ * Sends packet
+ * @param msg
+ * @param forceSend Used to send a packet ignoring the queue of them
+ * @return Number of bytes sent, SOCKET_ERROR on error
+ */
 int CExtendedSocket::Send(CSendPacket* msg, bool forceSend)
 {
 	int result = 1;
@@ -331,51 +369,89 @@ int CExtendedSocket::Send(CSendPacket* msg, bool forceSend)
 	return result;
 }
 
+/**
+ * Gets ID of ExtendedSocket
+ * @return Number of bytes sent
+ */
 unsigned int CExtendedSocket::GetID()
 {
 	return m_nID;
 }
 
+/**
+ * Sets socket object
+ */
 void CExtendedSocket::SetSocket(SOCKET socket)
 {
 	m_Socket = socket;
 }
 
+/**
+ * Gets socket object
+ */
 SOCKET CExtendedSocket::GetSocket()
 {
 	return m_Socket;
 }
 
+/**
+ * Gets received message
+ * @return Pointer to received message
+ */
 CReceivePacket* CExtendedSocket::GetMsg()
 {
 	return m_pMsg;
 }
 
+/**
+ * Sets received message
+ * @param msg
+ */
 void CExtendedSocket::SetMsg(CReceivePacket* msg)
 {
 	m_pMsg = msg;
 }
 
+/**
+ * Gets read result
+ * @return Last Read() result
+ */
 int CExtendedSocket::GetReadResult()
 {
 	return m_nReadResult;
 }
 
+/**
+ * Gets number of bytes received by client
+ * @return Bytes received
+ */
 int CExtendedSocket::GetBytesReceived()
 {
 	return m_nBytesReceived;
 }
 
+/**
+ * Gets number of bytes sent by client
+ * @return Bytes sent
+ */
 int CExtendedSocket::GetBytesSent()
 {
 	return m_nBytesSent;
 }
 
+/**
+ * Gets packets that are in the queue for sending
+ * @return Vector of packets to send
+ */
 std::vector<CSendPacket*>& CExtendedSocket::GetPacketsToSend()
 {
 	return m_SendPackets;
 }
 
+/**
+ * Gets client guest data (some additional info about the client)
+ * @return Guest data
+ */
 GuestData_s& CExtendedSocket::GetGuestData()
 {
 	return m_GuestData;
