@@ -283,7 +283,7 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 
 	if (highFlag)
 	{
-		g_pConsole->Warn("CRoomSettings: got high flag!\n");
+		Console().Warn("CRoomSettings: got high flag!\n");
 	}
 }
 
@@ -1334,7 +1334,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 			int gameModeMinPlayers = g_pGameModeListTable->GetCell<int>("mode_minplayer", to_string(gameModeId));
 			if (maxPlayers < gameModeMinPlayers)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with maxPlayers < gameModeMinPlayers: %d, maxPlayers: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeMinPlayers, maxPlayers);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with maxPlayers < gameModeMinPlayers: %d, maxPlayers: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeMinPlayers, maxPlayers);
 				lowFlag &= ~ROOM_LOW_MAXPLAYERS;
 			}
 			else
@@ -1342,7 +1342,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 				int gameModeMaxPlayers = g_pGameModeListTable->GetCell<int>("mode_maxplayer", to_string(gameModeId));
 				if (maxPlayers > gameModeMaxPlayers)
 				{
-					g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with maxPlayers > gameModeMaxPlayers: %d, maxPlayers: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeMaxPlayers, maxPlayers);
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with maxPlayers > gameModeMaxPlayers: %d, maxPlayers: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeMaxPlayers, maxPlayers);
 					lowFlag &= ~ROOM_LOW_MAXPLAYERS;
 				}
 			}
@@ -1352,7 +1352,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (gameModeId != 0 && gameModeId != 3 && !IsSettingValid(gameModeId, "mode_win_limit_id", winLimit))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid winLimit: %d\n", user->GetID(), user->GetUsername().c_str(), winLimit);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid winLimit: %d\n", user->GetID(), user->GetUsername().c_str(), winLimit);
 				lowFlag &= ~ROOM_LOW_WINLIMIT;
 			}
 		}
@@ -1361,7 +1361,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!IsSettingValid(gameModeId, "mode_kill_limit_id", killLimit))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid killLimit: %d\n", user->GetID(), user->GetUsername().c_str(), killLimit);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid killLimit: %d\n", user->GetID(), user->GetUsername().c_str(), killLimit);
 				lowFlag &= ~ROOM_LOW_KILLLIMIT;
 			}
 		}
@@ -1370,7 +1370,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!IsSettingValid(gameModeId, "mode_time_limit_id", gameTime))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid gameTime: %d\n", user->GetID(), user->GetUsername().c_str(), gameTime);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid gameTime: %d\n", user->GetID(), user->GetUsername().c_str(), gameTime);
 				lowFlag &= ~ROOM_LOW_GAMETIME;
 			}
 		}
@@ -1379,7 +1379,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!IsSettingValid(gameModeId, "mode_roundtime_id", roundTime))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid roundTime: %d\n", user->GetID(), user->GetUsername().c_str(), roundTime);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid roundTime: %d\n", user->GetID(), user->GetUsername().c_str(), roundTime);
 				lowFlag &= ~ROOM_LOW_ROUNDTIME;
 			}
 		}
@@ -1394,7 +1394,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!IsBuyTimeValid(gameModeId, buyTime))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid buyTime: %d\n", user->GetID(), user->GetUsername().c_str(), buyTime);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid buyTime: %d\n", user->GetID(), user->GetUsername().c_str(), buyTime);
 				lowFlag &= ~ROOM_LOW_BUYTIME;
 			}
 		}
@@ -1403,7 +1403,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!CanChangeTeamBalance(gameModeId) && teamBalance != GetDefaultTeamBalance(gameModeId))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't allow teamBalance to be changed, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't allow teamBalance to be changed, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowFlag &= ~ROOM_LOW_TEAMBALANCE;
 			}
 			else if (teamBalance > 1)
@@ -1414,7 +1414,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!CanChangeFriendlyFire(gameModeId) && friendlyFire != GetDefaultFriendlyFire(gameModeId))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't allow friendlyFire to be changed, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't allow friendlyFire to be changed, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowFlag &= ~ROOM_LOW_FRIENDLYFIRE;
 			}
 			else if (friendlyFire > 1)
@@ -1447,7 +1447,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 				}
 				else
 				{
-					g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use c4Timer, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use c4Timer, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 					lowMidFlag &= ~ROOM_LOWMID_C4TIMER;
 				}
 			}
@@ -1457,7 +1457,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!GetDefaultBotAdd(gameModeId))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't allow bots, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't allow bots, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_BOT;
 			}
 			else if (gameModeId == 3 || gameModeId == 4 || gameModeId == 5 || gameModeId == 24)
@@ -1478,17 +1478,17 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 			{
 				if (friendlyBots != GetDefaultFriendlyBots(gameModeId))
 				{
-					g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use friendlyBots, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use friendlyBots, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 					lowMidFlag &= ~ROOM_LOWMID_BOT;
 				}
 				else if (enemyBots != GetDefaultEnemyBots(gameModeId))
 				{
-					g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use enemyBots, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use enemyBots, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 					lowMidFlag &= ~ROOM_LOWMID_BOT;
 				}
 				else if (botBalance != GetDefaultBotAdd(gameModeId))
 				{
-					g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use botBalance, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use botBalance, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 					lowMidFlag &= ~ROOM_LOWMID_BOT;
 				}
 				else if (botDifficulty > 2)
@@ -1500,12 +1500,12 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!(gameModeId == 0 || gameModeId == 3 || gameModeId == 17 || gameModeId == 50))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use startingCash, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use startingCash, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_STARTINGCASH;
 			}
 			else if (!IsStartingCashValid(gameModeId, startingCash))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid startingCash: %d\n", user->GetID(), user->GetUsername().c_str(), startingCash);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid startingCash: %d\n", user->GetID(), user->GetUsername().c_str(), startingCash);
 				lowMidFlag &= ~ROOM_LOWMID_STARTINGCASH;
 			}
 		}
@@ -1514,12 +1514,12 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!(gameModeId == 0 || gameModeId == 22 || gameModeId == 32) && enhanceRestrict != 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use enhanceRestrict, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use enhanceRestrict, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_ENHANCERESTRICT;
 			}
 			else if ((gameModeId == 22 || gameModeId == 32) && enhanceRestrict != 1)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't allow enhanceRestrict to be changed, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't allow enhanceRestrict to be changed, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_ENHANCERESTRICT;
 			}
 			else if (enhanceRestrict > 1)
@@ -1533,7 +1533,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (gameModeId != 15 && zsDifficulty != 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use zsDifficulty, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use zsDifficulty, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_ZSDIFFICULTY;
 			}
 			else
@@ -1541,7 +1541,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 				int mapMaxZsDifficulty = g_pMapListTable->GetCell<int>("ZSmaxDifficulty", to_string(mapId));
 				if (zsDifficulty > mapMaxZsDifficulty)
 				{
-					g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with zsDifficulty > mapMaxZsDifficulty: %d, zsDifficulty: %d, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapMaxZsDifficulty, zsDifficulty, mapId);
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with zsDifficulty > mapMaxZsDifficulty: %d, zsDifficulty: %d, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapMaxZsDifficulty, zsDifficulty, mapId);
 					lowMidFlag &= ~ROOM_LOWMID_ZSDIFFICULTY;
 				}
 			}
@@ -1551,7 +1551,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!(gameModeId == 0 || gameModeId == 32) && leagueRule != 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use leagueRule, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use leagueRule, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_LEAGUERULE;
 			}
 			else if (leagueRule > 1)
@@ -1562,12 +1562,12 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!(gameModeId == 9 || gameModeId == 14 || gameModeId == 45) && (zbLimitFlag != 0 || !zbLimit.empty()))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use zbLimit, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use zbLimit, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_ZBLIMIT;
 			}
 			else if (!IsZbLimitValid(zbLimit))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid zbLimit\n", user->GetID(), user->GetUsername().c_str());
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid zbLimit\n", user->GetID(), user->GetUsername().c_str());
 				lowMidFlag &= ~ROOM_LOWMID_ZBLIMIT;
 			}
 			else if (zbLimitFlag == 2 || zbLimitFlag > 3)
@@ -1578,7 +1578,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!(gameModeId == 0 || gameModeId == 3) && teamSwitch != 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use teamSwitch, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use teamSwitch, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_TEAMSWITCH;
 			}
 			else if (teamSwitch > 1)
@@ -1589,12 +1589,12 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!GetDefaultZbRespawn(gameModeId) && zbRespawn != 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use zbRespawn, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use zbRespawn, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_ZBRESPAWN;
 			}
 			else if (gameModeId == 56 && zbRespawn != 1)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't allow zbRespawn to be changed, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't allow zbRespawn to be changed, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_ZBRESPAWN;
 			}
 			else if (zbRespawn > 1)
@@ -1605,7 +1605,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!GetDefaultZbBalance(gameModeId) && gameModeId != 56 && zbBalance != 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use zbBalance, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use zbBalance, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_ZBBALANCE;
 			}
 			else if (zbBalance > 1)
@@ -1616,7 +1616,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (gameModeId != 40 && gameRule != 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use gameRule, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use gameRule, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_GAMERULE;
 			}
 			else if (gameRule > 1)
@@ -1627,7 +1627,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!(gameModeId == 14 || gameModeId == 45) && zbAutoHunting != 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use zbAutoHunting, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use zbAutoHunting, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_ZBAUTOHUNTING;
 			}
 			else if (zbAutoHunting > 1)
@@ -1638,7 +1638,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!(gameModeId == 2 || gameModeId == 5 || gameModeId == 56 || gameModeId == 57) && integratedTeam != 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use integratedTeam, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use integratedTeam, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				lowMidFlag &= ~ROOM_LOWMID_INTEGRATEDTEAM;
 			}
 			else if (integratedTeam > 1)
@@ -1649,7 +1649,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (!(gameModeId == 14 || gameModeId == 45) && fireBomb != 1)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use fireBomb, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use fireBomb, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				highMidFlag &= ~ROOM_HIGHMID_FIREBOMB;
 			}
 			else if (fireBomb > 1)
@@ -1660,17 +1660,17 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (gameModeId != 45 && (mutationRestrictSize != 0 || !mutationRestrict.empty()))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use mutationRestrict, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use mutationRestrict, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				highMidFlag &= ~ROOM_HIGHMID_MUTATIONRESTRICT;
 			}
 			else if (mutationRestrictSize != 4)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with mutationRestrictSize != 4, mutationRestrictSize: %d\n", user->GetID(), user->GetUsername().c_str(), mutationRestrictSize);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with mutationRestrictSize != 4, mutationRestrictSize: %d\n", user->GetID(), user->GetUsername().c_str(), mutationRestrictSize);
 				highMidFlag &= ~ROOM_HIGHMID_MUTATIONRESTRICT;
 			}
 			else if (!IsMutationRestrictValid(mutationRestrict))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid mutationRestrict\n", user->GetID(), user->GetUsername().c_str());
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mutationRestrict\n", user->GetID(), user->GetUsername().c_str());
 				highMidFlag &= ~ROOM_HIGHMID_MUTATIONRESTRICT;
 			}
 		}
@@ -1679,12 +1679,12 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (gameModeId != 45 && mutationLimit != 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use mutationLimit, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use mutationLimit, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				highMidFlag &= ~ROOM_HIGHMID_MUTATIONLIMIT;
 			}
 			else if (!IsMutationLimitValid(mutationLimit))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid mutationLimit: %d\n", user->GetID(), user->GetUsername().c_str(), mutationLimit);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mutationLimit: %d\n", user->GetID(), user->GetUsername().c_str(), mutationLimit);
 				highMidFlag &= ~ROOM_HIGHMID_MUTATIONLIMIT;
 			}
 		}
@@ -1715,7 +1715,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 			int mapMaxPlayers = g_pMapListTable->GetCell<int>("max_player", to_string(mapId));
 			if (maxPlayers > mapMaxPlayers)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with maxPlayers > mapMaxPlayers: %d, maxPlayers: %d\n", user->GetID(), user->GetUsername().c_str(), mapMaxPlayers, maxPlayers);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with maxPlayers > mapMaxPlayers: %d, maxPlayers: %d\n", user->GetID(), user->GetUsername().c_str(), mapMaxPlayers, maxPlayers);
 				lowFlag &= ~ROOM_LOW_MAXPLAYERS;
 			}
 		}
@@ -1725,7 +1725,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 			int mapArmsRestriction = GetMapDefaultArmsRestriction(mapId);
 			if (mapArmsRestriction && armsRestriction != mapArmsRestriction)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with armsRestriction != mapArmsRestriction: %d, armsRestriction: %d\n", user->GetID(), user->GetUsername().c_str(), mapArmsRestriction, armsRestriction);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with armsRestriction != mapArmsRestriction: %d, armsRestriction: %d\n", user->GetID(), user->GetUsername().c_str(), mapArmsRestriction, armsRestriction);
 				lowFlag &= ~ROOM_LOW_ARMSRESTRICTION;
 			}
 		}
@@ -1735,7 +1735,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 			if (gameModeId != 16 && ballNumber != 0)
 			{
 				if (ballNumber != 1) // client sends this on some modes, weird
-					g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use ballNumber, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use ballNumber, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 
 				lowMidFlag &= ~ROOM_LOWMID_BALLNUMBER;
 			}
@@ -1744,7 +1744,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 				int mapMaxBallNumber = GetMapSetting(mapId, "ball_max");
 				if (ballNumber > mapMaxBallNumber)
 				{
-					g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with ballNumber > mapMaxBallNumber: %d, ballNumber: %d\n", user->GetID(), user->GetUsername().c_str(), mapMaxBallNumber, ballNumber);
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with ballNumber > mapMaxBallNumber: %d, ballNumber: %d\n", user->GetID(), user->GetUsername().c_str(), mapMaxBallNumber, ballNumber);
 					lowMidFlag &= ~ROOM_LOWMID_BALLNUMBER;
 				}
 			}
@@ -1755,7 +1755,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 	{
 		if (!IsRandomMapAllowed(gameModeId) && randomMap != 0)
 		{
-			g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId which doesn't allow randomMap, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+			Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId which doesn't allow randomMap, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 			lowMidFlag &= ~ROOM_LOWMID_RANDOMMAP;
 		}
 		else if (randomMap > 2)
@@ -1766,31 +1766,31 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 	{
 		if (mapPlaylistSize < 2)
 		{
-			g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with mapPlaylistSize < 2, mapPlaylistSize: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylistSize);
+			Console().Warn("User '%d, %s' tried to update a room\'s settings with mapPlaylistSize < 2, mapPlaylistSize: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylistSize);
 			lowFlag &= ~ROOM_LOW_MAPID;
 			lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
 		}
 		else if (!IsMapPlaylistAllowed(gameModeId))
 		{
-			g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with gameModeId which doesn't allow mapPlaylist, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+			Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId which doesn't allow mapPlaylist, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 			lowFlag &= ~ROOM_LOW_MAPID;
 			lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
 		}
 		else if (mapPlaylistSize > 5)
 		{
-			g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with mapPlaylistSize > 5, mapPlaylistSize: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylistSize);
+			Console().Warn("User '%d, %s' tried to update a room\'s settings with mapPlaylistSize > 5, mapPlaylistSize: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylistSize);
 			lowFlag &= ~ROOM_LOW_MAPID;
 			lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
 		}
 		else if (!IsMapPlaylistValid(mapPlaylist))
 		{
-			g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with duplicate mapIds in mapPlaylist\n", user->GetID(), user->GetUsername().c_str());
+			Console().Warn("User '%d, %s' tried to update a room\'s settings with duplicate mapIds in mapPlaylist\n", user->GetID(), user->GetUsername().c_str());
 			lowFlag &= ~ROOM_LOW_MAPID;
 			lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
 		}
 		else if (mapId != mapPlaylist[0].mapId)
 		{
-			g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with mapId which isn't the first in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId);
+			Console().Warn("User '%d, %s' tried to update a room\'s settings with mapId which isn't the first in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId);
 			lowFlag &= ~ROOM_LOW_MAPID;
 			lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
 		}
@@ -1800,7 +1800,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 			{
 				if (g_pMapListTable->GetRowIdx(to_string(mapPlaylist[i].mapId)) < 0)
 				{
-					g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with an invalid mapId in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with an invalid mapId in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
 					lowFlag &= ~ROOM_LOW_MAPID;
 					lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
 					break;
@@ -1808,7 +1808,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 
 				if (!IsMapValid(gameModeId, mapPlaylist[i].mapId))
 				{
-					g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with an invalid mapId in mapPlaylist, mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId, gameModeId);
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with an invalid mapId in mapPlaylist, mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId, gameModeId);
 					lowFlag &= ~ROOM_LOW_MAPID;
 					lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
 					break;
@@ -1816,7 +1816,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 
 				if (GetMapDefaultArmsRestriction(mapPlaylist[i].mapId))
 				{
-					g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with mapId which isn't allowed in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with mapId which isn't allowed in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
 					lowFlag &= ~ROOM_LOW_MAPID;
 					lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
 					break;
@@ -1846,52 +1846,52 @@ bool CRoomSettings::CheckSettings(IUser* user)
 	{
 		if (!(lowFlag & ROOM_LOW_ROOMNAME && lowFlag & ROOM_LOW_PASSWORD && lowFlag & ROOM_LOW_GAMEMODEID && lowFlag & ROOM_LOW_MAPID && lowFlag & ROOM_LOW_MAXPLAYERS && lowFlag & ROOM_LOW_WINLIMIT && lowFlag & ROOM_LOW_KILLLIMIT))
 		{
-			g_pConsole->Warn("User '%d, %s' tried to create a new room without necessary settings\n", user->GetID(), user->GetUsername().c_str());
+			Console().Warn("User '%d, %s' tried to create a new room without necessary settings\n", user->GetID(), user->GetUsername().c_str());
 			return false;
 		}
 
 		if (g_pGameModeListTable->GetRowIdx(to_string(gameModeId)) < 0)
 		{
-			g_pConsole->Warn("User '%d, %s' tried to create a new room with invalid gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+			Console().Warn("User '%d, %s' tried to create a new room with invalid gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 			return false;
 		}
 
 		if (gameModeId != 39 && !IsFunGameMode(gameModeId) && !g_pGameModeListTable->GetCell<int>("mode_select_ui_order", to_string(gameModeId)))
 		{
-			g_pConsole->Warn("User '%d, %s' tried to create a new room with invalid gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+			Console().Warn("User '%d, %s' tried to create a new room with invalid gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 			return false;
 		}
 
 		if (g_pMapListTable->GetRowIdx(to_string(mapId)) < 0)
 		{
-			g_pConsole->Warn("User '%d, %s' tried to create a new room with invalid mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId);
+			Console().Warn("User '%d, %s' tried to create a new room with invalid mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId);
 			return false;
 		}
 
 		if (!IsMapValid(gameModeId, mapId))
 		{
-			g_pConsole->Warn("User '%d, %s' tried to create a new room with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, gameModeId);
+			Console().Warn("User '%d, %s' tried to create a new room with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, gameModeId);
 			return false;
 		}
 
 		int mapMaxPlayers = g_pMapListTable->GetCell<int>("max_player", to_string(mapId));
 		if (maxPlayers > mapMaxPlayers)
 		{
-			g_pConsole->Warn("User '%d, %s' tried to create a new room with maxPlayers > mapMaxPlayers: %d, maxPlayers: %d, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapMaxPlayers, maxPlayers, mapId);
+			Console().Warn("User '%d, %s' tried to create a new room with maxPlayers > mapMaxPlayers: %d, maxPlayers: %d, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapMaxPlayers, maxPlayers, mapId);
 			return false;
 		}
 
 		int gameModeMinPlayers = g_pGameModeListTable->GetCell<int>("mode_minplayer", to_string(gameModeId));
 		if (maxPlayers < gameModeMinPlayers)
 		{
-			g_pConsole->Warn("User '%d, %s' tried to create a new room with maxPlayers < gameModeMinPlayers: %d, maxPlayers: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeMinPlayers, maxPlayers, gameModeId);
+			Console().Warn("User '%d, %s' tried to create a new room with maxPlayers < gameModeMinPlayers: %d, maxPlayers: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeMinPlayers, maxPlayers, gameModeId);
 			return false;
 		}
 
 		int gameModeMaxPlayers = g_pGameModeListTable->GetCell<int>("mode_maxplayer", to_string(gameModeId));
 		if (maxPlayers > gameModeMaxPlayers)
 		{
-			g_pConsole->Warn("User '%d, %s' tried to create a new room with maxPlayers > gameModeMaxPlayers: %d, maxPlayers: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeMaxPlayers, maxPlayers, gameModeId);
+			Console().Warn("User '%d, %s' tried to create a new room with maxPlayers > gameModeMaxPlayers: %d, maxPlayers: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeMaxPlayers, maxPlayers, gameModeId);
 			return false;
 		}
 
@@ -1900,7 +1900,7 @@ bool CRoomSettings::CheckSettings(IUser* user)
 
 		if (!IsSettingValid(gameModeId, "mode_win_limit_id", winLimit))
 		{
-			g_pConsole->Warn("User '%d, %s' tried to create a new room with invalid winLimit: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), winLimit, gameModeId);
+			Console().Warn("User '%d, %s' tried to create a new room with invalid winLimit: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), winLimit, gameModeId);
 			return false;
 		}
 
@@ -1909,7 +1909,7 @@ bool CRoomSettings::CheckSettings(IUser* user)
 
 		if (!IsSettingValid(gameModeId, "mode_kill_limit_id", killLimit))
 		{
-			g_pConsole->Warn("User '%d, %s' tried to create a new room with invalid killLimit: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), killLimit, gameModeId);
+			Console().Warn("User '%d, %s' tried to create a new room with invalid killLimit: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), killLimit, gameModeId);
 			return false;
 		}
 
@@ -1917,7 +1917,7 @@ bool CRoomSettings::CheckSettings(IUser* user)
 		{
 			if (!IsRandomMapAllowed(gameModeId) && randomMap != 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to create a new room with gameModeId which doesn't allow randomMap, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to create a new room with gameModeId which doesn't allow randomMap, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				return false;
 			}
 
@@ -1929,31 +1929,31 @@ bool CRoomSettings::CheckSettings(IUser* user)
 		{
 			if (mapPlaylistSize < 2)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to create a new room with mapPlaylistSize < 2, mapPlaylistSize: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylistSize);
+				Console().Warn("User '%d, %s' tried to create a new room with mapPlaylistSize < 2, mapPlaylistSize: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylistSize);
 				return false;
 			}
 
 			if (!IsMapPlaylistAllowed(gameModeId))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to create a new room with gameModeId which doesn't allow mapPlaylist, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				Console().Warn("User '%d, %s' tried to create a new room with gameModeId which doesn't allow mapPlaylist, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				return false;
 			}
 
 			if (mapPlaylistSize > 5)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to create a new room with mapPlaylistSize > 5, mapPlaylistSize: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylistSize);
+				Console().Warn("User '%d, %s' tried to create a new room with mapPlaylistSize > 5, mapPlaylistSize: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylistSize);
 				return false;
 			}
 
 			if (!IsMapPlaylistValid(mapPlaylist))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to create a new room with duplicate mapIds in mapPlaylist\n", user->GetID(), user->GetUsername().c_str());
+				Console().Warn("User '%d, %s' tried to create a new room with duplicate mapIds in mapPlaylist\n", user->GetID(), user->GetUsername().c_str());
 				return false;
 			}
 
 			if (mapId != mapPlaylist[0].mapId)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to create a new room with mapId which isn't the first in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId);
+				Console().Warn("User '%d, %s' tried to create a new room with mapId which isn't the first in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId);
 				return false;
 			}
 
@@ -1961,19 +1961,19 @@ bool CRoomSettings::CheckSettings(IUser* user)
 			{
 				if (g_pMapListTable->GetRowIdx(to_string(mapPlaylist[i].mapId)) < 0)
 				{
-					g_pConsole->Warn("User '%d, %s' tried to create a new room with an invalid mapId in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
+					Console().Warn("User '%d, %s' tried to create a new room with an invalid mapId in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
 					return false;
 				}
 
 				if (!IsMapValid(gameModeId, mapPlaylist[i].mapId))
 				{
-					g_pConsole->Warn("User '%d, %s' tried to create a new room with an invalid mapId in mapPlaylist, mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId, gameModeId);
+					Console().Warn("User '%d, %s' tried to create a new room with an invalid mapId in mapPlaylist, mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId, gameModeId);
 					return false;
 				}
 
 				if (GetMapDefaultArmsRestriction(mapPlaylist[i].mapId) != 0)
 				{
-					g_pConsole->Warn("User '%d, %s' tried to create a new room with mapId which isn't allowed in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
+					Console().Warn("User '%d, %s' tried to create a new room with mapId which isn't allowed in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
 					return false;
 				}
 			}
@@ -1986,13 +1986,13 @@ bool CRoomSettings::CheckSettings(IUser* user)
 				int mapMaxZsDifficulty = g_pMapListTable->GetCell<int>("ZSmaxDifficulty", to_string(mapId));
 				if (zsDifficulty > mapMaxZsDifficulty)
 				{
-					g_pConsole->Warn("User '%d, %s' tried to create a new room with zsDifficulty > mapMaxZsDifficulty: %d, zsDifficulty: %d, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapMaxZsDifficulty, zsDifficulty, mapId);
+					Console().Warn("User '%d, %s' tried to create a new room with zsDifficulty > mapMaxZsDifficulty: %d, zsDifficulty: %d, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapMaxZsDifficulty, zsDifficulty, mapId);
 					return false;
 				}
 			}
 			else
 			{
-				g_pConsole->Warn("User '%d, %s' tried to create a new Zombie Scenario room without necessary settings\n", user->GetID(), user->GetUsername().c_str());
+				Console().Warn("User '%d, %s' tried to create a new Zombie Scenario room without necessary settings\n", user->GetID(), user->GetUsername().c_str());
 				return false;
 			}
 		}
@@ -2009,13 +2009,13 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 	{
 		if (g_pGameModeListTable->GetRowIdx(to_string(gameModeId)) < 0)
 		{
-			g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+			Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 			return false;
 		}
 
 		if (gameModeId != 39 && !IsFunGameMode(gameModeId) && !g_pGameModeListTable->GetCell<int>("mode_select_ui_order", to_string(gameModeId)))
 		{
-			g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+			Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 			return false;
 		}
 
@@ -2023,13 +2023,13 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 		{
 			if (g_pMapListTable->GetRowIdx(to_string(mapId)) < 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, gameModeId);
 				return false;
 			}
 
 			if (!IsMapValid(gameModeId, mapId))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, gameModeId);
 				return false;
 			}
 
@@ -2039,7 +2039,7 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 		{
 			if (!IsMapValid(gameModeId, roomSettings->mapId))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), roomSettings->mapId, gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), roomSettings->mapId, gameModeId);
 				return false;
 			}
 
@@ -2052,13 +2052,13 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 		{
 			if (g_pMapListTable->GetRowIdx(to_string(mapId)) < 0)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, roomSettings->gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, roomSettings->gameModeId);
 				return false;
 			}
 
 			if (!IsMapValid(roomSettings->gameModeId, mapId))
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, roomSettings->gameModeId);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, roomSettings->gameModeId);
 				return false;
 			}
 
@@ -2081,7 +2081,7 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 				{
 					if (!IsLeagueRuleWinLimitValid(winLimit))
 					{
-						g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid winLimit: %d\n", user->GetID(), user->GetUsername().c_str(), winLimit);
+						Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid winLimit: %d\n", user->GetID(), user->GetUsername().c_str(), winLimit);
 						lowFlag &= ~ROOM_LOW_WINLIMIT;
 					}
 				}
@@ -2090,7 +2090,7 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 					if (!IsSettingValid(roomSettings->gameModeId, "mode_win_limit_id", winLimit))
 					{
 						if (winLimit != 6) // turning on league rule or team switch and then creating a new room makes the client sends this incorrectly, so let's just mute this
-							g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with invalid winLimit: %d\n", user->GetID(), user->GetUsername().c_str(), winLimit);
+							Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid winLimit: %d\n", user->GetID(), user->GetUsername().c_str(), winLimit);
 
 						lowFlag &= ~ROOM_LOW_WINLIMIT;
 					}
@@ -2104,7 +2104,7 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 			{
 				if (zbLimitFlag == 1 && !roomSettings->fireBomb)
 				{
-					g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with zbLimitFlag == 1 when roomSettings->fireBomb == 0\n", user->GetID(), user->GetUsername().c_str());
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with zbLimitFlag == 1 when roomSettings->fireBomb == 0\n", user->GetID(), user->GetUsername().c_str());
 					lowMidFlag &= ~ROOM_LOWMID_ZBLIMIT;
 				}
 			}
@@ -2114,7 +2114,7 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 		{
 			if (!fireBomb && roomSettings->zbLimitFlag == 1)
 			{
-				g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings with fireBomb == 0 when roomSettings->zbLimitFlag == 1\n", user->GetID(), user->GetUsername().c_str());
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with fireBomb == 0 when roomSettings->zbLimitFlag == 1\n", user->GetID(), user->GetUsername().c_str());
 				highMidFlag &= ~ROOM_HIGHMID_FIREBOMB;
 			}
 		}

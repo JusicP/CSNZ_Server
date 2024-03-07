@@ -1,4 +1,5 @@
 #include "channelserver.h"
+#include "common/utils.h"
 
 using namespace std;
 

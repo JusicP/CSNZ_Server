@@ -35,7 +35,6 @@ public:
 	virtual int Send(CSendPacket* msg, bool forceSend = false) = 0;
 
 	virtual unsigned int GetID() = 0;
-	virtual void SetSocket(SOCKET socket) = 0;
 	virtual SOCKET GetSocket() = 0;
 	virtual void SetMsg(CReceivePacket* msg) = 0;
 	virtual CReceivePacket* GetMsg() = 0;

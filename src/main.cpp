@@ -6,8 +6,8 @@
 #include "gui/igui.h"
 #endif
 #include "manager/manager.h"
+#include "common/utils.h"
 
-CConsole* g_pConsole;
 CServerInstance* g_pServerInstance;
 
 CEvent g_Event;
@@ -18,10 +18,7 @@ void invalid_parameter_function(const wchar_t* expression, const wchar_t* functi
 {
 	printf("invalid_parameter_function called\n");
 
-	if (g_pConsole)
-	{
-		g_pConsole->Log(OBFUSCATE("%ls, %ls, %ls, %d, %p\n"), expression, function, file, line, pReserved);
-	}
+	Console().Log(OBFUSCATE("%ls, %ls, %ls, %d, %p\n"), expression, function, file, line, pReserved);
 }
 
 BOOL WINAPI CtrlHandler(DWORD ctrlType)
@@ -85,7 +82,6 @@ int main(int argc, char* argv[])
 	g_GUIInitEvent.WaitForSignal();
 #endif
 
-	g_pConsole = new CConsole();
 	g_pServerInstance = new CServerInstance();
 	if (!g_pServerInstance->Init())
 	{
@@ -93,7 +89,6 @@ int main(int argc, char* argv[])
 		qtThread.Join();
 #endif
 		delete g_pServerInstance;
-		delete g_pConsole;
 		return 1;
 	}
 
@@ -102,7 +97,6 @@ int main(int argc, char* argv[])
 	{
 		qtThread.Join();
 		delete g_pServerInstance;
-		delete g_pConsole;
 		return 1;
 	}
 
@@ -110,12 +104,8 @@ int main(int argc, char* argv[])
 #endif
 
 	CThread readConsoleThread(ReadConsoleThread);
-	CThread listenThreadTCP(ListenThread);
-	CThread listenThreadUDP(ListenThreadUDP);
 	CThread eventThread(EventThread);
 	readConsoleThread.Start();
-	listenThreadTCP.Start();
-	listenThreadUDP.Start();
 	eventThread.Start();
 
 	while (g_pServerInstance->IsServerActive())
@@ -130,8 +120,6 @@ int main(int argc, char* argv[])
 	qtThread.Join();
 #endif
 
-	listenThreadTCP.Join();
-	listenThreadUDP.Join();
 	eventThread.Join();
 
 	g_ServerCriticalSection.Enter();
@@ -142,7 +130,6 @@ int main(int argc, char* argv[])
 	g_ServerCriticalSection.Leave();
 
 	delete g_pServerInstance;
-	delete g_pConsole;
 
 	return 0;
 }

@@ -14,6 +14,8 @@
 #include "manager/luckyitemmanager.h"
 #include "manager/shopmanager.h"
 
+#include "common/utils.h"
+
 using namespace std;
 
 static CCommandList g_CommandList;
@@ -111,15 +113,15 @@ void CommandHelp(CCommand* cmd, const vector<string>& args)
 
 void CommandUsers(CCommand* cmd, const vector<string>& args)
 {
-	g_pConsole->Log(va("%-6s|%-32s|%-8s|%-6s|%-15s| (online: %d | connected: %d)\n",
-		"UserID", "Username/IP", "Uptime", "Status", "IP Address", g_pUserManager->GetUsers().size(), g_pNetwork->m_Sessions.size()));
+	Console().Log(va("%-6s|%-32s|%-8s|%-6s|%-15s| (online: %d | connected: %d)\n",
+		"UserID", "Username/IP", "Uptime", "Status", "IP Address", g_pUserManager->GetUsers().size(), g_pServerInstance->GetClients().size()));
 
-	for (auto sock : g_pNetwork->m_Sessions)
+	for (auto sock : g_pServerInstance->GetClients())
 	{
 		IUser* user = g_pUserManager->GetUserBySocket(sock);
 		if (user)
 		{
-			g_pConsole->Log(va("%-6d|%-32s|%-8s|%-6d|%-15s\n",
+			Console().Log(va("%-6d|%-32s|%-8s|%-6d|%-15s\n",
 				user->GetID(),
 				user->GetUsername().c_str(),
 				FormatSeconds(user->GetUptime()),
@@ -128,7 +130,7 @@ void CommandUsers(CCommand* cmd, const vector<string>& args)
 		}
 		else
 		{
-			g_pConsole->Log(va("%-6d|%-32s|%-8s|%-6d|%-15s\n",
+			Console().Log(va("%-6d|%-32s|%-8s|%-6d|%-15s\n",
 				-1,
 				va("[Not Login] %s", sock->GetIP().c_str()),
 				"-1", // todo: make a global timer?
@@ -157,7 +159,7 @@ void CommandShutdown(CCommand* cmd, const vector<string>& args)
 		{
 			for (auto room : sub->GetRooms())
 			{
-				g_pConsole->Log("Force ending RoomID: %d game\n", room->GetID());
+				Console().Log("Force ending RoomID: %d game\n", room->GetID());
 				room->EndGame();
 			}
 		}
@@ -172,14 +174,14 @@ void CommandGiveRewardToAll(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
 	int rewardID = stoi(args[1]);
 	if (rewardID <= 0)
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -194,7 +196,7 @@ void CommandSendNotice(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -206,14 +208,14 @@ void CommandSendNotice(CCommand* cmd, const vector<string>& args)
 
 	g_pUserManager->SendNoticeMsgBoxToAll(out);
 
-	g_pConsole->Log("Sent to %d online users: %s\n", g_pUserManager->GetUsers().size(), out.c_str());
+	Console().Log("Sent to %d online users: %s\n", g_pUserManager->GetUsers().size(), out.c_str());
 }
 
 void CommandBan(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 5 || !isNumber(args[1]) || !isNumber(args[2]) || !isNumber(args[4]))
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -224,7 +226,7 @@ void CommandBan(CCommand* cmd, const vector<string>& args)
 
 	if (!g_pUserDatabase->IsUserExists(userID))
 	{
-		g_pConsole->Log("[Ban] User does not exist\n");
+		Console().Log("[Ban] User does not exist\n");
 		return;
 	}
 
@@ -256,7 +258,7 @@ void CommandUnban(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -273,7 +275,7 @@ void CommandUnban(CCommand* cmd, const vector<string>& args)
 	}
 	else
 	{
-		g_pConsole->Log("[UnBan] Failed to find user(%d).\n", userID);
+		Console().Log("[UnBan] Failed to find user(%d).\n", userID);
 	}
 }
 
@@ -281,14 +283,14 @@ void CommandHban(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
 	int userID = stoi(args[1]);
 	if (!g_pUserDatabase->IsUserExists(userID))
 	{
-		g_pConsole->Log("[HBan] User does not exist\n");
+		Console().Log("[HBan] User does not exist\n");
 		return;
 	}
 
@@ -308,7 +310,7 @@ void CommandUnhban(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -321,14 +323,14 @@ void CommandIpban(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
 	int userID = stoi(args[1]);
 	if (!g_pUserDatabase->IsUserExists(userID))
 	{
-		g_pConsole->Log(OBFUSCATE("[IPBan] User does not exist\n"));
+		Console().Log(OBFUSCATE("[IPBan] User does not exist\n"));
 		return;
 	}
 
@@ -348,7 +350,7 @@ void CommandUnipban(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -359,14 +361,14 @@ void CommandToggleGameMaster(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
 	int userID = stoi(args[1]);
 	if (!g_pUserDatabase->IsUserExists(userID))
 	{
-		g_pConsole->Log(OBFUSCATE("[ToggleGM] User does not exist\n"));
+		Console().Log(OBFUSCATE("[ToggleGM] User does not exist\n"));
 		return;
 	}
 
@@ -375,7 +377,7 @@ void CommandToggleGameMaster(CCommand* cmd, const vector<string>& args)
 	g_pUserDatabase->GetCharacterExtended(userID, character);
 
 	character.gameMaster = character.gameMaster ? false : true;
-	g_pConsole->Log(OBFUSCATE("Updated '%d' gameMaster privilege to '%s'\n"), userID, character.gameMaster ? (const char*)OBFUSCATE("true") : (const char*)OBFUSCATE("false"));
+	Console().Log(OBFUSCATE("Updated '%d' gameMaster privilege to '%s'\n"), userID, character.gameMaster ? (const char*)OBFUSCATE("true") : (const char*)OBFUSCATE("false"));
 
 	g_pUserDatabase->UpdateCharacterExtended(userID, character);
 }
@@ -387,7 +389,7 @@ void CommandShopReload(CCommand* cmd, const vector<string>& args)
 	for (auto u : g_pUserManager->GetUsers())
 		g_pPacketManager->SendShopUpdate(u->GetExtendedSocket(), g_pShopManager->GetProducts());
 
-	g_pConsole->Log("Sent shop update to: %d\n", g_pUserManager->GetUsers().size());
+	Console().Log("Sent shop update to: %d\n", g_pUserManager->GetUsers().size());
 }
 
 void CommandDbReload(CCommand* cmd, const vector<string>& args)
@@ -406,15 +408,15 @@ void CommandDbReload(CCommand* cmd, const vector<string>& args)
 		g_pPacketManager->SendUserUpdateInfo(u->GetExtendedSocket(), u, character);
 	}
 
-	g_pConsole->Log("Sent user update info to: %d\n", g_pUserManager->GetUsers().size());
+	Console().Log("Sent user update info to: %d\n", g_pUserManager->GetUsers().size());
 
 	// send shop update to users
 	for (auto u : g_pUserManager->GetUsers())
 		g_pPacketManager->SendShopUpdate(u->GetExtendedSocket(), g_pShopManager->GetProducts());
 
-	g_pConsole->Log("Sent shop update to: %d\n", g_pUserManager->GetUsers().size());
+	Console().Log("Sent shop update to: %d\n", g_pUserManager->GetUsers().size());
 
-	g_pConsole->Log("Database reload successfull.\n");
+	Console().Log("Database reload successfull.\n");
 }
 
 void CommandBans(CCommand* cmd, const vector<string>& args)
@@ -461,14 +463,14 @@ void CommandBans(CCommand* cmd, const vector<string>& args)
 				aCheck ? (const char*)OBFUSCATE("YES") : (const char*)OBFUSCATE("NO"));
 	}
 
-	g_pConsole->Log(log.str().c_str());
+	Console().Log(log.str().c_str());
 }
 
 void CommandGiveItem(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 3)
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -486,7 +488,7 @@ void CommandGiveItem(CCommand* cmd, const vector<string>& args)
 
 	if (!userID)
 	{
-		g_pConsole->Log(OBFUSCATE("[GiveItem] User not found.\n"));
+		Console().Log(OBFUSCATE("[GiveItem] User not found.\n"));
 		return;
 	}
 
@@ -495,7 +497,7 @@ void CommandGiveItem(CCommand* cmd, const vector<string>& args)
 
 	if (itemID <= 0)
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -546,14 +548,14 @@ void CommandGiveItem(CCommand* cmd, const vector<string>& args)
 
 void CommandStatus(CCommand* cmd, const vector<string>& args)
 {
-	g_pConsole->Log("%s\n", g_pServerInstance->GetMainInfo());
+	Console().Log("%s\n", g_pServerInstance->GetMainInfo());
 }
 
 void CommandSendEvent(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 3 || !isNumber(args[1]) || !isNumber(args[2]))
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -563,7 +565,7 @@ void CommandSendEvent(CCommand* cmd, const vector<string>& args)
 	IUser* user = g_pUserManager->GetUserById(userID);
 	if (!user)
 	{
-		g_pConsole->Log("User is offline");
+		Console().Log("User is offline");
 		return;
 	}
 
@@ -574,7 +576,7 @@ void CommandSendEvent2(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -582,7 +584,7 @@ void CommandSendEvent2(CCommand* cmd, const vector<string>& args)
 	IUser* user = g_pUserManager->GetUserById(userID);
 	if (!user)
 	{
-		g_pConsole->Log("User is offline");
+		Console().Log("User is offline");
 		return;
 	}
 
@@ -600,7 +602,7 @@ void CommandSendInventory(CCommand* cmd, const vector<string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		g_pConsole->Log("%s\n", cmd->GetUsage().c_str());
+		Console().Log("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -608,7 +610,7 @@ void CommandSendInventory(CCommand* cmd, const vector<string>& args)
 	IUser* user = g_pUserManager->GetUserById(userID);
 	if (!user)
 	{
-		g_pConsole->Log("User is offline");
+		Console().Log("User is offline");
 		return;
 	}
 

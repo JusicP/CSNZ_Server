@@ -1,5 +1,5 @@
-#include "sendpacket.h"
-#include "common/net/net.h"
+#include "net/sendpacket.h"
+#include "common/net/netdefs.h"
 
 using namespace std;
 

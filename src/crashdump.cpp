@@ -113,23 +113,18 @@ LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS* pep)
 
 		if (!WriteMiniDump(pep, MiniDumpWithFullMemory, name))
 		{
-			if (g_pConsole)
-				g_pConsole->Log(OBFUSCATE("WriteMiniDump(MiniDumpWithFullMemory) failed, GetLastError: %d\n"), GetLastError());
+			Console().Log(OBFUSCATE("WriteMiniDump(MiniDumpWithFullMemory) failed, GetLastError: %d\n"), GetLastError());
 
 			isMdmpGenerated = false;
 		}
 
 		// it is not safe to do that
-		if (g_pConsole)
-			g_pConsole->Log(OBFUSCATE("WriteMiniDump(MiniDumpNormal) failed, GetLastError: %d\n"), GetLastError());
+		Console().Log(OBFUSCATE("WriteMiniDump(MiniDumpNormal) failed, GetLastError: %d\n"), GetLastError());
 	}
 #endif
 
-	if (g_pConsole)
-	{
-		g_pConsole->Log("Last packet function: %s()\n", g_pConsole->GetLastPacket());
-		g_pConsole->Log("Trying to shutdown the server\n");
-	}
+	Console().Log("Last packet function: %s()\n", Console().GetLastPacket());
+	Console().Log("Trying to shutdown the server\n");
 
 	ForceEndServer();
 

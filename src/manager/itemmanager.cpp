@@ -7,6 +7,8 @@
 
 #include "user/userinventoryitem.h"
 
+#include "common/utils.h"
+
 #include "csvtable.h"
 #include "serverconfig.h"
 #include "keyvalues.hpp"
@@ -40,7 +42,7 @@ bool CItemManager::Init()
 
 	if (m_pReinforceMaxLvTable->IsLoadFailed() || m_pReinforceMaxExpTable->IsLoadFailed())
 	{
-		g_pConsole->FatalError("CItemManager::Init(): couldn't load some csv files. Required csv:\nData/ReinforceMaxLv.csv\nData/ReinforceMaxEXP.csv\n");
+		Console().FatalError("CItemManager::Init(): couldn't load some csv files. Required csv:\nData/ReinforceMaxLv.csv\nData/ReinforceMaxEXP.csv\n");
 		return false;
 	}
 
@@ -64,14 +66,14 @@ bool CItemManager::LoadRewards()
 
 		if (cfg.is_discarded())
 		{
-			g_pConsole->FatalError("CItemManager::LoadRewards: couldn't load ItemRewards.json.\n");
+			Console().FatalError("CItemManager::LoadRewards: couldn't load ItemRewards.json.\n");
 			return false;
 		}
 
 		int version = cfg.value("Version", 0);
 		if (version != ITEM_REWARDS_VERSION)
 		{
-			g_pConsole->FatalError("CItemManager::LoadRewards: %d != ITEM_REWARDS_VERSION(%d)\n", version, ITEM_REWARDS_VERSION);
+			Console().FatalError("CItemManager::LoadRewards: %d != ITEM_REWARDS_VERSION(%d)\n", version, ITEM_REWARDS_VERSION);
 			return false;
 		}
 
@@ -168,7 +170,7 @@ bool CItemManager::LoadRewards()
 	}
 	catch (exception& ex)
 	{
-		g_pConsole->FatalError("CItemManager::LoadRewards: an error occured while parsing ItemRewards.json: %s\n", ex.what());
+		Console().FatalError("CItemManager::LoadRewards: an error occured while parsing ItemRewards.json: %s\n", ex.what());
 		return false;
 	}
 
@@ -415,7 +417,7 @@ bool CItemManager::OnItemPacket(CReceivePacket* msg, IExtendedSocket* socket)
 				CUserCharacter character = user->GetCharacter(UFLAG_NAMEPLATE);
 				if (character.flag == 0)
 				{
-					g_pConsole->Warn("CItemManager::OnItemPacket: cannot use item, database error\n");
+					Console().Warn("CItemManager::OnItemPacket: cannot use item, database error\n");
 					return false;
 				}
 
@@ -449,7 +451,7 @@ bool CItemManager::OnItemPacket(CReceivePacket* msg, IExtendedSocket* socket)
 				CUserCharacterExtended character = user->GetCharacterExtended(EXT_UFLAG_ZBRESPAWNEFFECT);
 				if (character.flag == 0)
 				{
-					g_pConsole->Warn("CItemManager::OnItemPacket: cannot use item, database error\n");
+					Console().Warn("CItemManager::OnItemPacket: cannot use item, database error\n");
 					return false;
 				}
 
@@ -483,7 +485,7 @@ bool CItemManager::OnItemPacket(CReceivePacket* msg, IExtendedSocket* socket)
 				CUserCharacterExtended character = user->GetCharacterExtended(EXT_UFLAG_KILLERMARKEFFECT);
 				if (character.flag == 0)
 				{
-					g_pConsole->Warn("CItemManager::OnItemPacket: cannot use item, database error\n");
+					Console().Warn("CItemManager::OnItemPacket: cannot use item, database error\n");
 					return false;
 				}
 
@@ -528,7 +530,7 @@ bool CItemManager::OnItemPacket(CReceivePacket* msg, IExtendedSocket* socket)
 			UseItem(user, itemSlot, itemCount);
 		}
 
-		g_pConsole->Log("CItemManager::OnItemPacket: inventoryType: %d, slot: %d, unk: %d, itemCount: %d\n", inventoryType, itemSlot, unk, itemCount);
+		Console().Log("CItemManager::OnItemPacket: inventoryType: %d, slot: %d, unk: %d, itemCount: %d\n", inventoryType, itemSlot, unk, itemCount);
 		break;
 	}
 	case ItemPacketType::OpenDecoder:
@@ -584,7 +586,7 @@ bool CItemManager::OnItemPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		OnLockItemRequest(user, msg);
 		break;
 	default:
-		g_pConsole->Warn("Packet_Item type %d is not implemented\n", type);
+		Console().Warn("Packet_Item type %d is not implemented\n", type);
 		break;
 	}
 
@@ -766,7 +768,7 @@ int CItemManager::AddItem(int userID, IUser* user, int itemID, int count, int du
 			zombieSkinType = g_pItemTable->GetCell<int>("ZombieSkin", to_string(itemID));
 			if (zombieSkinType > ZB_COSTUME_SLOT_COUNT_MAX)
 			{
-				g_pConsole->Warn("CItemManager::AddItem: can't setup zb costume loadout (zombieSkinType > ZB_COSTUME_SLOT_COUNT_MAX)!!!\n");
+				Console().Warn("CItemManager::AddItem: can't setup zb costume loadout (zombieSkinType > ZB_COSTUME_SLOT_COUNT_MAX)!!!\n");
 			}
 			else if (!loadout.m_ZombieSkinCostumeID.count(zombieSkinType) && !loadout.m_ZombieSkinCostumeID[zombieSkinType])
 			{
@@ -1097,7 +1099,7 @@ int CItemManager::AddItems(int userID, IUser* user, vector<RewardItem>& items)
 				zombieSkinType = g_pItemTable->GetCell<int>("ZombieSkin", to_string(itemID));
 				if (zombieSkinType > ZB_COSTUME_SLOT_COUNT_MAX)
 				{
-					g_pConsole->Warn("CItemManager::AddItem: can't setup zb costume loadout (zombieSkinType > ZB_COSTUME_SLOT_COUNT_MAX)!!!\n");
+					Console().Warn("CItemManager::AddItem: can't setup zb costume loadout (zombieSkinType > ZB_COSTUME_SLOT_COUNT_MAX)!!!\n");
 					continue;
 				}
 				else if (!loadout.m_ZombieSkinCostumeID.count(zombieSkinType) && !loadout.m_ZombieSkinCostumeID[zombieSkinType])
@@ -1244,7 +1246,7 @@ int CItemManager::UseItem(IUser* user, int slot, int additionalArg, int addition
 	CUserInventoryItem item;
 	if (!g_pUserDatabase->GetInventoryItemBySlot(user->GetID(), item.GameSlotToSlot(slot), item))
 	{
-		g_pConsole->Log(OBFUSCATE("CItemManager::UseItem: item == NULL, slot: %d\n"), slot);
+		Console().Log(OBFUSCATE("CItemManager::UseItem: item == NULL, slot: %d\n"), slot);
 		return ITEM_USE_BAD_SLOT;
 	}
 
@@ -1325,7 +1327,7 @@ int CItemManager::UseItem(IUser* user, int slot, int additionalArg, int addition
 		}
 		else
 		{
-			g_pConsole->Warn("User '%d, %s' tried to use unknown item (itemId: %d, category: %d, status: %d)\n", user->GetID(), user->GetUsername().c_str(), item.m_nItemID, category, item.m_nStatus);
+			Console().Warn("User '%d, %s' tried to use unknown item (itemId: %d, category: %d, status: %d)\n", user->GetID(), user->GetUsername().c_str(), item.m_nItemID, category, item.m_nStatus);
 		}
 	}
 	}
@@ -1486,7 +1488,7 @@ bool CItemManager::RemoveItem(int userID, IUser* user, CUserInventoryItem& item)
 		CUserCharacter character = user->GetCharacter(UFLAG_NAMEPLATE);
 		if (character.flag == 0)
 		{
-			g_pConsole->Warn("CItemManager::RemoveItem: cannot remove item, database error\n");
+			Console().Warn("CItemManager::RemoveItem: cannot remove item, database error\n");
 			return false;
 		}
 
@@ -1498,7 +1500,7 @@ bool CItemManager::RemoveItem(int userID, IUser* user, CUserInventoryItem& item)
 		CUserCharacterExtended character = user->GetCharacterExtended(EXT_UFLAG_ZBRESPAWNEFFECT);
 		if (character.flag == 0)
 		{
-			g_pConsole->Warn("CItemManager::RemoveItem: cannot remove item, database error\n");
+			Console().Warn("CItemManager::RemoveItem: cannot remove item, database error\n");
 			return false;
 		}
 
@@ -1510,7 +1512,7 @@ bool CItemManager::RemoveItem(int userID, IUser* user, CUserInventoryItem& item)
 		CUserCharacterExtended character = user->GetCharacterExtended(EXT_UFLAG_KILLERMARKEFFECT);
 		if (character.flag == 0)
 		{
-			g_pConsole->Warn("CItemManager::RemoveItem: cannot remove item, database error\n");
+			Console().Warn("CItemManager::RemoveItem: cannot remove item, database error\n");
 			return false;
 		}
 
@@ -1525,7 +1527,7 @@ bool CItemManager::RemoveItem(int userID, IUser* user, CUserInventoryItem& item)
 
 	if (item.m_nSlot <= 0)
 	{
-		g_pConsole->Warn("CItemManager::RemoveItem: cannot remove item, slot <= 0\n");
+		Console().Warn("CItemManager::RemoveItem: cannot remove item, slot <= 0\n");
 		return false;
 	}
 
@@ -1590,7 +1592,7 @@ bool CItemManager::OnDisassembleRequest(IUser* user, CReceivePacket* msg)
 		int slot = msg->ReadUInt16();
 		int unk3 = msg->ReadUInt32(); // че за говно?
 
-		g_pConsole->Warn("CItemManager::OnDisassembleRequest: %d, %d, %d, %d\n", unk, unk2, slot, unk3);
+		Console().Warn("CItemManager::OnDisassembleRequest: %d, %d, %d, %d\n", unk, unk2, slot, unk3);
 
 		CUserInventoryItem item;
 		g_pUserDatabase->GetInventoryItemBySlot(user->GetID(), item.GameSlotToSlot(slot), item);
@@ -1600,7 +1602,7 @@ bool CItemManager::OnDisassembleRequest(IUser* user, CReceivePacket* msg)
 		}
 		else
 		{
-			g_pConsole->Error("CItemManager::OnDisassembleRequest: could not find item with %d slot\n", slot);
+			Console().Error("CItemManager::OnDisassembleRequest: could not find item with %d slot\n", slot);
 		}
 	}
 
@@ -1791,7 +1793,7 @@ bool CItemManager::OnDailyRewardsRequest(IUser* user, int requestID)
 	//switch (requestID)
 	//{
 	//default:
-		g_pConsole->Warn("CItemManager::OnDailyRewardsRequest: unknown request: %d\n", requestID);
+		Console().Warn("CItemManager::OnDailyRewardsRequest: unknown request: %d\n", requestID);
 	//	break;
 	//}
 
@@ -1983,7 +1985,7 @@ bool CItemManager::OnEnhancementRequest(IUser* user, CReceivePacket* msg)
 
 		int enhanceChancePercentage = (float)targetItem.m_nEnhancementExp / (float)expToUpgrade * 100; // calc chance for enhance
 
-		g_pConsole->Log("OnEnhance: itemID: %d, expToUpgrade: %d, enhExp: %d, enhChance: %d\n", targetItem.m_nItemID, expToUpgrade, targetItem.m_nEnhancementExp, enhanceChancePercentage);
+		Console().Log("OnEnhance: itemID: %d, expToUpgrade: %d, enhExp: %d, enhChance: %d\n", targetItem.m_nItemID, expToUpgrade, targetItem.m_nEnhancementExp, enhanceChancePercentage);
 
 		int enhAttributeIndex = -1;
 		if (yesOrNo(enhanceChancePercentage))
@@ -2323,7 +2325,7 @@ bool CItemManager::OnEnhancementRequest(IUser* user, CReceivePacket* msg)
 		break;
 	}
 	default:
-		g_pConsole->Warn("CItemManager::OnEnhancementRequest: unknown request: %d\n", requestID);
+		Console().Warn("CItemManager::OnEnhancementRequest: unknown request: %d\n", requestID);
 		break;
 	}
 
@@ -2442,7 +2444,7 @@ bool CItemManager::OnPartEquipRequest(IUser* user, CReceivePacket* msg)
 			weapon.m_nPartSlot2 = 0;
 			break;
 		default:
-			g_pConsole->Error("OnPartEquipRequest: wrong part id: %d\n", partID);
+			Console().Error("OnPartEquipRequest: wrong part id: %d\n", partID);
 		}
 
 		g_pUserDatabase->UpdateInventoryItem(user->GetID(), weapon);
@@ -2481,7 +2483,7 @@ bool CItemManager::OnPartEquipRequest(IUser* user, CReceivePacket* msg)
 		else if (partID == 1)
 			weapon.m_nPartSlot2 = part.m_nItemID;
 		else
-			g_pConsole->Error("OnPartEquipRequest: wrong part id: %d\n", partID);
+			Console().Error("OnPartEquipRequest: wrong part id: %d\n", partID);
 
 		g_pUserDatabase->UpdateInventoryItem(user->GetID(), weapon);
 
@@ -2498,7 +2500,7 @@ bool CItemManager::OnPartEquipRequest(IUser* user, CReceivePacket* msg)
 		break;
 	}
 	default:
-		g_pConsole->Warn("CItemManager::OnPartEquipRequest: unknown request: %d\n", type);
+		Console().Warn("CItemManager::OnPartEquipRequest: unknown request: %d\n", type);
 		break;
 	}
 	return true;

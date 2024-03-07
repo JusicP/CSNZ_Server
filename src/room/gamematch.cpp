@@ -239,7 +239,7 @@ CGameMatchUserStat* CGameMatch::GetGameUserStat(IUser* user)
 		}
 		else
 		{
-			g_pConsole->Warn("CGameMatch::GetGameUserStat: user stat does not exist\n");
+			Console().Warn("CGameMatch::GetGameUserStat: user stat does not exist\n");
 			return NULL;
 		}
 	}
@@ -391,13 +391,13 @@ void CGameMatch::OnDropBoxPickup(IUser* user, int rewardID)
 #ifndef PUBLIC_RELEASE
 	if (m_nGameMode != 15 && m_nGameMode != 17 && m_nGameMode != 26 && m_nGameMode != 28)
 	{
-		g_pConsole->Log("[SuspectNotice] detected suspect user '%d, %s', reason: %d, %s, %d, %d\n", user->GetID(), user->GetUsername().c_str(), 227, "DROPBOXABUSE", rewardID, m_nGameMode);
+		Console().Log("[SuspectNotice] detected suspect user '%d, %s', reason: %d, %s, %d, %d\n", user->GetID(), user->GetUsername().c_str(), 227, "DROPBOXABUSE", rewardID, m_nGameMode);
 		return;
 	}
 
 	if (rewardID < 3000 || rewardID > 3023)
 	{
-		g_pConsole->Log("[SuspectNotice] detected suspect user '%d, %s', reason: %d, %s, %d\n", user->GetID(), user->GetUsername().c_str(), 228, "DROPBOXABUSE", rewardID);
+		Console().Log("[SuspectNotice] detected suspect user '%d, %s', reason: %d, %s, %d\n", user->GetID(), user->GetUsername().c_str(), 228, "DROPBOXABUSE", rewardID);
 		return;
 	}
 #endif	
@@ -429,7 +429,7 @@ void CGameMatch::OnGameMatchEnd()
 	CalculateGameResult();
 	ApplyGameResult();
 
-	g_pConsole->Log("CGameMatch::OnGameMatchEnd: gamemode: %d, CT rounds win count: %d, T rounds win count: %d\n", m_nGameMode, m_nCtWinCount, m_nTerWinCount);
+	Console().Log("CGameMatch::OnGameMatchEnd: gamemode: %d, CT rounds win count: %d, T rounds win count: %d\n", m_nGameMode, m_nCtWinCount, m_nTerWinCount);
 }
 
 int CGameMatch::GetExpCoefficient()
@@ -651,7 +651,7 @@ void CGameMatch::PrintGameResult()
 		log << msg;
 	}
 
-	g_pConsole->Log(log.str().c_str());
+	Console().Log(log.str().c_str());
 }
 
 // TODO: find another way
@@ -708,7 +708,7 @@ void CGameMatch::OnZBSWin()
 	{
 		int rewardID = stat->m_nRank <= 3 ? 100 + stat->m_nRank : 100 + stat->m_nRank + GetZbsMapSeason(m_nMapID) - 1;
 
-		g_pConsole->Log(OBFUSCATE("CGameMatch::OnZBSWin: rank: %d, rewardID: %d\n"), stat->m_nRank, rewardID);
+		Console().Log(OBFUSCATE("CGameMatch::OnZBSWin: rank: %d, rewardID: %d\n"), stat->m_nRank, rewardID);
 
 		g_pItemManager->GiveReward(stat->m_pUser->GetID(), stat->m_pUser, rewardID, 0, false, 0);
 	}

@@ -1,5 +1,6 @@
-#include "receivepacket.h"
-#include "common/net/net.h"
+#include "net/receivepacket.h"
+#include "common/net/netdefs.h"
+#include "common/console.h"
 
 using namespace std;
 
@@ -65,7 +66,7 @@ int8_t CReceivePacket::ReadInt8()
 {
 	if (!CanReadBytes(1))
 	{
-		g_pConsole->Error("ReadInt8: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
+		Console().Error("ReadInt8: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
 		return 0;
 	}
 
@@ -81,7 +82,7 @@ int16_t CReceivePacket::ReadInt16(bool bigEndian)
 {
 	if (!CanReadBytes(2))
 	{
-		g_pConsole->Error("ReadInt16: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
+		Console().Error("ReadInt16: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
 		return 0;
 	}
 
@@ -97,7 +98,7 @@ int32_t CReceivePacket::ReadInt32(bool bigEndian)
 {
 	if (!CanReadBytes(4))
 	{
-		g_pConsole->Error("ReadInt32: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
+		Console().Error("ReadInt32: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
 		return 0;
 	}
 
@@ -113,7 +114,7 @@ int64_t CReceivePacket::ReadInt64(bool bigEndian)
 {
 	if (!CanReadBytes(8))
 	{
-		g_pConsole->Error("ReadInt64: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
+		Console().Error("ReadInt64: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
 		return 0;
 	}
 
@@ -128,7 +129,7 @@ uint8_t CReceivePacket::ReadUInt8()
 {
 	if (!CanReadBytes(1))
 	{
-		g_pConsole->Error("ReadUInt8: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
+		Console().Error("ReadUInt8: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
 		return 0;
 	}
 
@@ -144,7 +145,7 @@ uint16_t CReceivePacket::ReadUInt16(bool bigEndian)
 {
 	if (!CanReadBytes(2))
 	{
-		g_pConsole->Error("ReadUInt16: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
+		Console().Error("ReadUInt16: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
 		return 0;
 	}
 
@@ -160,7 +161,7 @@ uint32_t CReceivePacket::ReadUInt32(bool bigEndian)
 {
 	if (!CanReadBytes(4))
 	{
-		g_pConsole->Error("ReadUInt32: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
+		Console().Error("ReadUInt32: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
 		return 0;
 	}
 
@@ -176,7 +177,7 @@ uint64_t CReceivePacket::ReadUInt64(bool bigEndian)
 {
 	if (!CanReadBytes(8))
 	{
-		g_pConsole->Error("ReadUInt64: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
+		Console().Error("ReadUInt64: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
 		return 0;
 	}
 
@@ -192,7 +193,7 @@ float CReceivePacket::ReadFloat(bool bigEndian)
 {
 	if (!CanReadBytes(4))
 	{
-		g_pConsole->Error("ReadFloat: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
+		Console().Error("ReadFloat: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
 		return 0;
 	}
 
@@ -207,7 +208,7 @@ string CReceivePacket::ReadString()
 {
 	if (!CanReadBytes(1))
 	{
-		g_pConsole->Error("ReadString: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
+		Console().Error("ReadString: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
 		return "";
 	}
 
@@ -224,7 +225,7 @@ vector<unsigned char> CReceivePacket::ReadArray(int length)
 {
 	if (!CanReadBytes(length))
 	{
-		g_pConsole->Error("ReadArray: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
+		Console().Error("ReadArray: out of buffer, packet id: %d, len: %d, offset: %d\n", m_nPacketID, m_nLength, m_Buffer.getReadOffset());
 		return vector<unsigned char>();
 	}
 
@@ -251,7 +252,7 @@ void CReceivePacket::ParseHeader()
 	{
 		m_nPacketID = m_Buffer.readUInt8();
 
-		g_pConsole->Debug("ReceivePacket::Parse() sequence: %d, length: %d, id: %d\n", m_nSequence, m_nLength, m_nPacketID);
+		Console().Debug("ReceivePacket::Parse() sequence: %d, length: %d, id: %d\n", m_nSequence, m_nLength, m_nPacketID);
 	}
 }
 

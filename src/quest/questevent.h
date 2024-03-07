@@ -2,6 +2,7 @@
 
 #include "room/gamematch.h"
 #include "manager/packetmanager.h"
+#include "common/utils.h"
 
 class CQuestEvent;
 class CQuestEventTask;

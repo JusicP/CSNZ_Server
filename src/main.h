@@ -1,7 +1,6 @@
 #pragma once
 
-#include "net/network.h"
-#include "console.h"
+#include "common/console.h"
 
 #define NOMINMAX
 
@@ -33,12 +32,9 @@
 #include <functional>
 
 #include "obfuscate.h"
-#include "common/utils.h"
 
 #include "serverinstance.h"
 #include "event.h"
-
-extern CConsole* g_pConsole;
 
 extern CEvent g_Event;
 extern CCriticalSection g_ServerCriticalSection;

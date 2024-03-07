@@ -153,7 +153,7 @@ RoomReadyStatus CRoom::IsUserReady(IUser* user)
 {
 	if (!HasUser(user))
 	{
-		g_pConsole->Warn("CRoom::IsUserReady: user '%d, %s' not found\n", user->GetID(), user->GetUsername().c_str());
+		Console().Warn("CRoom::IsUserReady: user '%d, %s' not found\n", user->GetID(), user->GetUsername().c_str());
 		return RoomReadyStatus::READY_STATUS_NO;
 	}
 
@@ -181,7 +181,7 @@ void CRoom::SetUserToTeam(IUser* user, RoomTeamNum newTeam)
 {
 	if (!HasUser(user))
 	{
-		g_pConsole->Warn("CRoom::SetUserToTeam: user '%d, %s' not found\n", user->GetID(), user->GetUsername().c_str());
+		Console().Warn("CRoom::SetUserToTeam: user '%d, %s' not found\n", user->GetID(), user->GetUsername().c_str());
 		return;
 	}
 
@@ -192,13 +192,13 @@ RoomReadyStatus CRoom::ToggleUserReadyStatus(IUser* user)
 {
 	if (!HasUser(user))
 	{
-		g_pConsole->Warn("CRoom::ToggleUserReadyStatus: user '%d, %s' not found\n", user->GetID(), user->GetUsername().c_str());
+		Console().Warn("CRoom::ToggleUserReadyStatus: user '%d, %s' not found\n", user->GetID(), user->GetUsername().c_str());
 		return RoomReadyStatus::READY_STATUS_NO;
 	}
 
 	if (user == m_pHostUser)
 	{
-		g_pConsole->Warn("CRoom::ToggleUserReadyStatus: host user '%d, %s' tried to toggle ready status\n", user->GetID(), user->GetUsername().c_str());
+		Console().Warn("CRoom::ToggleUserReadyStatus: host user '%d, %s' tried to toggle ready status\n", user->GetID(), user->GetUsername().c_str());
 		return RoomReadyStatus::READY_STATUS_NO;
 	}
 
@@ -476,7 +476,7 @@ void CRoom::OnUserMessage(CReceivePacket* msg, IUser* user)
 	CUserCharacter character = user->GetCharacter(UFLAG_GAMENAME);
 	string senderName = character.gameName;
 
-	g_pConsole->Log("User '%s' write to room chat: '%s'\n", senderName.c_str(), message.c_str());
+	Console().Log("User '%s' write to room chat: '%s'\n", senderName.c_str(), message.c_str());
 
 	if (!message.find("/changegm") && m_pHostUser == user)
 	{
@@ -615,7 +615,7 @@ void CRoom::KickUser(IUser* user)
 
 void CRoom::VoteKick(IUser* user, bool kick)
 {
-	g_pConsole->Warn("CRoom::VoteKick: not implemented!\n");
+	Console().Warn("CRoom::VoteKick: not implemented!\n");
 }
 
 void CRoom::SendRoomSettings(IUser* user)
@@ -661,7 +661,7 @@ void CRoom::SendUserReadyStatus(IUser* user, IUser* player)
 {
 	if (player->GetRoomData() == NULL)
 	{
-		g_pConsole->Error("CRoom::SendUserReadyStatus: GetRoomData() == NULL, users count: %d\n", m_Users.size());
+		Console().Error("CRoom::SendUserReadyStatus: GetRoomData() == NULL, users count: %d\n", m_Users.size());
 		return;
 	}
 	g_pPacketManager->SendRoomSetPlayerReady(user->GetExtendedSocket(), player, player->GetRoomData()->m_Ready);
@@ -879,7 +879,7 @@ void CRoom::HostStartGame()
 	}
 	else
 	{
-		g_pConsole->Error("CRoom::HostStartGame: m_pGameMatch != NULL\n");
+		Console().Error("CRoom::HostStartGame: m_pGameMatch != NULL\n");
 		return;
 	}
 
@@ -891,14 +891,12 @@ void CRoom::HostStartGame()
 
 	if (m_pServer)
 	{
-		char ip[INET_ADDRSTRLEN];
-		int iIp = m_pServer->GetIP();
-		inet_ntop(AF_INET, &iIp, ip, sizeof(ip));
+		string ip = ip_to_string(m_pServer->GetIP());
 
-		g_pConsole->Log("Host '%s' started room match (RID: %d, IP: %s, port: %d)\n", m_pHostUser->GetUsername().c_str(), m_nID, ip, m_pServer->GetPort());
+		Console().Log("Host '%s' started room match (RID: %d, IP: %s, port: %d)\n", m_pHostUser->GetUsername().c_str(), m_nID, ip.c_str(), m_pServer->GetPort());
 	}
 	else
-		g_pConsole->Log("Host '%s' started room match (RID: %d, IP: %s, port: %d)\n", m_pHostUser->GetUsername().c_str(), m_nID, m_pHostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), m_pHostUser->GetNetworkConfig().m_nExternalServerPort);
+		Console().Log("Host '%s' started room match (RID: %d, IP: %s, port: %d)\n", m_pHostUser->GetUsername().c_str(), m_nID, m_pHostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), m_pHostUser->GetNetworkConfig().m_nExternalServerPort);
 }
 
 void CRoom::UserGameJoin(IUser* user)
@@ -910,7 +908,7 @@ void CRoom::UserGameJoin(IUser* user)
 
 	//m_pGameMatch->Connect(user);
 
-	g_pConsole->Log("User '%d, %s' joining room match (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), m_nID);
+	Console().Log("User '%d, %s' joining room match (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), m_nID);
 }
 
 void CRoom::EndGame()

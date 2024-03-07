@@ -1,5 +1,6 @@
 #include "userinventoryitem.h"
 #include "serverconfig.h"
+#include "common/utils.h"
 
 CUserInventoryItem::CUserInventoryItem()
 {

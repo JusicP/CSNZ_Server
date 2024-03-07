@@ -31,7 +31,7 @@ bool CUserManager::OnLoginPacket(CReceivePacket* msg, IExtendedSocket* socket)
 {
 	LOG_PACKET;
 
-	g_pConsole->Log("Client (%s) sent login packet\n", socket->GetIP().c_str());
+	Console().Log("Client (%s) sent login packet\n", socket->GetIP().c_str());
 
 	string steamID = msg->ReadString();
 	int size = msg->ReadUInt16();
@@ -45,15 +45,9 @@ bool CUserManager::OnLoginPacket(CReceivePacket* msg, IExtendedSocket* socket)
 
 	if (g_pUserDatabase->IsHWIDBanned(hwid))
 	{
-		g_pConsole->Log("Client (%s) disconnected from the server due to banned HWID\n", socket->GetIP().c_str());
+		Console().Log("Client (%s) disconnected from the server due to banned HWID\n", socket->GetIP().c_str());
 
-		IUser* user = GetUserBySocket(socket);
-		if (user)
-		{
-			RemoveUser(user);
-		}
-
-		g_pNetwork->RemoveSocket(socket);
+		g_pServerInstance->DisconnectClient(socket);
 
 		return true;
 	}
@@ -62,15 +56,9 @@ bool CUserManager::OnLoginPacket(CReceivePacket* msg, IExtendedSocket* socket)
 	{
 		if (!socket->SetupCrypt())
 		{
-			g_pConsole->Log("Client (%s) disconnected from the server (Crypt failed)\n", socket->GetIP().c_str());
+			Console().Log("Client (%s) disconnected from the server (Crypt failed)\n", socket->GetIP().c_str());
 
-			IUser* user = GetUserBySocket(socket);
-			if (user)
-			{
-				RemoveUser(user);
-			}
-
-			g_pNetwork->RemoveSocket(socket);
+			g_pServerInstance->DisconnectClient(socket);
 
 			return true;
 		}
@@ -100,12 +88,12 @@ bool CUserManager::OnUdpPacket(CReceivePacket* msg, IExtendedSocket* socket)
 	if (unk == 0)
 	{
 		// nothing to read
-		g_pConsole->Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 0\n"));
+		Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 0\n"));
 	}
 	else if (unk == 1)
 	{
 		int unk = msg->ReadUInt32();
-		g_pConsole->Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 1: %d\n"), unk);
+		Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 1: %d\n"), unk);
 	}
 	else if (unk == 2)
 	{
@@ -118,14 +106,14 @@ bool CUserManager::OnUdpPacket(CReceivePacket* msg, IExtendedSocket* socket)
 
 			//user->GetNetworkConfig().m_szLocalIpAddress = ip_to_string(ip);
 
-			g_pConsole->Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-1: ip: %d, unk: %d, unk: %d\n"), ip, unk3, unk4);
+			Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-1: ip: %d, unk: %d, unk: %d\n"), ip, unk3, unk4);
 		}
 		else if (unk2 == 2)
 		{
 			int userID = msg->ReadUInt32();
 			int unk3 = msg->ReadUInt16();
 
-			g_pConsole->Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-2: userID: %d, unk: %d\n"), userID, unk3);
+			Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-2: userID: %d, unk: %d\n"), userID, unk3);
 		}
 	}
 
@@ -154,7 +142,7 @@ bool CUserManager::OnOptionPacket(CReceivePacket* msg, IExtendedSocket* socket)
 	case 2: // called when joining the game
 		break;
 	default:
-		g_pConsole->Log(OBFUSCATE("[User '%s'] CUserManager::OnOptionPacket: unknown request %d\n"), user->GetLogName(), type);
+		Console().Log(OBFUSCATE("[User '%s'] CUserManager::OnOptionPacket: unknown request %d\n"), user->GetLogName(), type);
 		break;
 	}
 
@@ -174,21 +162,17 @@ bool CUserManager::OnVersionPacket(CReceivePacket* msg, IExtendedSocket* socket)
 
 		if (g_pServerConfig->checkClientBuild && ((clientBuildTimestamp != g_pServerConfig->allowedClientTimestamp) || (launcherVersion != g_pServerConfig->allowedLauncherVersion)))
 		{
-			g_pConsole->Log(OBFUSCATE("CUserManager::OnVersionPacket: user joined with outdated client build, rejecting...\n"));
+			Console().Log(OBFUSCATE("CUserManager::OnVersionPacket: user joined with outdated client build, rejecting...\n"));
 
 			g_pPacketManager->SendUMsgNoticeMsgBoxToUuid(socket, OBFUSCATE("You cannot log on due to invalid client version.\nPatch the client and try it again."));
 
 #ifndef PUBLIC_RELEASE
-			g_pConsole->Warn("[SuspectNotice] detected suspect user '%s', reason: 1, %s\n", socket->GetIP().c_str(), launcherVersion != g_pServerConfig->allowedLauncherVersion ? "launcher version mismatch" : "client libraries timestamp mismatch");
+			Console().Warn("[SuspectNotice] detected suspect user '%s', reason: 1, %s\n", socket->GetIP().c_str(), launcherVersion != g_pServerConfig->allowedLauncherVersion ? "launcher version mismatch" : "client libraries timestamp mismatch");
 
-			// TODO: get HWID by ip
+			/// @todo get HWID by ip
 			//g_pUserDatabase->SuspectAddAction(socket->GetIP(), 1);
 #endif
-			IUser* user = GetUserBySocket(socket);
-			if (user)
-				RemoveUser(user);
-
-			g_pNetwork->RemoveSocket(socket);
+			g_pServerInstance->DisconnectClient(socket);
 		}
 
 		GuestData_s& data = socket->GetGuestData();
@@ -206,7 +190,7 @@ bool CUserManager::OnVersionPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		strftime(dateStr, sizeof(dateStr), "%d.%m.%y", unk3_date);
 
 		if (strcmp(dateStr, SUPPORTED_CLIENT_BUILD))
-			g_pConsole->Warn("CUserManager::OnVersionPacket: the server may not support the client build: %s (supported build: %s)\n", dateStr, SUPPORTED_CLIENT_BUILD);
+			Console().Warn("CUserManager::OnVersionPacket: the server may not support the client build: %s (supported build: %s)\n", dateStr, SUPPORTED_CLIENT_BUILD);
 	}
 
 	return true;
@@ -232,7 +216,7 @@ bool CUserManager::OnFavoritePacket(CReceivePacket* msg, IExtendedSocket* socket
 	case FavoritePacketType::SetBookmark:
 		return OnFavoriteSetBookmark(msg, user);
 	default:
-		g_pConsole->Warn("CUserManager::OnFavoritePacket: unknown request %d\n", type);
+		Console().Warn("CUserManager::OnFavoritePacket: unknown request %d\n", type);
 		break;
 	};
 
@@ -263,7 +247,7 @@ bool CUserManager::OnFavoriteSetBookmark(CReceivePacket* msg, IUser* user)
 
 	if (bookmarkSlot > 8)
 	{
-		g_pConsole->Warn("OnFavoriteSetBookmark: bookmarkSlot(%d) > 8\n", bookmarkSlot);
+		Console().Warn("OnFavoriteSetBookmark: bookmarkSlot(%d) > 8\n", bookmarkSlot);
 		return false;
 	}
 
@@ -298,7 +282,7 @@ bool CUserManager::OnFavoriteSetLoadout(CReceivePacket* msg, IUser* user)
 	{
 		if (loadoutID > LOADOUT_COUNT)
 		{
-			g_pConsole->Log(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid loadout %d\n"), loadoutID);
+			Console().Log(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid loadout %d\n"), loadoutID);
 			return false;
 		}
 
@@ -317,13 +301,13 @@ bool CUserManager::OnFavoriteSetLoadout(CReceivePacket* msg, IUser* user)
 		
 		if (character.curLoadout > LOADOUT_COUNT)
 		{
-			g_pConsole->Log(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid loadout %d\n"), character.curLoadout);
+			Console().Log(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid loadout %d\n"), character.curLoadout);
 			return false;
 		}
 
 		if (slot > LOADOUT_SLOT_COUNT)
 		{
-			g_pConsole->Log(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid slot %d\n"), slot);
+			Console().Log(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid slot %d\n"), slot);
 			return false;
 		}
 
@@ -361,7 +345,7 @@ bool CUserManager::OnFavoriteSetLoadout(CReceivePacket* msg, IUser* user)
 	}
 	else
 	{
-		g_pConsole->Warn("CUserManager::OnFavoriteSetLoadout: unknown loadout type: %d\n", loadoutType);
+		Console().Warn("CUserManager::OnFavoriteSetLoadout: unknown loadout type: %d\n", loadoutType);
 	}
 
 	return true;
@@ -375,19 +359,19 @@ bool CUserManager::OnFavoriteSetBuyMenu(CReceivePacket* msg, IUser* user)
 
 	if (subMenuID > 17)
 	{
-		g_pConsole->Log(OBFUSCATE("CUserManager::OnFavoriteSetBuyMenu: invalid subMenuId %d\n"), subMenuID);
+		Console().Log(OBFUSCATE("CUserManager::OnFavoriteSetBuyMenu: invalid subMenuId %d\n"), subMenuID);
 		return false;
 	}
 
 	if (subMenuSlot > 9)
 	{
-		g_pConsole->Log(OBFUSCATE("CUserManager::OnFavoriteSetBuyMenu: invalid subMenuSlot %d\n"), subMenuSlot);
+		Console().Log(OBFUSCATE("CUserManager::OnFavoriteSetBuyMenu: invalid subMenuSlot %d\n"), subMenuSlot);
 		return false;
 	}
 
 	g_pUserDatabase->UpdateBuyMenu(user->GetID(), subMenuID, subMenuSlot, itemID);
 
-	g_pConsole->Log(OBFUSCATE("User '%d' updated buy menu, %d, %d, %d\n"), user->GetID(), subMenuID, subMenuSlot, itemID);
+	Console().Log(OBFUSCATE("User '%d' updated buy menu, %d, %d, %d\n"), user->GetID(), subMenuID, subMenuSlot, itemID);
 
 	return true;
 }
@@ -664,7 +648,7 @@ bool CUserManager::OnUserMessage(CReceivePacket* msg, IExtendedSocket* socket)
 		g_pChannelManager->OnLobbyMessage(msg, socket, user);
 		break;
 	case UMsgReceiveType::ClanChat:
-		g_pConsole->Warn("CUserManager::OnUserMessage: ClanChat!\n");
+		Console().Warn("CUserManager::OnUserMessage: ClanChat!\n");
 		break;
 	case UMsgReceiveType::RoomChat:
 		g_pChannelManager->OnRoomUserMessage(msg, user);
@@ -676,7 +660,7 @@ bool CUserManager::OnUserMessage(CReceivePacket* msg, IExtendedSocket* socket)
 		g_pItemManager->OnRewardSelect(msg, user);
 		break;
 	default:
-		g_pConsole->Warn("CUserManager::OnUserMessage: unknown request %d\n", type);
+		Console().Warn("CUserManager::OnUserMessage: unknown request %d\n", type);
 		break;
 	}
 
@@ -709,14 +693,14 @@ bool CUserManager::OnUpdateInfoPacket(CReceivePacket* msg, IExtendedSocket* sock
 	case UpdateInfoPacketType::RequestUpdateTutorial:
 	{
 		int tutorial = msg->ReadUInt8();
-		g_pConsole->Log("RequestTutorial: %d\n", tutorial);
+		Console().Log("RequestTutorial: %d\n", tutorial);
 
 		break;
 	}
 	case 12: // called when click on inventory button
 		break;
 	default:
-		g_pConsole->Warn("CUserManager::OnUpdateInfoPacket: unknown request %d\n", msgType);
+		Console().Warn("CUserManager::OnUpdateInfoPacket: unknown request %d\n", msgType);
 		break;
 	}
 
@@ -754,13 +738,13 @@ int CUserManager::LoginUser(IExtendedSocket* socket, const string& userName, con
 				g_pPacketManager->SendUMsgSystemReply(socket, UMsgPacketType::SystemReply_MsgBox, "GM_CUT", vector<string>{ban.reason});
 			break;
 		}
-		g_pConsole->Log(OBFUSCATE("Login failed (code: %d)\n"), userID);
+		Console().Log(OBFUSCATE("Login failed (code: %d)\n"), userID);
 		return userID;
 	}
 
 	if (GetUserById(userID)) // if user with this uid is already on server
 	{
-		g_pConsole->Log("Login failed (code: %d)\n", LOGIN_USER_ALREADY_LOGGED_IN_UID);
+		Console().Log("Login failed (code: %d)\n", LOGIN_USER_ALREADY_LOGGED_IN_UID);
 
 		g_pPacketManager->SendReply(socket, ServerReply::S_REPLY_PLAYING);
 
@@ -769,7 +753,7 @@ int CUserManager::LoginUser(IExtendedSocket* socket, const string& userName, con
 
 	if (GetUserBySocket(socket)) // if user with the same socket object is already on server
 	{
-		g_pConsole->Log("Login failed (code: %d)\n", LOGIN_USER_ALREADY_LOGGED_IN_UUID);
+		Console().Log("Login failed (code: %d)\n", LOGIN_USER_ALREADY_LOGGED_IN_UUID);
 
 		g_pPacketManager->SendReply(socket, ServerReply::S_REPLY_PLAYING);
 
@@ -779,14 +763,14 @@ int CUserManager::LoginUser(IExtendedSocket* socket, const string& userName, con
 	IUser* newUser = AddUser(socket, userID, userName);
 	if (!newUser)
 	{
-		g_pConsole->Log("Login failed (code: %d)\n", LOGIN_SERVER_IS_FULL); // -5 (user limit)
+		Console().Log("Login failed (code: %d)\n", LOGIN_SERVER_IS_FULL); // -5 (user limit)
 
 		g_pPacketManager->SendReply(socket, ServerReply::S_REPLY_EXCEED_MAX_CONNECTION);
 
 		return LOGIN_SERVER_IS_FULL;
 	}
 
-	g_pConsole->Log(OBFUSCATE("User logged in (IP: %s, UID: %d, Username: %s)\n"), newUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), userID, userName.c_str());
+	Console().Log(OBFUSCATE("User logged in (IP: %s, UID: %d, Username: %s)\n"), newUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), userID, userName.c_str());
 
 	// Update last login time, last IP and last HWID
 	CUserData data = newUser->GetUser(UDATA_FLAG_FIRSTLOGONTIME);
@@ -835,21 +819,18 @@ int CUserManager::RegisterUser(IExtendedSocket* socket, const string& userName, 
 	int regResult = g_pUserDatabase->Register(userName, password, socket->GetIP());
 	if (regResult < 0)
 	{
-		g_pConsole->Log("Register failed (code: %d)\n", regResult);
+		Console().Log("Register failed (code: %d)\n", regResult);
 		return regResult;
 	}
 
-	g_pConsole->Log("Register ok (code: %d)\n", regResult);
+	Console().Log("Register ok (code: %d)\n", regResult);
 
 	return regResult;
 }
 
 void CUserManager::DisconnectUser(IUser* user)
 {
-	IExtendedSocket* socket = user->GetExtendedSocket();
-	RemoveUser(user);
-
-	g_pNetwork->RemoveSocket(socket);
+	g_pServerInstance->DisconnectClient(user->GetExtendedSocket());
 }
 
 void CUserManager::DisconnectAllFromServer()
@@ -987,7 +968,7 @@ bool CUserManager::OnReportPacket(CReceivePacket* msg, IExtendedSocket* socket)
 	// cfg shit...., (5)ClsNotOpen, (6)BoxItem, (7)Spectator, (8)BoxItem2, (50)SPEED, Wall, W2lal, (1)Memory, (2)Class, (3)WpnCmd, (4)ClsCmd, (7)Table, spdcl, ChaHack, MOVTYP, OBS, OBSGUEST, SVDEX, QBARREL, SOCC(last char? a1 + 8), SOLID
 	string object = msg->ReadString();
 
-	g_pConsole->Log("[SuspectNotice] detected suspect user '%s', userID dest: %d, reason: %d, %s, %s\n", user->GetLogName(), userID, reason, classificator.empty() ? "NULL" : classificator.c_str(), object.empty() ? "NULL" : object.c_str());
+	Console().Log("[SuspectNotice] detected suspect user '%s', userID dest: %d, reason: %d, %s, %s\n", user->GetLogName(), userID, reason, classificator.empty() ? "NULL" : classificator.c_str(), object.empty() ? "NULL" : object.c_str());
 
 	// E0000002 - section(ce detect)
 	// E0000005 - ogl hook?
@@ -1002,7 +983,7 @@ bool CUserManager::OnReportPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		DisconnectUser(user);
 	}
 
-	// TODO:
+	/// @todo:
 	g_pUserDatabase->SuspectAddAction(user->GetExtendedSocket()->GetHWID(), 0);
 #endif
 	return true;
@@ -1050,7 +1031,7 @@ bool CUserManager::OnUserSurveyPacket(CReceivePacket* msg, IExtendedSocket* sock
 		break;
 	}
 	default:
-		g_pConsole->Warn(OBFUSCATE("[User '%s'] CUserManager::OnUserSurveyPacket: unknown request %d (len: %d)\n"), user->GetLogName(), type, msg->GetLength());
+		Console().Warn(OBFUSCATE("[User '%s'] CUserManager::OnUserSurveyPacket: unknown request %d (len: %d)\n"), user->GetLogName(), type, msg->GetLength());
 		break;
 	}
 
@@ -1078,7 +1059,7 @@ bool CUserManager::OnBanPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		OnBanSettingsRequest(msg, user);
 		break;
 	default:
-		g_pConsole->Warn(OBFUSCATE("[User '%s'] Unknown Packet_Ban type %d (len: %d)\n"), user->GetLogName(), type, msg->GetLength());
+		Console().Warn(OBFUSCATE("[User '%s'] Unknown Packet_Ban type %d (len: %d)\n"), user->GetLogName(), type, msg->GetLength());
 		break;
 	}
 
@@ -1098,7 +1079,7 @@ bool CUserManager::OnMessengerPacket(CReceivePacket* msg, IExtendedSocket* socke
 	{
 	case 1: // send user info
 	{
-		// TODO: handle errors
+		/// @todo handle errors
 		string gameName = msg->ReadString();
 
 		int userID = g_pUserDatabase->IsUserExists(gameName, false);
@@ -1109,7 +1090,7 @@ bool CUserManager::OnMessengerPacket(CReceivePacket* msg, IExtendedSocket* socke
 		break;
 	}
 	default:
-		g_pConsole->Warn(OBFUSCATE("[User '%s'] CUserManager::OnMessengerPacket: unknown request %d\n"), user->GetLogName(), type);
+		Console().Warn(OBFUSCATE("[User '%s'] CUserManager::OnMessengerPacket: unknown request %d\n"), user->GetLogName(), type);
 	}
 
 	return true;
@@ -1148,7 +1129,7 @@ bool CUserManager::OnLeaguePacket(CReceivePacket* msg, IExtendedSocket* socket)
 		g_pPacketManager->SendLeaguePacket(socket);
 		break;
 	default:
-		g_pConsole->Warn(OBFUSCATE("[User '%s'] Unknown Packet_League type %d (len: %d)\n"), user->GetLogName(), type, msg->GetLength());
+		Console().Warn(OBFUSCATE("[User '%s'] Unknown Packet_League type %d (len: %d)\n"), user->GetLogName(), type, msg->GetLength());
 		break;
 	}
 

@@ -12,6 +12,7 @@
 #include "csvtable.h"
 #include "serverconfig.h"
 #include "common/buildnum.h"
+#include "common/utils.h"
 
 #include <chrono>
 
@@ -45,10 +46,10 @@ bool CChannelManager::OnChannelListPacket(IExtendedSocket* socket)
 		channel->UserLeft(user);
 		user->SetCurrentChannel(NULL);
 
-		g_pConsole->Log("User '%d, %s' left channel\n", user->GetID(), user->GetUsername().c_str());
+		Console().Log("User '%d, %s' left channel\n", user->GetID(), user->GetUsername().c_str());
 	}
 
-	g_pConsole->Log("User '%d, %s' requested server list, sending...\n", user->GetID(), user->GetUsername().c_str());
+	Console().Log("User '%d, %s' requested server list, sending...\n", user->GetID(), user->GetUsername().c_str());
 
 	g_pPacketManager->SendServerList(socket);
 
@@ -97,7 +98,7 @@ bool CChannelManager::OnRoomRequest(CReceivePacket* msg, IExtendedSocket* socket
 	case InRoomType::SetZBAddonsRequest:
 		return OnRoomSetZBAddonRequest(msg, user);
 	default:
-		g_pConsole->Warn("Unknown room request %d\n", type);
+		Console().Warn("Unknown room request %d\n", type);
 		break;
 	}
 
@@ -146,7 +147,7 @@ void CChannelManager::JoinChannel(IUser* user, int channelServerID, int channelI
 			return;
 		}*/
 
-		g_pConsole->Log("User '%d, %s' joined channel '%s'\n", user->GetID(), user->GetUsername().c_str(), channel->GetName().c_str());
+		Console().Log("User '%d, %s' joined channel '%s'\n", user->GetID(), user->GetUsername().c_str(), channel->GetName().c_str());
 
 		user->SetCurrentChannel(channel);
 		user->SetLastChannelServer(channelServer);
@@ -160,7 +161,7 @@ void CChannelManager::JoinChannel(IUser* user, int channelServerID, int channelI
 		//g_pUserManager->SendNoticeMsgBoxToUuid(socket, error);
 	}
 
-	g_pConsole->Log("User '%d, %s' requested room list successfully, sending...\n", user->GetID(), user->GetUsername().c_str());
+	Console().Log("User '%d, %s' requested room list successfully, sending...\n", user->GetID(), user->GetUsername().c_str());
 
 	g_pPacketManager->SendRoomListFull(user->GetExtendedSocket(), channel->GetRooms());
 }
@@ -184,7 +185,7 @@ void CChannelManager::EndAllGames()
 
 				if (room->GetStatus() == STATUS_INGAME)
 				{
-					g_pConsole->Log(OBFUSCATE("Force ending RoomID: %d game match\n"), room->GetID());
+					Console().Log(OBFUSCATE("Force ending RoomID: %d game match\n"), room->GetID());
 					room->EndGame();
 				}
 			}
@@ -208,7 +209,7 @@ bool CChannelManager::OnLobbyMessage(CReceivePacket* msg, IExtendedSocket* socke
 		CChannel* channel = user->GetCurrentChannel();
 		if (!channel)
 		{
-			g_pConsole->Log(OBFUSCATE("User '%s' tried to send message but he's not in channel\n"), user->GetLogName());
+			Console().Log(OBFUSCATE("User '%s' tried to send message but he's not in channel\n"), user->GetLogName());
 			return false;
 		}
 
@@ -327,7 +328,7 @@ bool CChannelManager::OnCommandHandler(IExtendedSocket* socket, IUser* user, con
 					g_pPacketManager->SendUMsgNoticeMsgBoxToUuid(socket, OBFUSCATE("Wrong password or username."));
 					break;
 				case LOGIN_USER_BANNED:
-					g_pNetwork->RemoveSocket(socket);
+					g_pServerInstance->DisconnectClient(socket);
 					break;
 				case LOGIN_SERVER_CANNOT_VALIDATE_CLIENT:
 					g_pPacketManager->SendUMsgNoticeMsgBoxToUuid(socket, OBFUSCATE("Failed to validate client. Contact administrator and try to reinstall the game."));
@@ -694,7 +695,7 @@ bool CChannelManager::OnCommandHandler(IExtendedSocket* socket, IUser* user, con
 				catch (exception& ex)
 				{
 					g_pPacketManager->SendUMsgNoticeMessageInChat(socket, OBFUSCATE("/addexp out of range!"));
-					g_pConsole->Warn("/addexp out of range! %s\n", ex.what());
+					Console().Warn("/addexp out of range! %s\n", ex.what());
 					return true;
 				}
 
@@ -1107,14 +1108,14 @@ bool CChannelManager::OnNewRoomRequest(CReceivePacket* msg, IUser* user)
 	IRoom* room = user->GetCurrentRoom();
 	if (room)
 	{
-		g_pConsole->Warn("User '%d, %s' tried to create a new room, but he is already playing in other room, curRoomId: %d\n", user->GetID(), user->GetUsername().c_str(), room->GetID());
+		Console().Warn("User '%d, %s' tried to create a new room, but he is already playing in other room, curRoomId: %d\n", user->GetID(), user->GetUsername().c_str(), room->GetID());
 		return false;
 	}
 
 	CChannel* channel = user->GetCurrentChannel();
 	if (channel == NULL)
 	{
-		g_pConsole->Warn("User '%d, %s' tried to create a new room without channel\n", user->GetID(), user->GetUsername().c_str());
+		Console().Warn("User '%d, %s' tried to create a new room without channel\n", user->GetID(), user->GetUsername().c_str());
 		return false;
 	}
 
@@ -1135,7 +1136,7 @@ bool CChannelManager::OnNewRoomRequest(CReceivePacket* msg, IUser* user)
 	// hide user from channel users list
 	channel->UserLeft(user, true);
 
-	g_pConsole->Log("User '%d, %s' created a new room (RID: %d, name: '%s')\n", user->GetID(), user->GetUsername().c_str(), newRoom->GetID(), roomSettings->roomName.c_str());
+	Console().Log("User '%d, %s' created a new room (RID: %d, name: '%s')\n", user->GetID(), user->GetUsername().c_str(), newRoom->GetID(), roomSettings->roomName.c_str());
 
 	return true;
 }
@@ -1149,7 +1150,7 @@ bool CChannelManager::OnJoinRoomRequest(CReceivePacket* msg, IUser* user)
 	CChannel* channel = user->GetCurrentChannel();
 	if (channel == NULL)
 	{
-		g_pConsole->Warn("User '%d, %s' tried to join room (RID: %d) without channel\n", user->GetID(), user->GetUsername().c_str(), roomID);
+		Console().Warn("User '%d, %s' tried to join room (RID: %d) without channel\n", user->GetID(), user->GetUsername().c_str(), roomID);
 		return false;
 	}
 
@@ -1218,7 +1219,7 @@ bool CChannelManager::OnJoinRoomRequest(CReceivePacket* msg, IUser* user)
 
 	channel->SendUpdateRoomList(room);
 
-	g_pConsole->Log("User '%d, %s' joined a room (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), room->GetID());
+	Console().Log("User '%d, %s' joined a room (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), room->GetID());
 
 	return true;
 }
@@ -1228,13 +1229,13 @@ bool CChannelManager::OnSetTeamRequest(CReceivePacket* msg, IUser* user)
 	IRoom* currentRoom = user->GetCurrentRoom();
 	if (currentRoom == NULL)
 	{
-		g_pConsole->Warn("User '%d, %s' tried to change room settings, but he isn't in room\n", user->GetID(), user->GetUsername().c_str());
+		Console().Warn("User '%d, %s' tried to change room settings, but he isn't in room\n", user->GetID(), user->GetUsername().c_str());
 		return false;
 	}
 
 	if (currentRoom->IsUserReady(user))
 	{
-		g_pConsole->Warn("User '%d, %s' tried to change team in a room, but he is ready\n", user->GetID(), user->GetUsername().c_str());
+		Console().Warn("User '%d, %s' tried to change team in a room, but he is ready\n", user->GetID(), user->GetUsername().c_str());
 		return false;
 	}
 
@@ -1248,7 +1249,7 @@ bool CChannelManager::OnSetTeamRequest(CReceivePacket* msg, IUser* user)
 		currentRoom->SendTeamChange(u, user, (RoomTeamNum)newTeam);
 	}
 
-	g_pConsole->Log("User '%d, %s' changed room team to %d (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), newTeam, currentRoom->GetID());
+	Console().Log("User '%d, %s' changed room team to %d (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), newTeam, currentRoom->GetID());
 
 	return true;
 }
@@ -1260,7 +1261,7 @@ bool CChannelManager::OnLeaveRoomRequest(IUser* user)
 
 	if (currentRoom == NULL || currentChannel == NULL)
 	{
-		g_pConsole->Log(OBFUSCATE("User '%d' tried to leave room without curRoom or curChannel\n"), user->GetID());
+		Console().Log(OBFUSCATE("User '%d' tried to leave room without curRoom or curChannel\n"), user->GetID());
 
 		return false;
 	}
@@ -1270,7 +1271,7 @@ bool CChannelManager::OnLeaveRoomRequest(IUser* user)
 		currentRoom->SendPlayerLeaveIngame(user);
 	}
 
-	g_pConsole->Log("User '%d, %s' left a room (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), currentRoom->GetID());
+	Console().Log("User '%d, %s' left a room (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), currentRoom->GetID());
 
 	currentRoom->RemoveUser(user);
 
@@ -1304,13 +1305,13 @@ bool CChannelManager::OnToggleReadyRequest(IUser* user)
 	IRoom* room = user->GetCurrentRoom();
 	if (room == NULL)
 	{
-		g_pConsole->Warn("User '%d, %s' tried to toggle ready status\n", user->GetID(), user->GetUsername().c_str());
+		Console().Warn("User '%d, %s' tried to toggle ready status\n", user->GetID(), user->GetUsername().c_str());
 		return false;
 	}
 
 	RoomReadyStatus readyStatus = room->ToggleUserReadyStatus(user);
 
-	g_pConsole->Log("User '%d, %s' toggled ready status %d\n", user->GetID(), user->GetUsername().c_str(), readyStatus);
+	Console().Log("User '%d, %s' toggled ready status %d\n", user->GetID(), user->GetUsername().c_str(), readyStatus);
 
 	// inform every user in the room of the changes
 	for (auto u : room->GetUsers())
@@ -1344,17 +1345,15 @@ bool CChannelManager::OnConnectionFailure(IUser* user)
 
 	if (server)
 	{
-		char ip[INET_ADDRSTRLEN];
-		int iIp = server->GetIP();
-		inet_ntop(AF_INET, &iIp, ip, sizeof(ip));
+		string ip = ip_to_string(server->GetIP());
 
-		g_pConsole->Log("User '%d, %s' unsuccessfully tried to connect to the game match(%s:%d)\n", user->GetID(), user->GetUsername().c_str(), ip, server->GetPort());
+		Console().Log("User '%d, %s' unsuccessfully tried to connect to the game match(%s:%d)\n", user->GetID(), user->GetUsername().c_str(), ip.c_str(), server->GetPort());
 
 		g_pPacketManager->SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), "ROOM_JOIN_FAILED_INVALID_GAME_IP");
 	}
 	else
 	{
-		g_pConsole->Log("User '%d, %s' unsuccessfully tried to connect to the game match(%s:%d)\n", user->GetID(), user->GetUsername().c_str(), hostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), hostUser->GetNetworkConfig().m_nExternalServerPort);
+		Console().Log("User '%d, %s' unsuccessfully tried to connect to the game match(%s:%d)\n", user->GetID(), user->GetUsername().c_str(), hostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), hostUser->GetNetworkConfig().m_nExternalServerPort);
 
 		g_pPacketManager->SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), va("Cannot establish connection to %s:%d. Possible reasons:\n"
 			"1. Host connected to the master server with localhost(127.0.0.1) ip\n"
@@ -1380,7 +1379,7 @@ bool CChannelManager::OnGameStartRequest(IUser* user)
 	CChannel* currentChannel = user->GetCurrentChannel();
 	if (currentRoom == NULL || currentChannel == NULL)
 	{
-		g_pConsole->Warn("User '%d, %s' isn't in room or channel but he tried to start room match.\n", user->GetID(), user->GetUsername().c_str());
+		Console().Warn("User '%d, %s' isn't in room or channel but he tried to start room match.\n", user->GetID(), user->GetUsername().c_str());
 		return false;
 	}
 
@@ -1425,25 +1424,25 @@ bool CChannelManager::OnRoomUpdateSettings(CReceivePacket* msg, IUser* user)
 	CChannel* currentChannel = user->GetCurrentChannel();
 	if (currentRoom == NULL)
 	{
-		g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings, although it isn\'t in any\n", user->GetID(), user->GetUsername().c_str());
+		Console().Warn("User '%d, %s' tried to update a room\'s settings, although it isn\'t in any\n", user->GetID(), user->GetUsername().c_str());
 		return false;
 	}
 
 	if (currentChannel == NULL)
 	{
-		g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings without current channel\n", user->GetID(), user->GetUsername().c_str());
+		Console().Warn("User '%d, %s' tried to update a room\'s settings without current channel\n", user->GetID(), user->GetUsername().c_str());
 		return false;
 	}
 
 	if (user != currentRoom->GetHostUser())
 	{
-		g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings, although it isn\'t the host (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), currentRoom->GetID());
+		Console().Warn("User '%d, %s' tried to update a room\'s settings, although it isn\'t the host (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), currentRoom->GetID());
 		return false;
 	}
 
 	if (currentRoom->GetGameMatch() != NULL)
 	{
-		g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings, but m_pGameMatch != NULL (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), currentRoom->GetID());
+		Console().Warn("User '%d, %s' tried to update a room\'s settings, but m_pGameMatch != NULL (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), currentRoom->GetID());
 		return false;
 	}
 
@@ -1451,7 +1450,7 @@ bool CChannelManager::OnRoomUpdateSettings(CReceivePacket* msg, IUser* user)
 
 	if (roomSettings->mapPlaylistIndex > 1)
 	{
-		g_pConsole->Warn("User '%d, %s' tried to update a room\'s settings while mapPlaylist is on-going (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), currentRoom->GetID());
+		Console().Warn("User '%d, %s' tried to update a room\'s settings while mapPlaylist is on-going (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), currentRoom->GetID());
 		return false;
 	}
 
@@ -1469,7 +1468,7 @@ bool CChannelManager::OnRoomUpdateSettings(CReceivePacket* msg, IUser* user)
 
 	currentChannel->SendUpdateRoomList(currentRoom);
 
-	g_pConsole->Log("Host '%d, %s' updated room settings (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), currentRoom->GetID());
+	Console().Log("Host '%d, %s' updated room settings (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), currentRoom->GetID());
 
 	return true;
 }

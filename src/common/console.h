@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common/thread.h"
+
 #ifdef WIN32
 #include <windows.h> 
 #include "shlwapi.h"
@@ -45,16 +47,20 @@ public:
 	CConsole();
 	~CConsole();
 
+	// thread safe methods
 	void Warn(const char* msg, ...);
 	void Error(const char* msg, ...);
 	void FatalError(const char* msg, ...);
 	void Log(const char* msg, ...);
 	void Debug(const char* msg, ...);
+
 	void SetStatus(const char* status);
 	void SetLogLevel(int logLevel);
 	void SetLastPacket(const char* name);
 	const char* GetLastPacket();
 	void UpdateStatus();
+
+	void SetLogFile(const char* path);
 
 private:
 	void   Write(OutMode mode, const char* msg);
@@ -68,8 +74,12 @@ private:
 	char m_szStatusLine[81];	// first line in console is status line
 #endif
 
-	char m_szServerLogPath[MAX_PATH];
+	char m_szLogPath[MAX_PATH];
 	const char* m_szLastPacket;
 
 	int m_nLogLevel;
+
+	CCriticalSection m_CriticalSection;
 };
+
+extern CConsole& Console();

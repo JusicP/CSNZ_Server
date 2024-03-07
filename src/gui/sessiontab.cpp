@@ -6,7 +6,7 @@
 #include "gui.h"
 #include "common/utils.h"
 
-#include "interface/iextendedsocket.h"
+#include "interface/net/iextendedsocket.h"
 #include "interface/iserverinstance.h"
 #include "interface/iusermanager.h"
 #include "interface/ievent.h"
@@ -54,7 +54,7 @@ void CSessionTab::Refresh()
 	g_pEvent->AddEventFunction([]()
 		{
 			std::vector<Session> sessions;
-			std::vector<IExtendedSocket*> sockets = g_pServerInstance->GetSessions();
+			std::vector<IExtendedSocket*> sockets = g_pServerInstance->GetClients();
 			for (auto s : sockets)
 			{
 				Session session;

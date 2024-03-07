@@ -16,6 +16,9 @@
 
 #include "net/receivepacket.h"
 #include "common/buildnum.h"
+#include "common/net/netdefs.h"
+#include "common/utils.h"
+
 #include "csvtable.h"
 #include "serverconfig.h"
 #include "consolecommands.h"
@@ -26,7 +29,6 @@
 using namespace std;
 
 CServerConfig* g_pServerConfig;
-CNetwork* g_pNetwork;
 CPacketManager* g_pPacketManager;
 #ifdef DB_SQLITE
 CUserDatabaseSQLite* g_pUserDatabase;
@@ -54,11 +56,13 @@ CRankManager* g_pRankManager;
 
 CServerInstance::CServerInstance()
 {
-	m_nNextClientIndex = 1;
 	m_bIsServerActive = true;
 	m_CurrentTime = 0;
 	m_pCurrentLocalTime = NULL;
 	m_nUptime = 0;
+
+	m_TCPServer.SetCriticalSection(&g_ServerCriticalSection);
+	m_UDPServer.SetCriticalSection(&g_ServerCriticalSection);
 }
 
 bool CServerInstance::Init()
@@ -68,7 +72,7 @@ bool CServerInstance::Init()
 		UnloadConfigs();
 		if (!LoadConfigs())
 		{
-			g_pConsole->Error("Server initialization failed.\n");
+			Console().Error("Server initialization failed.\n");
 			m_bIsServerActive = false;
 			return false;
 		}
@@ -78,12 +82,11 @@ bool CServerInstance::Init()
 
 	if (!LoadConfigs())
 	{
-		g_pConsole->Error("Server initialization failed.\n");
+		Console().Error("Server initialization failed.\n");
 		m_bIsServerActive = false;
 		return false;
 	}
 
-	g_pNetwork = new CNetwork();
 	g_pPacketManager = new CPacketManager();
 	g_pUserManager = new CUserManager(g_pServerConfig->maxPlayers);
 	g_pHostManager = new CHostManager();
@@ -111,40 +114,42 @@ bool CServerInstance::Init()
 
 	g_pDedicatedServerManager = new CDedicatedServerManager();
 
-	if (!Manager().InitAll() || !g_pNetwork->ServerInit() || !g_pNetwork->UDPInit())
+	if (!Manager().InitAll() ||
+		!m_TCPServer.Start(g_pServerConfig->tcpPort, g_pServerConfig->tcpSendBufferSize) ||
+		!m_UDPServer.Start(g_pServerConfig->udpPort))
 	{
-		g_pConsole->Error("Server initialization failed.\n");
+		Console().Error("Server initialization failed.\n");
 		m_bIsServerActive = false;
 		return false;
 	}
 	else if (g_pItemTable->IsLoadFailed())
 	{
-		g_pConsole->Error("Server initialization failed. Couldn't load Item.csv.\n");
+		Console().Error("Server initialization failed. Couldn't load Item.csv.\n");
 		m_bIsServerActive = false;
 		return false;
 	}
 	else if (g_pMapListTable->IsLoadFailed())
 	{
-		g_pConsole->Error("Server initialization failed. Couldn't load MapList.csv.\n");
+		Console().Error("Server initialization failed. Couldn't load MapList.csv.\n");
 		m_bIsServerActive = false;
 		return false;
 	}
 	else if (g_pGameModeListTable->IsLoadFailed())
 	{
-		g_pConsole->Error("Server initialization failed. Couldn't load GameModeList.csv.\n");
+		Console().Error("Server initialization failed. Couldn't load GameModeList.csv.\n");
 		m_bIsServerActive = false;
 		return false;
 	}
 
-	g_pConsole->Log("Server starts listening. Server developers: Jusic, Hardee, NekoMeow. Thx to Ochii for CSO2 server.\nFor more information visit discord.gg/EvUAY6D\n");
-	g_pConsole->Log("Server build: %s, %s\n", build_number(),
+	Console().Log("Server starts listening. Server developers: Jusic, Hardee, NekoMeow. Thx to Ochii for CSO2 server.\nFor more information visit discord.gg/EvUAY6D\n");
+	Console().Log("Server build: %s, %s\n", build_number(),
 #ifdef PUBLIC_RELEASE
 		"Public Release");
 #else
 		"Private Release");
 #endif
 
-	// TODO: why?
+	/// @fixme: explanation why we call this
 	OnSecondTick();
 
 	return true;
@@ -152,7 +157,6 @@ bool CServerInstance::Init()
 
 CServerInstance::~CServerInstance()
 {
-	delete g_pNetwork;
 	delete g_pPacketManager;
 	delete g_pUserDatabase;
 	delete g_pUserManager;
@@ -181,9 +185,103 @@ void CServerInstance::UnloadConfigs()
 	delete g_pServerConfig;
 }
 
+void CServerInstance::OnTCPConnectionCreated(IExtendedSocket* socket)
+{
+	if (g_pUserDatabase->IsIPBanned(socket->GetIP()))
+	{
+		Console().Log("Client (%d, %s) disconnected from the server due to banned ip\n", socket->GetID(), socket->GetIP().c_str());
+		DisconnectClient(socket);
+
+		// return false;
+	}
+
+	// return true;
+}
+
+void CServerInstance::OnTCPConnectionClosed(IExtendedSocket* socket)
+{
+	int bytesSent = socket->GetBytesSent();
+	int bytesReceived = socket->GetBytesReceived();
+	int sock = socket->GetSocket();
+
+	// clean up user
+	IUser* user = g_pUserManager->GetUserBySocket(socket);
+	int userID = 0;
+	string userName = "NULL";
+	if (user)
+	{
+		userID = user->GetID();
+		userName = user->GetUsername();
+		g_pUserManager->DisconnectUser(user);
+	}
+	else
+	{
+		g_pDedicatedServerManager->RemoveServer(socket);
+	}
+
+	/// @todo remove all events referred to deleted socket object
+
+	Console().Log("User logged out (%d, '%s', 0x%X)\n", userID, userName.c_str(), user);
+}
+
+void CServerInstance::OnTCPMessage(IExtendedSocket* socket, CReceivePacket* msg)
+{
+	g_Event.AddEventPacket(socket, socket->GetMsg());
+	socket->SetMsg(NULL);
+}
+
+void CServerInstance::OnTCPError(int errorCode)
+{
+	//g_pChannelManager->EndAllGames();
+	//SetServerActive(false);
+}
+
+void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
+{
+	if (buf.getBuffer().size() == 14)
+	{
+		char signature = buf.readUInt8();
+		if (signature != UDP_HOLEPUNCH_PACKET_SIGNATURE_1)
+		{
+			Console().Log(OBFUSCATE("CPacketIn_UDP::Parse: signature error\n"));
+			return;
+		}
+
+		int userID = buf.readUInt32_LE();
+		int portID = buf.readUInt16_LE();
+		long longAddr = buf.readUInt32_BE();
+		string localIpAddress = ip_to_string(longAddr);
+		short localPort = buf.readUInt16_LE();
+
+		IUser* user = g_pUserManager->GetUserById(userID);
+		if (!user)
+		{
+			return;
+		}
+
+		int result = user->UpdateHolepunch(portID, localPort, port);
+		if (result == -1)
+		{
+			Console().Warn("Unknown hole punch port\n");
+		}
+
+		Buffer replyBuffer;
+		replyBuffer.writeUInt8('W');
+		replyBuffer.writeUInt8(0);
+		replyBuffer.writeUInt8(1);
+
+		// send reply
+		m_UDPServer.SendTo(replyBuffer);
+	}
+}
+
+void CServerInstance::OnUDPError(int errorCode)
+{
+}
+
 void CServerInstance::OnCommand(const string& command)
 {
-	g_pConsole->Log("Command: %s\n", command.c_str());
+	Console().Log("Command: %s\n", command.c_str());
 
 	istringstream iss(command);
 	vector<string> args((istream_iterator<string>(iss)), istream_iterator<string>());
@@ -226,264 +324,6 @@ void* ReadConsoleThread(void*)
 	return NULL;
 }
 
-void* ListenThread(void*)
-{
-	while (g_pServerInstance->IsServerActive())
-	{
-		g_pServerInstance->ListenTCP();
-	}
-	
-	return NULL;
-}
-
-void* ListenThreadUDP(void*)
-{
-	while (g_pServerInstance->IsServerActive())
-	{
-		g_pServerInstance->ListenUDP();
-	}
-	
-	return NULL;
-}
-
-void CServerInstance::ListenTCP()
-{
-	FD_ZERO(&g_pNetwork->m_Write_fds);
-	FD_ZERO(&g_pNetwork->m_Read_fds);
-
-	FD_SET(g_pNetwork->m_TCPSocket, &g_pNetwork->m_Read_fds);
-
-	for (auto socket : g_pNetwork->m_Sessions)
-	{
-		if (socket->GetPacketsToSend().size())
-			FD_SET(socket->GetSocket(), &g_pNetwork->m_Write_fds);
-
-		FD_SET(socket->GetSocket(), &g_pNetwork->m_Read_fds);
-
-		if ((int)socket->GetSocket() > g_pNetwork->m_nFDmax)
-			g_pNetwork->m_nFDmax = socket->GetSocket();
-	}
-
-	struct timeval tv;
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
-
-	int activity = select(g_pNetwork->m_nFDmax + 1, &g_pNetwork->m_Read_fds, &g_pNetwork->m_Write_fds, NULL, &tv);
-	if (activity == SOCKET_ERROR)
-	{
-		g_pConsole->Error("select() failed with error: %d\n", GetNetworkError());
-		g_pChannelManager->EndAllGames();
-		SetServerActive(false);
-		return;
-	}
-	else if (!activity) // timeout
-	{
-		return;
-	}
-
-	g_ServerCriticalSection.Enter();
-
-	for (int i = 0; i <= g_pNetwork->m_nFDmax; i++)
-	{
-		if (FD_ISSET(i, &g_pNetwork->m_Read_fds))
-		{
-			if (i == g_pNetwork->m_TCPSocket) // accept new client
-			{
-				IExtendedSocket* sock = g_pNetwork->AcceptNewClient(m_nNextClientIndex);
-				if (!sock)
-				{
-					SleepMS(100);
-					break;
-				}
-
-				g_pConsole->Log(OBFUSCATE("Client (%d, %s) has been connected to the server\n"), m_nNextClientIndex, sock->GetIP().c_str());
-
-				if (g_pUserDatabase->IsIPBanned(sock->GetIP()))
-				{
-					g_pConsole->Log(OBFUSCATE("Client (%d, %s) disconnected from the server due to banned ip\n"), m_nNextClientIndex, sock->GetIP().c_str());
-					DisconnectClient(sock);
-					break;
-				}
-
-				m_nNextClientIndex++;
-			}
-			else // data from client
-			{
-				IExtendedSocket* s = g_pNetwork->GetExSocketBySocket(i);
-				if (!s)
-				{
-					continue;
-				}
-
-				CReceivePacket* msg = s->Read();
-				int readResult = s->GetReadResult();
-				if (readResult == 0 || readResult == -1)
-				{
-					int bytesSent = s->GetBytesSent();
-					int bytesReceived = s->GetBytesReceived();
-					int socket = s->GetSocket();
-
-					// clean up user
-					IUser* user = g_pUserManager->GetUserBySocket(s);
-					int userID = 0;
-					string userName = "NULL";
-					if (user)
-					{
-						userID = user->GetID();
-						userName = user->GetUsername();
-						g_pUserManager->DisconnectUser(user);
-					}
-					else
-					{
-						g_pDedicatedServerManager->RemoveServer(s);
-						g_pNetwork->RemoveSocket(s);
-					}
-
-					g_pConsole->Log(OBFUSCATE("User logged out (%d, '%s', sent: %d, received: %d, %d, %d, 0x%X)\n"), userID, userName.c_str(), bytesSent, bytesReceived, socket, GetNetworkError(), user);
-				}
-				else if (readResult == SOCKET_ERROR)
-				{
-					int error = GetNetworkError();
-					if (error == WSAECONNABORTED || error == WSAECONNRESET)
-					{
-						int bytesSent = s->GetBytesSent();
-						int bytesReceived = s->GetBytesReceived();
-						int socket = s->GetSocket();
-
-						// clean up user
-						IUser* user = g_pUserManager->GetUserBySocket(s);
-						int userID = 0;
-						string userName = "NULL";
-						if (user)
-						{
-							userID = user->GetID();
-							userName = user->GetUsername();
-							g_pUserManager->DisconnectUser(user);
-						}
-						else
-						{
-							g_pDedicatedServerManager->RemoveServer(s);
-							g_pNetwork->RemoveSocket(s);
-						}
-
-						g_pConsole->Log(OBFUSCATE("User logged out (%d, '%s', sent: %d, received: %d, %d, %d, 0x%X)\n"), userID, userName.c_str(), bytesSent, bytesReceived, socket, GetNetworkError(), user);
-					}
-					else
-					{
-						g_pConsole->Log(OBFUSCATE("Unhandled WSA error: %d, user object will remain...\n"), error);
-						g_pDedicatedServerManager->RemoveServer(s);
-						g_pNetwork->RemoveSocket(s);
-					}
-				}
-				else if (!msg)
-				{
-					continue;
-				}
-				else
-				{
-					g_Event.AddEventPacket(s, s->GetMsg());
-					s->SetMsg(NULL);
-				}
-			}
-		}
-
-		if (FD_ISSET(i, &g_pNetwork->m_Write_fds))
-		{
-			IExtendedSocket* sock = g_pNetwork->GetExSocketBySocket(i);
-			if (sock && sock->GetPacketsToSend().size())
-			{
-				CSendPacket* msg = sock->GetPacketsToSend()[0]; // send only one packet from vector
-				if (sock->Send(msg, true) <= 0)
-				{
-					g_pConsole->Warn("An error occurred while sending packet from queue: WSAGetLastError: %d, queue.size: %d\n", GetNetworkError(), sock->GetPacketsToSend().size());
-					
-					DisconnectClient(sock);
-				}
-				else
-				{
-					sock->GetPacketsToSend().erase(sock->GetPacketsToSend().begin());
-				}
-			}
-		}
-	}
-
-	g_ServerCriticalSection.Leave();
-}
-
-void CServerInstance::ListenUDP()
-{
-	g_pNetwork->m_Read_fds_u = g_pNetwork->m_Master_u; // reset
-
-	struct timeval tv;
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
-
-	int activity = select(g_pNetwork->m_nFDmax_u + 1, &g_pNetwork->m_Read_fds_u, NULL, NULL, &tv);
-	if (activity == SOCKET_ERROR)
-	{
-		g_pConsole->Error("select(udp) failed with error: %d.\n", GetNetworkError());
-		return;
-	}
-	else if (!activity) // timeout
-	{
-		return;
-	}
-
-	g_ServerCriticalSection.Enter();
-
-	for (int i = 0; i <= g_pNetwork->m_nFDmax_u; i++)
-	{
-		if (FD_ISSET(i, &g_pNetwork->m_Read_fds_u))
-		{
-			// got message
-			struct sockaddr_in from;
-			socklen_t fromlen = sizeof(from);
-
-			int datalen = recvfrom(g_pNetwork->m_UDPSocket, network_data, 15000, 0, (sockaddr*)&from, &fromlen);
-			if (datalen == 14)
-			{
-				Buffer buf(vector<unsigned char>(network_data, network_data + datalen));
-
-				char signature = buf.readUInt8();
-				if (signature != 'W')
-				{
-					g_pConsole->Log(OBFUSCATE("CPacketIn_UDP::Parse: signature error\n"));
-					return;
-				}
-
-				int userID = buf.readUInt32_LE();
-				int portID = buf.readUInt16_LE();
-				long longAddr = buf.readUInt32_BE();
-				string localIpAddress = ip_to_string(longAddr);
-				short port = buf.readUInt16_LE();
-
-				IUser* user = g_pUserManager->GetUserById(userID);
-				if (!user)
-				{
-					return;
-				}
-
-				int result = user->UpdateHolepunch(portID, port, from.sin_port);
-				if (result == -1)
-				{
-					g_pConsole->Warn("Unknown hole punch port\n");
-				}
-
-				Buffer replyBuffer;
-				replyBuffer.writeUInt8('W');
-				replyBuffer.writeUInt8(0);
-				replyBuffer.writeUInt8(1);
-
-				// send reply
-				const vector<unsigned char>& buffer = replyBuffer.getBuffer();
-				sendto(g_pNetwork->m_UDPSocket, reinterpret_cast<const char*>(&buffer[0]), buffer.size(), 0, (sockaddr*)&from, fromlen);
-			}
-		}
-	}
-
-	g_ServerCriticalSection.Leave();
-}
-
 void CServerInstance::SetServerActive(bool active)
 {
 	m_bIsServerActive = active;
@@ -502,6 +342,7 @@ bool CServerInstance::IsServerActive()
 
 void CServerInstance::OnEvent()
 {
+	/// @todo
 	bool empty;
 	Event_s ev = g_Event.GetNextEvent(empty);
 	while (!empty)
@@ -532,7 +373,8 @@ void CServerInstance::OnEvent()
 
 void CServerInstance::OnPackets(IExtendedSocket* s, CReceivePacket* msg)
 {
-	if (find(g_pNetwork->m_Sessions.begin(), g_pNetwork->m_Sessions.end(), s) == g_pNetwork->m_Sessions.end())
+	/// @todo don't use pointer to deleted object
+	if (find(m_TCPServer.GetClients().begin(), m_TCPServer.GetClients().end(), s) == m_TCPServer.GetClients().end())
 	{
 		// skip packets with deleted socket object
 		return;
@@ -633,7 +475,7 @@ void CServerInstance::OnPackets(IExtendedSocket* s, CReceivePacket* msg)
 		g_pUserManager->OnLeaguePacket(msg, s);
 		break;
 	default:
-		g_pConsole->Warn("Unimplemented packet: %d\n", msg->GetID());
+		Console().Warn("Unimplemented packet: %d\n", msg->GetID());
 		break;
 	}
 }
@@ -650,7 +492,7 @@ void CServerInstance::OnSecondTick()
 	UpdateConsoleStatus();
 
 #ifdef USE_GUI
-	GUI()->UpdateInfo(m_bIsServerActive, g_pNetwork->m_Sessions.size(), m_nUptime, GetMemoryInfo());
+	GUI()->UpdateInfo(m_bIsServerActive, m_TCPServer.GetClients().size(), m_nUptime, GetMemoryInfo());
 #endif
 
 	Manager().SecondTick(m_CurrentTime);
@@ -663,7 +505,7 @@ void CServerInstance::OnSecondTick()
 
 void CServerInstance::OnMinuteTick()
 {
-	g_pConsole->Log("%s\n", GetMainInfo());
+	Console().Log("%s\n", GetMainInfo());
 
 	Manager().MinuteTick(m_CurrentTime);
 }
@@ -681,18 +523,18 @@ double CServerInstance::GetMemoryInfo()
 
 	SIZE_T mem = pmc.WorkingSetSize;
 	if (mem >= 10e9)
-		g_pConsole->Warn("[ALERT] Server is using more than 1G of memory.\n");
+		Console().Warn("[ALERT] Server is using more than 1G of memory.\n");
 
 	return mem / (1024.0 * 1024.0);
 #else
-	g_pConsole->Log("CServerInstance::GetMemoryInfo: not implemented\n");
+	Console().Log("CServerInstance::GetMemoryInfo: not implemented\n");
 	return 0;
 #endif
 }
 
 const char* CServerInstance::GetMainInfo()
 {
-	return va("Memory usage: %.02fmb. Connected users: %d. Logged in users: %d.", GetMemoryInfo(), static_cast<int>(g_pNetwork->m_Sessions.size()), static_cast<int>(g_pUserManager->GetUsers().size()));
+	return va("Memory usage: %.02fmb. Connected users: %d. Logged in users: %d.", GetMemoryInfo(), static_cast<int>(m_TCPServer.GetClients().size()), static_cast<int>(g_pUserManager->GetUsers().size()));
 }
 
 void CServerInstance::DisconnectClient(IExtendedSocket* socket)
@@ -700,26 +542,17 @@ void CServerInstance::DisconnectClient(IExtendedSocket* socket)
 	if (!socket)
 		return;
 
-	IUser* user = g_pUserManager->GetUserBySocket(socket);
-	if (user)
-	{
-		g_pUserManager->DisconnectUser(user);
-	}
-	else
-	{
-		g_pDedicatedServerManager->RemoveServer(socket);
-		g_pNetwork->RemoveSocket(socket);
-	}
+	m_TCPServer.DisconnectClient(socket);
 }
 
-std::vector<IExtendedSocket*> CServerInstance::GetSessions()
+std::vector<IExtendedSocket*> CServerInstance::GetClients()
 {
-	return g_pNetwork->m_Sessions;
+	return m_TCPServer.GetClients();
 }
 
 IExtendedSocket* CServerInstance::GetSocketByID(unsigned int id)
 {
-	for (auto s : g_pNetwork->m_Sessions)
+	for (auto s : m_TCPServer.GetClients())
 		if (s->GetID() == id)
 			return s;
 
@@ -728,8 +561,8 @@ IExtendedSocket* CServerInstance::GetSocketByID(unsigned int id)
 
 void CServerInstance::UpdateConsoleStatus()
 {
-	g_pConsole->SetStatus(GetMainInfo());
-	g_pConsole->UpdateStatus();
+	Console().SetStatus(GetMainInfo());
+	Console().UpdateStatus();
 }
 
 time_t CServerInstance::GetCurrentTime()

@@ -34,14 +34,10 @@ CUser::~CUser()
 	g_pUserDatabase->DropSession(m_nID);
 
 	if (m_pCurrentRoom)
-	{
 		m_pCurrentRoom->RemoveUser(this);
-	}
 
 	if (m_pCurrentChannel)
-	{
 		m_pCurrentChannel->UserLeft(this);
-	}
 
 	if (m_pRoomData)
 		delete m_pRoomData;

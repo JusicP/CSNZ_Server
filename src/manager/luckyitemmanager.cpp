@@ -7,6 +7,8 @@
 #include "nlohmann/json.hpp"
 #include "keyvalues.hpp"
 
+#include "common/utils.h"
+
 using namespace std;
 using json = nlohmann::json;
 using ordered_json = nlohmann::ordered_json;
@@ -48,14 +50,14 @@ void CLuckyItemManager::LoadLuckyItems()
 
 		if (jItemBox.is_discarded())
 		{
-			g_pConsole->Error("CLuckyItemManager::LoadLuckyItems: couldn't load ItemBox.json.\n");
+			Console().Error("CLuckyItemManager::LoadLuckyItems: couldn't load ItemBox.json.\n");
 			return;
 		}
 
 		int version = jItemBox.value("Version", 0);
 		if (version != ITEM_BOX_VERSION)
 		{
-			g_pConsole->Error("CLuckyItemManager::LoadLuckyItems: %d != ITEM_BOX_VERSION(%d)\n", version, ITEM_BOX_VERSION);
+			Console().Error("CLuckyItemManager::LoadLuckyItems: %d != ITEM_BOX_VERSION(%d)\n", version, ITEM_BOX_VERSION);
 			return;
 		}
 
@@ -96,7 +98,7 @@ void CLuckyItemManager::LoadLuckyItems()
 				itemBox->totalRate += rate.rate;
 				if (itemBox->totalRate > 100.0f)
 				{
-					g_pConsole->Warn("CLuckyItemManager::LoadLuckyItems: total rate for %d is more than 100\n", itemBox->itemId);
+					Console().Warn("CLuckyItemManager::LoadLuckyItems: total rate for %d is more than 100\n", itemBox->itemId);
 					break;
 				}
 
@@ -111,7 +113,7 @@ void CLuckyItemManager::LoadLuckyItems()
 	}
 	catch (exception& ex)
 	{
-		g_pConsole->Error("CLuckyItemManager::LoadLuckyItems: an error occured while parsing ItemBox.json: %s\n", ex.what());
+		Console().Error("CLuckyItemManager::LoadLuckyItems: an error occured while parsing ItemBox.json: %s\n", ex.what());
 	}
 
 	// normilize all values
@@ -286,7 +288,7 @@ int CLuckyItemManager::OpenItemBox(IUser* user, int itemBoxID, int itemBoxOpenCo
 	ItemBox* itemBox = GetItemBoxByItemId(itemBoxID);
 	if (!itemBox || itemBox->itemId == 0)
 	{
-		g_pConsole->Warn("User '%d, %s' tried to open item box with unknown ID: %d\n", user->GetID(), user->GetUsername().c_str(), itemBoxID);
+		Console().Warn("User '%d, %s' tried to open item box with unknown ID: %d\n", user->GetID(), user->GetUsername().c_str(), itemBoxID);
 		g_pPacketManager->SendItemOpenDecoderErrorReply(user->GetExtendedSocket(), ItemBoxError::FAIL_USEITEM);
 		return 0;
 	}

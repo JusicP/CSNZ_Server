@@ -1,5 +1,5 @@
 #include "consoletab.h"
-#include "../console.h"
+#include "common/console.h"
 #include "gui.h"
 #include "interface/ievent.h"
 #include "../consolecommands.h"

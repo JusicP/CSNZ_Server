@@ -1,11 +1,13 @@
-#include "extendedsocket.h"
-#include "sendpacket.h"
-#include "receivepacket.h"
-
-#include "common/net/net.h"
-
 #include <wolfssl/options.h>
 #include <wolfssl/openssl/evp.h>
+
+#include "net/extendedsocket.h"
+#include "net/sendpacket.h"
+#include "net/receivepacket.h"
+
+#include "common/net/netdefs.h"
+#include "common/console.h"
+#include "common/utils.h"
 
 using namespace std;
 
@@ -13,11 +15,11 @@ using namespace std;
  * Constructor.
  * @param id
  */
-CExtendedSocket::CExtendedSocket(unsigned int id)
+CExtendedSocket::CExtendedSocket(SOCKET socket, unsigned int id)
 {
 	memset(&m_GuestData, 0, sizeof(GuestData_s));
 	m_nID = id;
-	m_Socket = 0;
+	m_Socket = socket;
 	m_nSequence = 0;
 	m_nBytesReceived = 0;
 	m_nBytesSent = 0;
@@ -55,6 +57,8 @@ CExtendedSocket::~CExtendedSocket()
 		EVP_CIPHER_CTX_cleanup(m_pEncEVPCTX);
 		EVP_CIPHER_CTX_free(m_pEncEVPCTX);
 	}
+
+	closesocket(m_Socket);
 }
 
 /**
@@ -166,7 +170,7 @@ CReceivePacket* CExtendedSocket::Read()
 		recvResult = recv(m_Socket, (char*)packetDataBuf.data(), PACKET_HEADER_SIZE, 0);
 		if (recvResult < PACKET_HEADER_SIZE)
 		{
-			g_pConsole->Warn("CExtendedSocket::Read(%s): result < PACKET_HEADER_SIZE, %d\n", GetIP().c_str(), GetNetworkError());
+			Console().Warn("CExtendedSocket::Read(%s): result < PACKET_HEADER_SIZE, %d\n", GetIP().c_str(), GetNetworkError());
 			return NULL;
 		}
 
@@ -182,13 +186,15 @@ CReceivePacket* CExtendedSocket::Read()
 			int outLen = 0;
 			if (EVP_DecryptUpdate(m_pDecEVPCTX, packetDataBuf.data(), &outLen, packetDataBuf.data(), recvResult) != 1)
 			{
-				g_pConsole->Log("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+				Console().Log("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+				return NULL;
 			}
 
 			int finalLen = 0;
 			if (EVP_DecryptFinal_ex(m_pDecEVPCTX, packetDataBuf.data() + outLen, &finalLen) != 1)
 			{
-				g_pConsole->Log("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+				Console().Log("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+				return NULL;
 			}
 		}
 
@@ -196,7 +202,7 @@ CReceivePacket* CExtendedSocket::Read()
 		m_pMsg = new CReceivePacket(Buffer(packetDataBuf));
 		if (!m_pMsg->IsValid())
 		{
-			g_pConsole->Error("CExtendedSocket::Read(%s): received invalid packet\n", GetIP().c_str());
+			Console().Error("CExtendedSocket::Read(%s): received invalid packet\n", GetIP().c_str());
 			delete m_pMsg;
 			m_pMsg = NULL;
 			return NULL;
@@ -204,8 +210,8 @@ CReceivePacket* CExtendedSocket::Read()
 
 		if (m_pMsg->GetSequence() != m_nNextExpectedSeq)
 		{
-			g_pConsole->Warn("CExtendedSocket::Read(%s): sequence mismatch, got: %d, expected: %d\n", GetIP().c_str(), m_pMsg->GetSequence(), m_nNextExpectedSeq);
-			//return NULL;
+			Console().Warn("CExtendedSocket::Read(%s): sequence mismatch, got: %d, expected: %d\n", GetIP().c_str(), m_pMsg->GetSequence(), m_nNextExpectedSeq);
+			return NULL;
 		}
 
 		// well i think set to -1 afterwards, so fixed shits
@@ -225,7 +231,7 @@ CReceivePacket* CExtendedSocket::Read()
 	recvResult = recv(m_Socket, (char*)packetDataBuf.data(), m_nPacketReceivedSize ? m_pMsg->GetLength() + PACKET_HEADER_SIZE - m_nPacketReceivedSize : m_pMsg->GetLength(), 0);
 	if (recvResult <= 0)
 	{
-		g_pConsole->Warn("CExtendedSocket::Read(%s): result <= 0\n", GetIP().c_str(), GetNetworkError());
+		Console().Warn("CExtendedSocket::Read(%s): result <= 0\n", GetIP().c_str(), GetNetworkError());
 		delete m_pMsg;
 		m_pMsg = NULL;
 		return NULL;
@@ -244,24 +250,26 @@ CReceivePacket* CExtendedSocket::Read()
 		int outLen = 0;
 		if (EVP_DecryptUpdate(m_pDecEVPCTX, packetDataBuf.data(), &outLen, packetDataBuf.data(), recvResult) != 1)
 		{
-			g_pConsole->Log("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+			Console().Log("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+			return NULL;
 		}
 
 		int finalLen = 0;
 		if (EVP_DecryptFinal_ex(m_pDecEVPCTX, packetDataBuf.data() + outLen, &finalLen) != 1)
 		{
-			g_pConsole->Log("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+			Console().Log("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+			return NULL;
 		}
 	}
 
 	Buffer& buf = m_pMsg->GetData();
-	// todo: rewrite
+	/// @todo: rewrite
 	vector<unsigned char> vecBuf = buf.getBuffer();
 	vecBuf.insert(vecBuf.end(), packetDataBuf.begin(), packetDataBuf.end());
 	buf.setBuffer(vecBuf);
 
 #if 0
-	g_pConsole->Server->Log("CExtendedSocket::Read: recvResult: %d, packetDataBuf.size: %d, m_nPacketReceivedSize: %d, m_pMsg->GetLength: %d, m_pMsg->GetSequence: %d, m_nPacketToReceiveFullSize: %d\n", recvResult, packetDataBuf.size(), m_nPacketReceivedSize, m_pMsg->GetLength(), m_pMsg->GetSequence(), m_nPacketToReceiveFullSize);
+	Console().Log("CExtendedSocket::Read: recvResult: %d, packetDataBuf.size: %d, m_nPacketReceivedSize: %d, m_pMsg->GetLength: %d, m_pMsg->GetSequence: %d, m_nPacketToReceiveFullSize: %d\n", recvResult, packetDataBuf.size(), m_nPacketReceivedSize, m_pMsg->GetLength(), m_pMsg->GetSequence(), m_nPacketToReceiveFullSize);
 #endif
 
 	// if not received the full packet
@@ -286,8 +294,8 @@ int CExtendedSocket::Send(vector<unsigned char>& buffer)
 {
 	if (buffer.size() > PACKET_MAX_SIZE)
 	{
-		g_pConsole->Error("CExtendedSocket::Send() buffer.size(): %d > PACKET_MAX_SIZE!!!, ID: %d, seq: %d. Packet not sent.\n", buffer.size(), buffer[4], buffer[1]);
-		m_nSequence--;
+		Console().Error("CExtendedSocket::Send() buffer.size(): %d > PACKET_MAX_SIZE!!!, ID: %d, seq: %d. Packet not sent.\n", buffer.size(), buffer[4], buffer[1]);
+		m_nSequence--; /// @fixme I don't think we need to do this
 		return 0;
 	}
 
@@ -296,18 +304,21 @@ int CExtendedSocket::Send(vector<unsigned char>& buffer)
 		int encLen = 0;
 		if (EVP_EncryptUpdate(m_pEncEVPCTX, buffer.data(), &encLen, buffer.data(), buffer.size()) != 1)
 		{
-			g_pConsole->Log("CExtendedSocket::Send: EVP_EncryptUpdate failed\n");
+			Console().Log("CExtendedSocket::Send: EVP_EncryptUpdate failed\n");
+			return 0;
 		}
 
 		int finalLen = 0;
 		if (EVP_EncryptFinal_ex(m_pEncEVPCTX, buffer.data() + encLen, &finalLen) != 1)
 		{
-			g_pConsole->Log("CExtendedSocket::Read: EVP_EncryptUpdate failed\n");
+			Console().Log("CExtendedSocket::Read: EVP_EncryptUpdate failed\n");
+			return 0;
 		}
 
 		if (encLen != buffer.size())
 		{
-			g_pConsole->Log("CExtendedSocket::Send: encLen != buffer.size()\n");
+			Console().Log("CExtendedSocket::Send: encLen != buffer.size()\n");
+			return 0;
 		}
 	}
 
@@ -324,7 +335,7 @@ int CExtendedSocket::Send(vector<unsigned char>& buffer)
 		m_nBytesSent = 0;
 
 #ifdef _DEBUG
-	g_pConsole->Log("CExtendedSocket::Send() seq: %d, buffer.size(): %d, bytesSent: %d, id: %d\n", buffer[1], buffer.size(), bytesSent, buffer[4]);
+	Console().Log("CExtendedSocket::Send() seq: %d, buffer.size(): %d, bytesSent: %d, id: %d\n", buffer[1], buffer.size(), bytesSent, buffer[4]);
 #endif
 
 	return bytesSent;
@@ -333,15 +344,16 @@ int CExtendedSocket::Send(vector<unsigned char>& buffer)
 /**
  * Sends packet
  * @param msg
- * @param forceSend Used to send a packet ignoring the queue of them
+ * @param ignoreQueue Used to send a packet ignoring the queue of them (used but need to make sure that the data is ready to be sent)
  * @return Number of bytes sent, SOCKET_ERROR on error
  */
-int CExtendedSocket::Send(CSendPacket* msg, bool forceSend)
+int CExtendedSocket::Send(CSendPacket* msg, bool ignoreQueue)
 {
 	int result = 1;
 
-	if (!forceSend && m_SendPackets.size())
+	if (!ignoreQueue && m_SendPackets.size())
 	{
+		// add to the send queue
 		m_SendPackets.push_back(msg);
 	}
 	else
@@ -353,11 +365,13 @@ int CExtendedSocket::Send(CSendPacket* msg, bool forceSend)
 		{
 			if (error == WSAEWOULDBLOCK)
 			{
+				/// @fixme can we come here?
 				m_SendPackets.push_back(msg);
 			}
 			else
 			{
-				g_pConsole->Error("CExtendedSocket::Send() WSAGetLastError: %d\n", error);
+				Console().Error("CExtendedSocket::Send() WSAGetLastError: %d\n", error);
+				delete msg;
 			}
 		}
 		else
@@ -376,14 +390,6 @@ int CExtendedSocket::Send(CSendPacket* msg, bool forceSend)
 unsigned int CExtendedSocket::GetID()
 {
 	return m_nID;
-}
-
-/**
- * Sets socket object
- */
-void CExtendedSocket::SetSocket(SOCKET socket)
-{
-	m_Socket = socket;
 }
 
 /**
@@ -443,7 +449,7 @@ int CExtendedSocket::GetBytesSent()
  * Gets packets that are in the queue for sending
  * @return Vector of packets to send
  */
-std::vector<CSendPacket*>& CExtendedSocket::GetPacketsToSend()
+vector<CSendPacket*>& CExtendedSocket::GetPacketsToSend()
 {
 	return m_SendPackets;
 }

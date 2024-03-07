@@ -68,14 +68,14 @@ void CQuestManager::LoadEventQuests()
 
 		if (jEventQuests.is_discarded())
 		{
-			g_pConsole->Error("CQuestManager::LoadEventQuests: couldn't load EventQuests.json.\n");
+			Console().Error("CQuestManager::LoadEventQuests: couldn't load EventQuests.json.\n");
 			return;
 		}
 
 		int version = jEventQuests.value("Version", 0);
 		if (version != EVENT_QUESTS_VERSION)
 		{
-			g_pConsole->Error("CQuestManager::LoadEventQuests: %d != EVENT_QUESTS_VERSION(%d)\n", version, EVENT_QUESTS_VERSION);
+			Console().Error("CQuestManager::LoadEventQuests: %d != EVENT_QUESTS_VERSION(%d)\n", version, EVENT_QUESTS_VERSION);
 			return;
 		}
 
@@ -224,7 +224,7 @@ void CQuestManager::LoadEventQuests()
 	}
 	catch (exception& ex)
 	{
-		g_pConsole->Error("CQuestManager::LoadEventQuests: an error occured while parsing EventQuests.json: %s\n", ex.what());
+		Console().Error("CQuestManager::LoadEventQuests: an error occured while parsing EventQuests.json: %s\n", ex.what());
 	}
 }
 
@@ -258,7 +258,7 @@ void CQuestManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		//OnSetFavouriteRequest(user, msg);
 		break;
 	default:
-		g_pConsole->Warn(OBFUSCATE("[User '%s'] Packet_Quest type %d is not implemented\n"), user->GetLogName(), requestID);
+		Console().Warn(OBFUSCATE("[User '%s'] Packet_Quest type %d is not implemented\n"), user->GetLogName(), requestID);
 		break;
 	};
 }
@@ -284,7 +284,7 @@ void CQuestManager::OnTitlePacket(CReceivePacket* msg, IExtendedSocket* socket)
 		OnTitleListRemoveRequest(user, msg);
 		break;
 	default:
-		g_pConsole->Warn(OBFUSCATE("[User '%s'] Packet_Title type %d is not implemented\n"), user->GetLogName(), requestID);
+		Console().Warn(OBFUSCATE("[User '%s'] Packet_Title type %d is not implemented\n"), user->GetLogName(), requestID);
 		break;
 	};
 }
@@ -512,7 +512,7 @@ void CQuestManager::OnQuestFinished(IUser* user, CQuest* quest, UserQuestProgres
 	g_pPacketManager->SendQuestUpdateMainInfo(user->GetExtendedSocket(), 0xFFFF, quest, questProgress);
 	g_pUserDatabase->UpdateQuestProgress(user->GetID(), questProgress);
 
-	g_pConsole->Log(OBFUSCATE("[User '%s'] completed quest %d, %s, room id: %d\n"), user->GetLogName(), quest->GetID(), quest->GetName().c_str(), user->GetCurrentRoom() ? user->GetCurrentRoom()->GetID() : 0);
+	Console().Log(OBFUSCATE("[User '%s'] completed quest %d, %s, room id: %d\n"), user->GetLogName(), quest->GetID(), quest->GetName().c_str(), user->GetCurrentRoom() ? user->GetCurrentRoom()->GetID() : 0);
 }
 
 void CQuestManager::OnReceiveReward(IUser* user, int rewardID, int questID)
@@ -561,7 +561,7 @@ void CQuestManager::OnSpecialMissionRequest(IUser* user, CReceivePacket* msg)
 
 	g_pPacketManager->SendQuestUpdateMainInfo(user->GetExtendedSocket(), 0xFFFF, quest, questProgress);
 
-	g_pConsole->Log(OBFUSCATE("[User '%s'] CQuestManager::OnSpecialMissionRequest: %d\n"), user->GetLogName(), questID);
+	Console().Log(OBFUSCATE("[User '%s'] CQuestManager::OnSpecialMissionRequest: %d\n"), user->GetLogName(), questID);
 }
 
 void CQuestManager::OnSetFavouriteRequest(IUser* user, CReceivePacket* msg)

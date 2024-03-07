@@ -9,6 +9,7 @@ option(CSO_SERVER_PROTECTION "Enable protection" OFF)
 option(CSO_SERVER_DBSQLITE "SQLite database" ON)
 
 add_subdirectory(thirdparty)
+add_subdirectory(net)
 
 if (CSO_SERVER_USE_GUI)
 	add_subdirectory(GUI)
@@ -22,6 +23,8 @@ target_link_libraries(PROJECTNAME PRIVATE keyvalues)
 target_link_libraries(PROJECTNAME PRIVATE nlohmann_json)
 target_link_libraries(PROJECTNAME PRIVATE wolfssl)
 target_link_libraries(PROJECTNAME PRIVATE zip)
+
+target_link_libraries(PROJECTNAME PRIVATE net)
 if (CSO_SERVER_USE_GUI)
 	target_link_libraries(PROJECTNAME PRIVATE gui)
 	qt6_disable_unicode_defines(PROJECTNAME)
@@ -34,7 +37,6 @@ target_sources(PROJECTNAME PRIVATE "serverconfig.cpp")
 target_sources(PROJECTNAME PRIVATE "consolecommands.cpp")
 target_sources(PROJECTNAME PRIVATE "common/buffer.cpp")
 target_sources(PROJECTNAME PRIVATE "common/buildnum.cpp")
-target_sources(PROJECTNAME PRIVATE "console.cpp")
 target_sources(PROJECTNAME PRIVATE "user/user.cpp")
 target_sources(PROJECTNAME PRIVATE "user/userinventoryitem.cpp")
 target_sources(PROJECTNAME PRIVATE "user/userloadout.cpp")
@@ -64,20 +66,18 @@ target_sources(PROJECTNAME PRIVATE "manager/minigamemanager.cpp")
 target_sources(PROJECTNAME PRIVATE "manager/clanmanager.cpp")
 target_sources(PROJECTNAME PRIVATE "manager/rankmanager.cpp")
 
-target_sources(PROJECTNAME PRIVATE "net/network.cpp")
-target_sources(PROJECTNAME PRIVATE "net/extendedsocket.cpp")
-target_sources(PROJECTNAME PRIVATE "net/receivepacket.cpp")
-target_sources(PROJECTNAME PRIVATE "net/sendpacket.cpp")
 target_sources(PROJECTNAME PRIVATE "packet/packethelper_fulluserinfo.cpp")
 if (WIN32)
 	target_sources(PROJECTNAME PRIVATE "crashdump.cpp")
 endif()
 
+target_sources(PROJECTNAME PRIVATE "common/console.cpp")
 target_sources(PROJECTNAME PRIVATE "common/thread.cpp")
 target_sources(PROJECTNAME PRIVATE "common/utils.cpp")
 
 target_include_directories(PROJECTNAME PUBLIC
 	"."
+	"public"
 	"thirdparty"
 	"thirdparty/json/include"
 	"thirdparty/SQLiteCpp/include"
@@ -128,6 +128,8 @@ if (NOT WIN32)
 endif()
 
 if (MSVC)
+	add_definitions(-DWIN32_LEAN_AND_MEAN)
+
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:CONSOLE")
 
 	set (CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Od")

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>  // buffers
 #include <sstream> // strings, byteStr()
+#include <iomanip>
 
 class Buffer {
 public:

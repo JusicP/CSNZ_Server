@@ -75,12 +75,12 @@ bool CDedicatedServerManager::OnPacket(CReceivePacket* msg, IExtendedSocket* soc
 	case 2:
 	{
 		int unk = msg->ReadUInt32();
-		g_pConsole->Warn("CDedicatedServerManager::OnPacket(2): %d\n", unk);
+		Console().Warn("CDedicatedServerManager::OnPacket(2): %d\n", unk);
 
 		break;
 	}
 	default:
-		g_pConsole->Warn("Unknown host server request %d\n", type);
+		Console().Warn("Unknown host server request %d\n", type);
 		break;
 	}
 

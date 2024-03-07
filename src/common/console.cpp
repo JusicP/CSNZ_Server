@@ -1,11 +1,4 @@
 #include "console.h"
-#ifdef WIN32
-#include <direct.h>
-#define getcwd _getcwd // avoid warning C4996
-#else
-#include <stdarg.h>
-#include <unistd.h>
-#endif
 #ifdef USE_GUI
 #include "gui/igui.h"
 #endif
@@ -14,57 +7,21 @@
 
 using namespace std;
 
-CConsole::CConsole()
+CConsole& Console()
 {
-	char cwd[MAX_PATH];
-	if (!getcwd(cwd, sizeof(cwd)))
-	{
-		printf("getcwd failed: %s", strerror(errno));
-	}
+	static CConsole g_Console;
+	return g_Console;
+}
 
-	char path[MAX_PATH];
-	snprintf(path, sizeof(path), "%s/Logs", cwd);
-
-#ifdef WIN32
-	_mkdir(path);
-#else 
-	mkdir(path, 0755);
-#endif
-
-	time_t currTime = time(NULL);
-	struct tm* pTime = localtime(&currTime);
-
-	snprintf(m_szServerLogPath, sizeof(m_szServerLogPath), "%s/Server_%d-%.2d-%.2d %.2d-%.2d-%.2d.log", path,
-		pTime->tm_year + 1900,	/* Year less 2000 */
-		pTime->tm_mon + 1,		/* month (0 - 11 : 0 = January) */
-		pTime->tm_mday,			/* day of month (1 - 31) */
-		pTime->tm_hour,			/* hour (0 - 23) */
-		pTime->tm_min,		    /* minutes (0 - 59) */
-		pTime->tm_sec		    /* seconds (0 - 59) */
-	);
-
-	FILE* file = fopen(m_szServerLogPath, "w");
-	if (file)
-	{
-		fclose(file);
-	}
-
+CConsole::CConsole() : m_szLogPath {}
+{
 #ifdef WIN32
 	m_Output = GetStdHandle(STD_OUTPUT_HANDLE);
-
-	char windowName[512];
-#ifdef _DEBUG
-	snprintf(windowName, sizeof(windowName), OBFUSCATE("CSN:Z Server %s %s DEBUG BUILD"), __DATE__, __TIME__);
-#else
-	snprintf(windowName, sizeof(windowName), OBFUSCATE("CSN:Z Server %s %s"), __DATE__, __TIME__);
-#endif
-	SetWindowTextA(GetConsoleWindow(), windowName);
+	printf("\n");
 #endif
 
 	m_nLogLevel = LOG_INFO | LOG_WARN | LOG_ERROR;
 	m_szLastPacket = "none";
-
-	printf("\n");
 }
 
 CConsole::~CConsole()
@@ -153,7 +110,7 @@ void CConsole::WriteToConsole(OutMode mode, const char* msg)
 	// write to console
 	printf("%s", buffer);
 
-	FILE* file = fopen(m_szServerLogPath, "a+");
+	FILE* file = fopen(m_szLogPath, "a+");
 	if (file)
 	{
 		fprintf(file, "%s", buffer);
@@ -177,6 +134,8 @@ void CConsole::WriteToConsole(OutMode mode, const char* msg)
 
 void CConsole::Error(const char* msg, ...)
 {
+	m_CriticalSection.Enter();
+
 	if ((m_nLogLevel & LOG_ERROR) == 0)
 	{
 		return;
@@ -190,10 +149,14 @@ void CConsole::Error(const char* msg, ...)
 	va_end(argptr);
 
 	Write(CON_ERROR, buffer);
+
+	m_CriticalSection.Leave();
 }
 
 void CConsole::FatalError(const char* msg, ...)
 {
+	m_CriticalSection.Enter();
+
 	if ((m_nLogLevel & LOG_ERROR) == 0)
 	{
 		return;
@@ -207,10 +170,14 @@ void CConsole::FatalError(const char* msg, ...)
 	va_end(argptr);
 
 	Write(CON_FATAL_ERROR, buffer);
+
+	m_CriticalSection.Leave();
 }
 
 void CConsole::Warn(const char* msg, ...)
 {
+	m_CriticalSection.Enter();
+
 	if ((m_nLogLevel & LOG_WARN) == 0)
 	{
 		return;
@@ -224,10 +191,14 @@ void CConsole::Warn(const char* msg, ...)
 	va_end(argptr);
 
 	Write(CON_WARNING, buffer);
+
+	m_CriticalSection.Leave();
 }
 
 void CConsole::Log(const char* msg, ...)
 {
+	m_CriticalSection.Enter();
+
 	if ((m_nLogLevel & LOG_INFO) == 0)
 	{
 		return;
@@ -241,10 +212,14 @@ void CConsole::Log(const char* msg, ...)
 	va_end(argptr);
 
 	Write(CON_LOG, buffer);
+
+	m_CriticalSection.Leave();
 }
 
 void CConsole::Debug(const char* msg, ...)
 {
+	m_CriticalSection.Enter();
+
 	if ((m_nLogLevel & LOG_DEBUG_PACKET) == 0)
 	{
 		return;
@@ -258,6 +233,8 @@ void CConsole::Debug(const char* msg, ...)
 	va_end(argptr);
 
 	Write(CON_LOG, buffer);
+
+	m_CriticalSection.Leave();
 }
 
 void CConsole::SetStatus(const char* status)
@@ -301,4 +278,10 @@ void CConsole::UpdateStatus()
 	WriteConsoleOutputAttribute(m_Output, wAttrib, 80, coord, &dwWritten);
 	WriteConsoleOutputCharacter(m_Output, m_szStatusLine, 80, coord, &dwWritten);
 #endif
+}
+
+void CConsole::SetLogFile(const char* path)
+{
+	strncpy(m_szLogPath, path, sizeof(m_szLogPath) - 1);
+	m_szLogPath[sizeof(m_szLogPath) - 1] = '\0';
 }

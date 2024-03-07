@@ -1,6 +1,6 @@
 #pragma once
 
-#include "interface/iextendedsocket.h"
+#include "interface/net/iextendedsocket.h"
 #include "common/buffer.h"
 
 struct GuestData_s
@@ -18,12 +18,13 @@ class CReceivePacket;
 struct WOLFSSL_EVP_CIPHER_CTX;
 
 /**
- * Class that extends socket object to store additional information such as IP, some statistics, etc
+ * Class that extends client sockets and sockets returned by accept() to store additional information
+ * such as IP, some statistics, etc and to manage packets
  */
 class CExtendedSocket : public IExtendedSocket
 {
 public:
-	CExtendedSocket(unsigned int id = 0);
+	CExtendedSocket(SOCKET socket, unsigned int id = 0);
 	~CExtendedSocket();
 
 	bool SetupCrypt();
@@ -40,10 +41,9 @@ public:
 	void ResetSeq();
 	CReceivePacket* Read();
 	int Send(std::vector<unsigned char>& buffer);
-	int Send(CSendPacket* msg, bool forceSend = false);
+	int Send(CSendPacket* msg, bool ignoreQueue = false);
 
 	unsigned int GetID();
-	void SetSocket(SOCKET socket);
 	SOCKET GetSocket();
 	void SetMsg(CReceivePacket* msg);
 	CReceivePacket* GetMsg();
