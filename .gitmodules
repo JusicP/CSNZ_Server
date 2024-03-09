@@ -16,3 +16,6 @@
 [submodule "src/thirdparty/rapidcsv"]
 	path = src/thirdparty/rapidcsv
 	url = https://github.com/d99kris/rapidcsv
+[submodule "src/thirdparty/doctest"]
+	path = src/thirdparty/doctest
+	url = https://github.com/doctest/doctest
