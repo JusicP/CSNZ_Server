@@ -26,7 +26,7 @@ CUDPServer::CUDPServer() : m_ListenThread(ListenThread, this)
 
 #ifdef WIN32
 	WSADATA wsaData;
-	m_nResult = WSAStartup(MAKEWORD(2, 0), &wsaData);
+	m_nResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (m_nResult != 0)
 	{
 		Console().FatalError("WSAStartup() failed with error: %d\n%s\n", m_nResult, WSAGetLastErrorString());
@@ -121,11 +121,11 @@ void CUDPServer::Stop()
 {
 	if (m_bIsRunning)
 	{
-		closesocket(m_Socket);
-
 		m_bIsRunning = false;
 
 		m_ListenThread.Join();
+
+		closesocket(m_Socket);
 	}
 }
 

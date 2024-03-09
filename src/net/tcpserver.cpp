@@ -26,7 +26,7 @@ CTCPServer::CTCPServer() : m_ListenThread(ListenThread, this)
 
 #ifdef WIN32
 	WSADATA wsaData;
-	int result = WSAStartup(MAKEWORD(2,0), &wsaData);
+	int result = WSAStartup(MAKEWORD(2,2), &wsaData);
 	if (result != 0)
 	{
 		Console().FatalError("WSAStartup() failed with error: %d\n%s\n", m_nResult, WSAGetLastErrorString());
@@ -138,11 +138,11 @@ void CTCPServer::Stop()
 
 	if (IsRunning())
 	{
-		closesocket(m_Socket);
-
 		m_bIsRunning = false;
-		
+
 		m_ListenThread.Join();
+
+		closesocket(m_Socket);
 	}
 }
 

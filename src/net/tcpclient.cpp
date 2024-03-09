@@ -26,7 +26,7 @@ CTCPClient::CTCPClient() : m_ListenThread(ListenThread, this)
 
 #ifdef WIN32
 	WSADATA wsaData;
-	int result = WSAStartup(MAKEWORD(2, 0), &wsaData);
+	int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (result != 0)
 	{
 		Console().FatalError("WSAStartup() failed with error: %d\n%s\n", m_nResult, WSAGetLastErrorString());
@@ -52,7 +52,7 @@ bool CTCPClient::Start(const string& ip, const string& port)
 	if (IsRunning())
 		return false;
 
-	addrinfo hints;
+	addrinfo hints = {};
 	addrinfo* result;
 	if (getaddrinfo(ip.data(), port.data(), &hints, &result) != 0)
 	{
@@ -78,13 +78,13 @@ bool CTCPClient::Start(const string& ip, const string& port)
 		return false;
 	}
 
-	if (connect(sock, result->ai_addr, result->ai_addrlen) == SOCKET_ERROR)
-	{
-		Console().FatalError("connect() failed with error: %d\n%s\n", GetNetworkError(), WSAGetLastErrorString());
-		freeaddrinfo(result);
-		closesocket(sock);
-		return false;
-	}
+	//if (connect(sock, result->ai_addr, result->ai_addrlen) == SOCKET_ERROR)
+	//{
+	//	Console().FatalError("connect() failed with error: %d\n%s\n", GetNetworkError(), WSAGetLastErrorString());
+	//	freeaddrinfo(result);
+	//	closesocket(sock);
+	//	return false;
+	//}
 
 	freeaddrinfo(result);
 
@@ -107,11 +107,11 @@ void CTCPClient::Stop()
 {
 	if (IsRunning())
 	{
-		closesocket(m_pSocket->GetSocket());
-
 		m_bIsRunning = false;
 
 		m_ListenThread.Join();
+
+		closesocket(m_pSocket->GetSocket());
 	}
 }
 

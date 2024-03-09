@@ -1,13 +1,12 @@
 #pragma once
 
 #include "socketshared.h"
-#include "interface/net/iserverlistener.h"
-
 #include "common/thread.h"
 
 #include <string>
 
 class CExtendedSocket;
+class IClientListenerTCP;
 
 /**
  * Class that connects to the server on a given IP and port
