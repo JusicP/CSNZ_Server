@@ -62,7 +62,9 @@ CServerInstance::CServerInstance()
 	m_nUptime = 0;
 
 	m_TCPServer.SetCriticalSection(&g_ServerCriticalSection);
+	m_TCPServer.SetListener(this);
 	m_UDPServer.SetCriticalSection(&g_ServerCriticalSection);
+	m_UDPServer.SetListener(this);
 }
 
 bool CServerInstance::Init()
