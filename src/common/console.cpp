@@ -134,12 +134,12 @@ void CConsole::WriteToConsole(OutMode mode, const char* msg)
 
 void CConsole::Error(const char* msg, ...)
 {
-	m_CriticalSection.Enter();
-
 	if ((m_nLogLevel & LOG_ERROR) == 0)
 	{
 		return;
 	}
+
+	m_CriticalSection.Enter();
 
 	va_list argptr;
 	static char buffer[8192];
@@ -155,12 +155,12 @@ void CConsole::Error(const char* msg, ...)
 
 void CConsole::FatalError(const char* msg, ...)
 {
-	m_CriticalSection.Enter();
-
 	if ((m_nLogLevel & LOG_ERROR) == 0)
 	{
 		return;
 	}
+
+	m_CriticalSection.Enter();
 
 	va_list argptr;
 	static char buffer[8192];
@@ -176,12 +176,12 @@ void CConsole::FatalError(const char* msg, ...)
 
 void CConsole::Warn(const char* msg, ...)
 {
-	m_CriticalSection.Enter();
-
 	if ((m_nLogLevel & LOG_WARN) == 0)
 	{
 		return;
 	}
+
+	m_CriticalSection.Enter();
 
 	va_list argptr;
 	static char buffer[8192];
@@ -197,12 +197,12 @@ void CConsole::Warn(const char* msg, ...)
 
 void CConsole::Log(const char* msg, ...)
 {
-	m_CriticalSection.Enter();
-
 	if ((m_nLogLevel & LOG_INFO) == 0)
 	{
 		return;
 	}
+
+	m_CriticalSection.Enter();
 
 	va_list argptr;
 	static char buffer[8192];
@@ -218,12 +218,12 @@ void CConsole::Log(const char* msg, ...)
 
 void CConsole::Debug(const char* msg, ...)
 {
-	m_CriticalSection.Enter();
-
 	if ((m_nLogLevel & LOG_DEBUG_PACKET) == 0)
 	{
 		return;
 	}
+
+	m_CriticalSection.Enter();
 
 	va_list argptr;
 	static char buffer[8192];
