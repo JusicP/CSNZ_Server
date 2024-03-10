@@ -23,4 +23,9 @@ public:
 
 class IClientListenerTCP
 {
+public:
+	virtual void OnTCPServerConnected() = 0;
+	virtual void OnTCPServerConnectFailed() = 0;
+	virtual void OnTCPMessage(CReceivePacket* msg) = 0;
+	virtual void OnTCPError(int errorCode) = 0;
 };

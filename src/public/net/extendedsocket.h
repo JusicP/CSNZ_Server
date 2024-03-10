@@ -39,9 +39,13 @@ public:
 	int GetSeq();
 	int LoggerGetSeq();
 	void ResetSeq();
+	int Read(char* buf, int len);
 	CReceivePacket* Read();
-	int Send(std::vector<unsigned char>& buffer);
+	int Send(std::vector<unsigned char>& buffer, bool serverHelloMsg = false);
 	int Send(CSendPacket* msg, bool ignoreQueue = false);
+
+	// tcp client method
+	bool OnServerConnected();
 
 	unsigned int GetID();
 	SOCKET GetSocket();

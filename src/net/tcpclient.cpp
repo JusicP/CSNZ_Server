@@ -19,10 +19,11 @@ CTCPClient::CTCPClient() : m_ListenThread(ListenThread, this)
 	m_pListener = NULL;
 	m_pCriticalSection = NULL;
 	m_nResult = 0;
+	m_bConnected = false;
 
 	FD_ZERO(&m_FdsRead);
 	FD_ZERO(&m_FdsWrite);
-	m_nMaxFD = 0;
+	FD_ZERO(&m_FdsExcept);
 
 #ifdef WIN32
 	WSADATA wsaData;
@@ -78,20 +79,16 @@ bool CTCPClient::Start(const string& ip, const string& port)
 		return false;
 	}
 
-	//if (connect(sock, result->ai_addr, result->ai_addrlen) == SOCKET_ERROR)
-	//{
-	//	Console().FatalError("connect() failed with error: %d\n%s\n", GetNetworkError(), WSAGetLastErrorString());
-	//	freeaddrinfo(result);
-	//	closesocket(sock);
-	//	return false;
-	//}
-
-	freeaddrinfo(result);
+	if (connect(sock, result->ai_addr, result->ai_addrlen) == SOCKET_ERROR && GetNetworkError() != WSAEWOULDBLOCK)
+	{
+		Console().FatalError("connect() failed with error: %d\n%s\n", GetNetworkError(), WSAGetLastErrorString());
+		freeaddrinfo(result);
+		closesocket(sock);
+		return false;
+	}
 
 	m_pSocket = new CExtendedSocket(sock);
 	m_pSocket->SetIP(ip);
-
-	m_nMaxFD = sock;
 
 	m_bIsRunning = true;
 
@@ -122,22 +119,20 @@ void CTCPClient::Listen()
 {
 	FD_ZERO(&m_FdsRead);
 	FD_ZERO(&m_FdsWrite);
+	FD_ZERO(&m_FdsExcept);
 
 	FD_SET(m_pSocket->GetSocket(), &m_FdsRead);
 
 	if (m_pSocket->GetPacketsToSend().size())
 		FD_SET(m_pSocket->GetSocket(), &m_FdsWrite);
 
-	FD_SET(m_pSocket->GetSocket(), &m_FdsRead);
-
-	if ((int)m_pSocket->GetSocket() > m_nMaxFD)
-		m_nMaxFD = m_pSocket->GetSocket();
+	FD_SET(m_pSocket->GetSocket(), &m_FdsExcept);
 
 	struct timeval tv;
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 
-	int activity = select(m_nMaxFD + 1, &m_FdsRead, &m_FdsWrite, NULL, &tv);
+	int activity = select(1, &m_FdsRead, &m_FdsWrite, &m_FdsExcept, &tv);
 	if (activity == SOCKET_ERROR)
 	{
 		Console().Error("select() failed with error: %d\n", GetNetworkError());
@@ -151,45 +146,80 @@ void CTCPClient::Listen()
 	if (m_pCriticalSection)
 		m_pCriticalSection->Enter();
 
-	for (int i = 0; i <= m_nMaxFD; i++)
+	if (FD_ISSET(m_pSocket->GetSocket(), &m_FdsRead))
 	{
-		if (FD_ISSET(i, &m_FdsRead))
+		if (!m_bConnected)
 		{
-			if (m_pSocket->GetSocket() == i)
+			// read server connected message
+			if (!m_pSocket->OnServerConnected())
 			{
-				printf("accept\n");
+				// seems to be connected to the wrong server
+				Stop();
+
+				if (m_pListener)
+					m_pListener->OnTCPError(0);
+			}
+
+			if (m_pListener)
+				m_pListener->OnTCPServerConnected();
+
+			m_bConnected = true;
+		}
+		else
+		{
+			CReceivePacket* msg = m_pSocket->Read();
+			int readResult = m_pSocket->GetReadResult();
+			if (readResult == 0)
+			{
+				// connection closed
+				Stop();
+			}
+			else if (readResult == SOCKET_ERROR)
+			{
+				// error but close connection
+				Stop();
+
+				if (m_pListener)
+					m_pListener->OnTCPError(0);
+			}
+			else if (!msg)
+			{
+				// packet is not valid or wrong sequence or decryption failed
+				/// @fixme should we disconnect here?
+				Stop();
 			}
 			else
 			{
-				printf("receive\n");
-
-				CReceivePacket* msg = m_pSocket->Read();
-				int readResult = m_pSocket->GetReadResult();
-
-				//if (m_pListener)
-					//m_pListener->OnTCPMessage(socket, socket->GetMsg());
+				if (m_pListener)
+					m_pListener->OnTCPMessage(msg);
 			}
-		}
 
-		if (FD_ISSET(i, &m_FdsWrite)) // data to write
+		}
+	}
+
+	if (FD_ISSET(m_pSocket->GetSocket(), &m_FdsWrite)) // data to write
+	{
+ 		if (m_pSocket->GetPacketsToSend().size())
 		{
-			printf("write\n");
-			if (m_pSocket->GetPacketsToSend().size())
+			// send the first packet from the queue
+			CSendPacket* msg = m_pSocket->GetPacketsToSend()[0];
+			if (m_pSocket->Send(msg, true) <= 0)
 			{
-				// send the first packet from the queue
-				CSendPacket* msg = m_pSocket->GetPacketsToSend()[0];
-				if (m_pSocket->Send(msg, true) <= 0)
-				{
-					Console().Warn("An error occurred while sending packet from queue: WSAGetLastError: %d, queue.size: %d\n", GetNetworkError(), m_pSocket->GetPacketsToSend().size());
+				Console().Warn("An error occurred while sending packet from queue: WSAGetLastError: %d, queue.size: %d\n", GetNetworkError(), m_pSocket->GetPacketsToSend().size());
 
-					*(int*)0 = NULL;
-				}
-				else
-				{
-					m_pSocket->GetPacketsToSend().erase(m_pSocket->GetPacketsToSend().begin());
-				}
+				*(int*)0 = NULL;
+			}
+			else
+			{
+				m_pSocket->GetPacketsToSend().erase(m_pSocket->GetPacketsToSend().begin());
 			}
 		}
+	}
+
+	if (FD_ISSET(m_pSocket->GetSocket(), &m_FdsExcept))
+	{
+		if (m_pListener)
+			m_pListener->OnTCPServerConnectFailed();
 	}
 
 	if (m_pCriticalSection)
@@ -221,4 +251,13 @@ void CTCPClient::SetListener(IClientListenerTCP* listener)
 void CTCPClient::SetCriticalSection(CCriticalSection* criticalSection)
 {
 	m_pCriticalSection = criticalSection;
+}
+
+/**
+ * Gets extended socket object
+ * @return m_pSocket Pointer to extended socket object
+ */
+CExtendedSocket* CTCPClient::GetSocket()
+{
+	return m_pSocket;
 }

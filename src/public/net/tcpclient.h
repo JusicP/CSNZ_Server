@@ -26,6 +26,8 @@ public:
 	void SetListener(IClientListenerTCP* listener);
 	void SetCriticalSection(CCriticalSection* criticalSection);
 
+	CExtendedSocket* GetSocket();
+
 private:
 	CExtendedSocket* m_pSocket;
 	bool m_bIsRunning;
@@ -36,5 +38,7 @@ private:
 
 	fd_set m_FdsRead;
 	fd_set m_FdsWrite;
-	int m_nMaxFD;
+	fd_set m_FdsExcept;
+
+	bool m_bConnected; // true when server connected msg received
 };

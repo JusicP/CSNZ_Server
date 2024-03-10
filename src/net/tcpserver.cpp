@@ -17,7 +17,7 @@ CTCPServer::CTCPServer() : m_ListenThread(ListenThread, this)
 	m_bIsRunning = false;
 	m_pListener = NULL;
 	m_pCriticalSection = NULL;
-	m_nNextClientIndex = 1;
+ 	m_nNextClientIndex = 0;
 	m_nResult = 0;
 
 	FD_ZERO(&m_FdsRead);
@@ -131,16 +131,16 @@ bool CTCPServer::Start(const string& port, int tcpSendBufferSize)
  */
 void CTCPServer::Stop()
 {
-	for (auto client : m_Clients)
-	{
-		delete client;
-	}
-
 	if (IsRunning())
 	{
 		m_bIsRunning = false;
 
 		m_ListenThread.Join();
+
+		for (auto client : m_Clients)
+		{
+			delete client;
+		}
 
 		closesocket(m_Socket);
 	}
@@ -236,6 +236,8 @@ void CTCPServer::Listen()
 				{
 					// packet is not valid or wrong sequence or decryption failed
 					/// @fixme should we disconnect here?
+
+					DisconnectClient(socket);
 					continue;
 				}
 				else
@@ -303,7 +305,7 @@ IExtendedSocket* CTCPServer::Accept(SOCKET socket)
 	// send server connected message
 	static const string connectedMsg = TCP_CONNECTED_MESSAGE;
 	static vector<unsigned char> msg(connectedMsg.begin(), connectedMsg.end());
-	newSocket->Send(msg);
+	newSocket->Send(msg, true);
 
 	return newSocket;
 }
