@@ -23,7 +23,7 @@ public:
 	void Stop();
 	void Listen();
 
-	IExtendedSocket* Accept(SOCKET socket);
+	IExtendedSocket* Accept(unsigned int id);
 	IExtendedSocket* GetExSocketBySocket(SOCKET socket);
 	void DisconnectClient(IExtendedSocket* socket);
 	std::vector<IExtendedSocket*>& GetClients();

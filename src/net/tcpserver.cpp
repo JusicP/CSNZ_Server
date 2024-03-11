@@ -274,10 +274,10 @@ void CTCPServer::Listen()
 
 /**
  * Accepts connection on a socket
- * @param socket
+ * @param id Number 
  * @return Pointer to CExtendedSocket, NULL on error
  */
-IExtendedSocket* CTCPServer::Accept(SOCKET socket)
+IExtendedSocket* CTCPServer::Accept(unsigned int id)
 {
 	sockaddr_in addr;
 	socklen_t addrlen = sizeof(addr);
@@ -297,7 +297,7 @@ IExtendedSocket* CTCPServer::Accept(SOCKET socket)
 	char ip[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &addr.sin_addr, ip, INET_ADDRSTRLEN);
 
-	CExtendedSocket* newSocket = new CExtendedSocket(clientSocket, m_nNextClientIndex++);
+	CExtendedSocket* newSocket = new CExtendedSocket(clientSocket, id);
 	newSocket->SetIP(ip);
 
 	m_Clients.push_back(newSocket);
@@ -335,6 +335,8 @@ void CTCPServer::DisconnectClient(IExtendedSocket* socket)
 	// connection closed
 	if (m_pListener)
 		m_pListener->OnTCPConnectionClosed(socket);
+
+	Console().Log("Client (%d, %s) has been disconnected from the server\n", socket->GetID(), socket->GetIP().c_str());
 
 	delete socket;
 	m_Clients.erase(remove(m_Clients.begin(), m_Clients.end(), socket), m_Clients.end());
