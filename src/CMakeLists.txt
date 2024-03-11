@@ -15,6 +15,9 @@ if (CSO_SERVER_USE_GUI)
 	add_subdirectory(GUI)
 endif()
 
+# if test build enabled
+add_subdirectory(test)
+
 add_executable(PROJECTNAME)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "" FORCE)
