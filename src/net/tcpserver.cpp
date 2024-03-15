@@ -226,7 +226,7 @@ void CTCPServer::Listen()
 				}
 				else if (readResult == SOCKET_ERROR)
 				{
-					// error but close connection
+					// error, close connection
 					DisconnectClient(socket);
 
 					if (m_pListener)
@@ -237,13 +237,23 @@ void CTCPServer::Listen()
 					// packet is not valid or wrong sequence or decryption failed
 					/// @fixme should we disconnect here?
 
-					DisconnectClient(socket);
+					// exclude case when message is not fully read
+					if (!socket->GetMsg())
+						DisconnectClient(socket);
+
 					continue;
 				}
 				else
 				{
+					// Call this to mark that socket is ready to receive a new message
+					socket->SetMsg(NULL);
+
+					// Important: responsibility for deleting the message is assumed by the listener
+					/// @todo use shared_ptr for messages?
 					if (m_pListener)
-						m_pListener->OnTCPMessage(socket, socket->GetMsg());
+						m_pListener->OnTCPMessage(socket, msg);
+					else
+						delete msg;
 				}
 			}
 		}

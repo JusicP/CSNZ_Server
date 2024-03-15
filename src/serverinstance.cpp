@@ -228,8 +228,7 @@ void CServerInstance::OnTCPConnectionClosed(IExtendedSocket* socket)
 
 void CServerInstance::OnTCPMessage(IExtendedSocket* socket, CReceivePacket* msg)
 {
-	g_Event.AddEventPacket(socket, socket->GetMsg());
-	socket->SetMsg(NULL);
+	g_Event.AddEventPacket(socket, msg);
 }
 
 void CServerInstance::OnTCPError(int errorCode)
@@ -365,6 +364,11 @@ void CServerInstance::OnEvent()
 		case SERVER_EVENT_FUNCTION:
 			OnFunction(ev.func);
 			break; 
+		}
+
+		if (ev.type == SERVER_EVENT_TCP_PACKET)
+		{
+			delete ev.msg;
 		}
 
 		g_ServerCriticalSection.Leave();

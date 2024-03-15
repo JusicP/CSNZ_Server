@@ -24,7 +24,6 @@ CExtendedSocket::CExtendedSocket(SOCKET socket, unsigned int id)
 	m_nBytesReceived = 0;
 	m_nBytesSent = 0;
 	m_nPacketReceivedSize = 0;
-	m_nPacketToReceiveFullSize = 0;
 	m_nReadResult = 0;
 	m_nNextExpectedSeq = 1;
 	m_pMsg = NULL;
@@ -173,7 +172,7 @@ int CExtendedSocket::Read(char* buf, int len)
 
 /**
  * Receives incoming packet or packets
- * @return Pointer to received packet, NULL on error
+ * @return Pointer to received message if entire message has been read, NULL on error or if waiting for the rest of message
  */
 CReceivePacket* CExtendedSocket::Read()
 {
@@ -188,7 +187,11 @@ CReceivePacket* CExtendedSocket::Read()
 		recvResult = Read((char*)packetDataBuf.data(), PACKET_HEADER_SIZE);
 		if (recvResult < PACKET_HEADER_SIZE)
 		{
-			Console().Warn("CExtendedSocket::Read(%s): result < PACKET_HEADER_SIZE, %d\n", GetIP().c_str(), GetNetworkError());
+			if (recvResult != 0)
+				Console().Error("CExtendedSocket::Read(%s): result < PACKET_HEADER_SIZE, %d\n", GetIP().c_str(), GetNetworkError());
+
+			/// @fixme what if recvResult > 0?
+
 			return NULL;
 		}
 
@@ -204,14 +207,14 @@ CReceivePacket* CExtendedSocket::Read()
 			int outLen = 0;
 			if (EVP_DecryptUpdate(m_pDecEVPCTX, packetDataBuf.data(), &outLen, packetDataBuf.data(), recvResult) != 1)
 			{
-				Console().Log("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+				Console().Error("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
 				return NULL;
 			}
 
 			int finalLen = 0;
 			if (EVP_DecryptFinal_ex(m_pDecEVPCTX, packetDataBuf.data() + outLen, &finalLen) != 1)
 			{
-				Console().Log("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+				Console().Error("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
 				return NULL;
 			}
 		}
@@ -228,7 +231,9 @@ CReceivePacket* CExtendedSocket::Read()
 
 		if (m_pMsg->GetSequence() != m_nNextExpectedSeq)
 		{
-			Console().Warn("CExtendedSocket::Read(%s): sequence mismatch, got: %d, expected: %d\n", GetIP().c_str(), m_pMsg->GetSequence(), m_nNextExpectedSeq);
+			Console().Error("CExtendedSocket::Read(%s): sequence mismatch, got: %d, expected: %d\n", GetIP().c_str(), m_pMsg->GetSequence(), m_nNextExpectedSeq);
+			delete m_pMsg;
+			m_pMsg = NULL;
 			return NULL;
 		}
 
@@ -239,65 +244,70 @@ CReceivePacket* CExtendedSocket::Read()
 		// here causes seq never 0 lol
 		m_nNextExpectedSeq++;
 
-		m_nPacketToReceiveFullSize = m_pMsg->GetLength();
-		m_nPacketToReceiveFullSize += PACKET_HEADER_SIZE;
-
 		m_nPacketReceivedSize = 0;
 	}
 
-	packetDataBuf.resize(m_pMsg->GetLength());
-	recvResult = Read((char*)packetDataBuf.data(), m_nPacketReceivedSize ? m_pMsg->GetLength() + PACKET_HEADER_SIZE - m_nPacketReceivedSize : m_pMsg->GetLength());
-	if (recvResult <= 0)
+	// if there is data to read
+	if (m_pMsg->GetLength() > 0)
 	{
-		Console().Warn("CExtendedSocket::Read(%s): result <= 0\n", GetIP().c_str(), GetNetworkError());
-		delete m_pMsg;
-		m_pMsg = NULL;
-		return NULL;
-	}
+		if (packetDataBuf.size() != m_pMsg->GetLength())
+			packetDataBuf.resize(m_pMsg->GetLength());
 
-	packetDataBuf.resize(recvResult);
-
-	m_nReadResult += recvResult;
-	m_nBytesReceived += recvResult;
-	if (m_nBytesReceived < 0)
-		m_nBytesReceived = 0;
-
-	// decrypt the rest part of packet
-	if (m_bCryptInput)
-	{
-		int outLen = 0;
-		if (EVP_DecryptUpdate(m_pDecEVPCTX, packetDataBuf.data(), &outLen, packetDataBuf.data(), recvResult) != 1)
+		recvResult = Read((char*)packetDataBuf.data(), m_pMsg->GetLength() - m_nPacketReceivedSize);
+		if (recvResult <= 0) // error or peer disconnected
 		{
-			Console().Log("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+			if (recvResult < 0)
+				Console().Error("CExtendedSocket::Read(%s): result < 0, %d\n", GetIP().c_str(), GetNetworkError());
+
+			delete m_pMsg;
+			m_pMsg = NULL;
 			return NULL;
 		}
 
-		int finalLen = 0;
-		if (EVP_DecryptFinal_ex(m_pDecEVPCTX, packetDataBuf.data() + outLen, &finalLen) != 1)
+		m_nPacketReceivedSize += recvResult;
+
+		// decrypt the rest part of packet
+		if (m_bCryptInput)
 		{
-			Console().Log("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+			int outLen = 0;
+			if (EVP_DecryptUpdate(m_pDecEVPCTX, packetDataBuf.data(), &outLen, packetDataBuf.data(), recvResult) != 1)
+			{
+				Console().Error("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+				delete m_pMsg;
+				m_pMsg = NULL;
+				return NULL;
+			}
+
+			int finalLen = 0;
+			if (EVP_DecryptFinal_ex(m_pDecEVPCTX, packetDataBuf.data() + outLen, &finalLen) != 1)
+			{
+				Console().Error("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+				delete m_pMsg;
+				m_pMsg = NULL;
+				return NULL;
+			}
+		}
+
+		// append read data to packet buffer
+		Buffer& buf = m_pMsg->GetData();
+		/// @todo: rewrite
+		vector<unsigned char> vecBuf = buf.getBuffer();
+		vecBuf.insert(vecBuf.end(), packetDataBuf.begin(), packetDataBuf.end());
+		buf.setBuffer(vecBuf);
+
+		// if not full message read
+		if (recvResult < m_pMsg->GetLength())
+		{
+			// wait for rest of message
 			return NULL;
 		}
 	}
-
-	Buffer& buf = m_pMsg->GetData();
-	/// @todo: rewrite
-	vector<unsigned char> vecBuf = buf.getBuffer();
-	vecBuf.insert(vecBuf.end(), packetDataBuf.begin(), packetDataBuf.end());
-	buf.setBuffer(vecBuf);
 
 #if 0
 	Console().Log("CExtendedSocket::Read: recvResult: %d, packetDataBuf.size: %d, m_nPacketReceivedSize: %d, m_pMsg->GetLength: %d, m_pMsg->GetSequence: %d, m_nPacketToReceiveFullSize: %d\n", recvResult, packetDataBuf.size(), m_nPacketReceivedSize, m_pMsg->GetLength(), m_pMsg->GetSequence(), m_nPacketToReceiveFullSize);
 #endif
 
-	// if not received the full packet
-	if (m_nPacketToReceiveFullSize != buf.getBuffer().size())
-	{
-		m_nPacketReceivedSize = buf.getBuffer().size();
-		return NULL;
-	}
-
-	buf.setReadOffset(0);
+	m_pMsg->GetData().setReadOffset(0);
 	m_pMsg->ParseHeader();
 
 	return m_pMsg;

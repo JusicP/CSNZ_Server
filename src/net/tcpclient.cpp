@@ -41,6 +41,9 @@ CTCPClient::CTCPClient() : m_ListenThread(ListenThread, this)
 CTCPClient::~CTCPClient()
 {
 	Stop();
+
+	if (m_pSocket)
+		delete m_pSocket;
 }
 
 /**
@@ -176,7 +179,7 @@ void CTCPClient::Listen()
 			}
 			else if (readResult == SOCKET_ERROR)
 			{
-				// error but close connection
+				// error, close connection
 				Stop();
 
 				if (m_pListener)
@@ -186,14 +189,23 @@ void CTCPClient::Listen()
 			{
 				// packet is not valid or wrong sequence or decryption failed
 				/// @fixme should we disconnect here?
-				Stop();
+
+				// exclude case when message is not fully read
+				if (!m_pSocket->GetMsg())
+					Stop();
 			}
 			else
 			{
+				// Call this to mark that socket is ready to receive a new message
+				m_pSocket->SetMsg(NULL);
+
+				// Important: responsibility for deleting the message is assumed by the listener
+				/// @todo use shared_ptr for messages?
 				if (m_pListener)
 					m_pListener->OnTCPMessage(msg);
+				else
+					delete msg;
 			}
-
 		}
 	}
 
@@ -205,9 +217,9 @@ void CTCPClient::Listen()
 			CSendPacket* msg = m_pSocket->GetPacketsToSend()[0];
 			if (m_pSocket->Send(msg, true) <= 0)
 			{
-				Console().Warn("An error occurred while sending packet from queue: WSAGetLastError: %d, queue.size: %d\n", GetNetworkError(), m_pSocket->GetPacketsToSend().size());
+				Console().Error("An error occurred while sending packet from queue: WSAGetLastError: %d, queue.size: %d\n", GetNetworkError(), m_pSocket->GetPacketsToSend().size());
 
-				*(int*)0 = NULL;
+				Stop();
 			}
 			else
 			{

@@ -68,8 +68,6 @@ private:
 
 	CReceivePacket* m_pMsg;
 	
-	// packet separation
-	int m_nPacketToReceiveFullSize;
 	int m_nPacketReceivedSize;
 	
 	int m_nReadResult;
