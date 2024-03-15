@@ -214,7 +214,9 @@ void CServerInstance::OnTCPConnectionClosed(IExtendedSocket* socket)
 	{
 		userID = user->GetID();
 		userName = user->GetUsername();
-		g_pUserManager->DisconnectUser(user);
+		g_pUserManager->RemoveUser(user);
+
+		Console().Log("User logged out (%d, '%s', 0x%X)\n", userID, userName.c_str(), user);
 	}
 	else
 	{
@@ -222,8 +224,6 @@ void CServerInstance::OnTCPConnectionClosed(IExtendedSocket* socket)
 	}
 
 	/// @todo remove all events referred to deleted socket object
-
-	Console().Log("User logged out (%d, '%s', 0x%X)\n", userID, userName.c_str(), user);
 }
 
 void CServerInstance::OnTCPMessage(IExtendedSocket* socket, CReceivePacket* msg)
