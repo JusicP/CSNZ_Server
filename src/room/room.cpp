@@ -285,8 +285,8 @@ void CRoom::UpdateSettings(CRoomSettings& newSettings)
 	if (newSettings.lowFlag & ROOM_LOW_ROUNDTIME) {
 		m_pSettings->roundTime = newSettings.roundTime;
 	}
-	if (newSettings.lowFlag & ROOM_LOW_ARMSRESTRICTION) {
-		m_pSettings->armsRestriction = newSettings.armsRestriction;
+	if (newSettings.lowFlag & ROOM_LOW_WEAPONLIMIT) {
+		m_pSettings->weaponLimit = newSettings.weaponLimit;
 	}
 	if (newSettings.lowFlag & ROOM_LOW_HOSTAGEKILLLIMIT) {
 		m_pSettings->hostageKillLimit = newSettings.hostageKillLimit;
@@ -452,20 +452,20 @@ void CRoom::UpdateSettings(CRoomSettings& newSettings)
 		m_pSettings->fireBomb = newSettings.fireBomb;
 	}
 	if (newSettings.highMidFlag & ROOM_HIGHMID_MUTATIONRESTRICT) {
-		m_pSettings->mutationRestrictSize = newSettings.mutationRestrictSize;
 		m_pSettings->mutationRestrict = newSettings.mutationRestrict;
+		m_pSettings->mutationRestrictList = newSettings.mutationRestrictList;
 	}
 	if (newSettings.highMidFlag & ROOM_HIGHMID_MUTATIONLIMIT) {
 		m_pSettings->mutationLimit = newSettings.mutationLimit;
 	}
-	if (newSettings.highMidFlag & ROOM_HIGHMID_UNK78) {
-		m_pSettings->unk78 = newSettings.unk78;
+	if (newSettings.highMidFlag & ROOM_HIGHMID_FLOATINGDAMAGESKIN) {
+		m_pSettings->floatingDamageSkin = newSettings.floatingDamageSkin;
 	}
-	if (newSettings.highMidFlag & ROOM_HIGHMID_UNK79) {
-		m_pSettings->unk79 = newSettings.unk79;
+	if (newSettings.highMidFlag & ROOM_HIGHMID_PLAYERONETEAM) {
+		m_pSettings->playerOneTeam = newSettings.playerOneTeam;
 	}
-	if (newSettings.highMidFlag & ROOM_HIGHMID_UNK80) {
-		m_pSettings->unk80 = newSettings.unk80;
+	if (newSettings.highMidFlag & ROOM_HIGHMID_WEAPONRESTRICT) {
+		m_pSettings->weaponRestrict = newSettings.weaponRestrict;
 	}
 	if (newSettings.highFlag & ROOM_HIGH_UNK77) {
 		m_pSettings->unk77 = newSettings.unk77;

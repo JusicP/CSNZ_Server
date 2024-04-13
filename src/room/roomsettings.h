@@ -32,8 +32,8 @@ public:
 	void Init();
 	int GetGameModeDefaultSetting(int gameModeId, const std::string& setting);
 	int GetMapSetting(int mapId, const std::string& setting);
-	int GetGameModeDefaultArmsRestriction(int gameModeId);
-	int GetMapDefaultArmsRestriction(int mapId);
+	int GetGameModeDefaultWeaponLimit(int gameModeId);
+	int GetMapDefaultWeaponRestrict(int mapId);
 	int GetDefaultBuyTime(int gameModeId);
 	int GetDefaultTeamBalance(int gameModeId);
 	int GetDefaultFriendlyFire(int gameModeId);
@@ -61,7 +61,7 @@ public:
 	bool IsStartingCashValid(int startingCash);
 	bool IsZombieItem(int itemId);
 	bool IsZbLimitValid(const std::vector<int>& zbLimit);
-	bool IsMutationRestrictValid(const std::vector<int>& mutationRestrict);
+	bool IsMutationRestrictValid(const std::vector<int>& mutationRestrictList);
 	bool IsMapPlaylistValid(const std::vector<mapPlaylist_data>& mapPlaylist);
 	bool IsMutationLimitValid(int mutationLimit);
 	bool CanChangeTeamBalance(int gameModeId);
@@ -90,7 +90,7 @@ public:
 	int killLimit;
 	int gameTime;
 	int roundTime;
-	int armsRestriction;
+	int weaponLimit;
 	int hostageKillLimit;
 	int freezeTime;
 	int buyTime;
@@ -154,11 +154,11 @@ public:
 	int integratedTeam;
 	int unk73;
 	int fireBomb;
-	int mutationRestrictSize;
-	std::vector<int> mutationRestrict;
+	int mutationRestrict;
+	std::vector<int> mutationRestrictList;
 	int mutationLimit;
 	int unk77;
-	int unk78;
-	int unk79;
-	int unk80;
+	int floatingDamageSkin;
+	int playerOneTeam;
+	int weaponRestrict;
 };

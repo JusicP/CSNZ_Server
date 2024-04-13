@@ -66,8 +66,8 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 	if (lowFlag & ROOM_LOW_ROUNDTIME) {
 		roundTime = inPacket.readUInt8();
 	}
-	if (lowFlag & ROOM_LOW_ARMSRESTRICTION) {
-		armsRestriction = inPacket.readUInt8();
+	if (lowFlag & ROOM_LOW_WEAPONLIMIT) {
+		weaponLimit = inPacket.readUInt8();
 	}
 	if (lowFlag & ROOM_LOW_HOSTAGEKILLLIMIT) {
 		hostageKillLimit = inPacket.readUInt8();
@@ -262,23 +262,23 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 		fireBomb = inPacket.readUInt8();
 	}
 	if (highMidFlag & ROOM_HIGHMID_MUTATIONRESTRICT) {
-		mutationRestrictSize = inPacket.readUInt8();
+		mutationRestrict = inPacket.readUInt8();
 		for (int i = 0; i < 4; i++)
 		{
-			mutationRestrict.push_back(inPacket.readUInt8());
+			mutationRestrictList.push_back(inPacket.readUInt8());
 		}
 	}
 	if (highMidFlag & ROOM_HIGHMID_MUTATIONLIMIT) {
 		mutationLimit = inPacket.readUInt8();
 	}
-	if (highMidFlag & ROOM_HIGHMID_UNK78) {
-		unk78 = inPacket.readUInt8();
+	if (highMidFlag & ROOM_HIGHMID_FLOATINGDAMAGESKIN) {
+		floatingDamageSkin = inPacket.readUInt8();
 	}
-	if (highMidFlag & ROOM_HIGHMID_UNK79) {
-		unk79 = inPacket.readUInt8();
+	if (highMidFlag & ROOM_HIGHMID_PLAYERONETEAM) {
+		playerOneTeam = inPacket.readUInt8();
 	}
-	if (highMidFlag & ROOM_HIGHMID_UNK80) {
-		unk80 = inPacket.readUInt8();
+	if (highMidFlag & ROOM_HIGHMID_WEAPONRESTRICT) {
+		weaponRestrict = inPacket.readUInt8();
 	}
 	if (highFlag & ROOM_HIGH_UNK77) {
 		unk77 = inPacket.readUInt8();
@@ -313,7 +313,7 @@ void CRoomSettings::Init()
 	killLimit = 0;
 	gameTime = 0;
 	roundTime = 0;
-	armsRestriction = 0;
+	weaponLimit = 0;
 	hostageKillLimit = 0;
 	freezeTime = 0;
 	buyTime = 0;
@@ -373,12 +373,12 @@ void CRoomSettings::Init()
 	integratedTeam = 0;
 	unk73 = 0;
 	fireBomb = 0;
-	mutationRestrictSize = 0;
+	mutationRestrict = 0;
 	mutationLimit = 0;
 	unk77 = 0; // high flag
-	unk78 = 0; // high mid flag
-	unk79 = 0;
-	unk80 = 0;
+	floatingDamageSkin = 0; // high mid flag
+	playerOneTeam = 0;
+	weaponRestrict = 0;
 }
 
 vector<int> split(const string& s, char delimiter)
@@ -505,22 +505,22 @@ bool CRoomSettings::IsZbLimitValid(const vector<int>& zbLimit)
 	return true;
 }
 
-bool CRoomSettings::IsMutationRestrictValid(const vector<int>& mutationRestrict)
+bool CRoomSettings::IsMutationRestrictValid(const vector<int>& mutationRestrictList)
 {
-	bool empty = all_of(mutationRestrict.begin(), mutationRestrict.end(), [](int i) { return i == -1; });
+	bool empty = all_of(mutationRestrictList.begin(), mutationRestrictList.end(), [](int i) { return i == -1; });
 	if (!empty)
 	{
 		for (int i = 0; i < 4; i++)
 		{
-			int current = mutationRestrict[i];
-			if (current != -1)
+			int current = mutationRestrictList[i];
+			if (current != 255)
 			{
-				if (current > 71)
+				if (current > 79)
 					return false;
 
 				for (int j = i + 1; j < 4; j++)
 				{
-					if (current == mutationRestrict[j])
+					if (current == mutationRestrictList[j])
 						return false;
 				}
 			}
@@ -575,12 +575,12 @@ int CRoomSettings::GetMapSetting(int mapId, const string& setting)
 	return g_pMapListTable->GetCell<int>(setting, to_string(mapId));
 }
 
-int CRoomSettings::GetGameModeDefaultArmsRestriction(int gameModeId)
+int CRoomSettings::GetGameModeDefaultWeaponLimit(int gameModeId)
 {
 	return (gameModeId == 2 || gameModeId == 5 || gameModeId == 23) ? 9 : 0;
 }
 
-int CRoomSettings::GetMapDefaultArmsRestriction(int mapId)
+int CRoomSettings::GetMapDefaultWeaponRestrict(int mapId)
 {
 	return g_pMapListTable->GetCell<int>("weapon_restrict_deault", to_string(mapId));
 }
@@ -906,7 +906,7 @@ bool CRoomSettings::IsMapValid(int gameModeId, int mapId)
 	if (!id)
 		return false;
 
-	if (gameModeName == "map_FunMode" && g_pMapListTable->GetCell<int>("Fun_Subtype(축구 16, 챌린지 12, 아이템전 19, 바주카전 21, 메탈아레나 18, 파이트야드 31, 비스트 27, 서든데스 34, 술래잡기 37)", to_string(mapId)) != gameModeId)
+	if (gameModeName == "map_FunMode" && g_pMapListTable->GetCell<int>(62, to_string(mapId)) != gameModeId)
 		return false;
 
 	if (gameModeName == "playroom" && g_pMapListTable->GetCell<int>("playroom_modeID", to_string(mapId)) != gameModeId)
@@ -941,8 +941,7 @@ void CRoomSettings::LoadDefaultSettings(int gameModeId, int mapId)
 	unk07 = 0;
 	gameTime = GetGameModeDefaultSetting(gameModeId, "mode_time_limit_id");
 	roundTime = GetGameModeDefaultSetting(gameModeId, "mode_roundtime_id");
-	armsRestriction = GetMapDefaultArmsRestriction(mapId);
-	if (!armsRestriction) armsRestriction = GetGameModeDefaultArmsRestriction(gameModeId);
+	weaponLimit = GetGameModeDefaultWeaponLimit(gameModeId);
 	hostageKillLimit = 0;
 	freezeTime = 0;
 	buyTime = GetDefaultBuyTime(gameModeId);
@@ -1003,10 +1002,13 @@ void CRoomSettings::LoadDefaultSettings(int gameModeId, int mapId)
 	integratedTeam = 0;
 	unk73 = 0;
 	fireBomb = 1;
-	mutationRestrictSize = 0;
-	mutationRestrict.clear();
+	mutationRestrict = 0;
+	mutationRestrictList.clear();
 	mutationLimit = gameModeId == 45 ? 40 : 0;
 	unk77 = 0;
+	floatingDamageSkin = gameModeId == 0 ? 0 : 1;
+	playerOneTeam = (gameModeId == 3 || gameModeId == 5) ? 1 : 0;
+	weaponRestrict = GetMapDefaultWeaponRestrict(mapId);
 
 	if (!winLimit)
 		winLimit = GetGameModeDefaultSetting(gameModeId, "mode_win_limit_id");
@@ -1093,8 +1095,8 @@ void CRoomSettings::LoadZbCompetitiveSettings(int gameModeId)
 	fireBomb = 1;
 
 	highMidFlag |= ROOM_HIGHMID_MUTATIONRESTRICT;
-	mutationRestrictSize = 0;
-	mutationRestrict.clear();
+	mutationRestrict = 0;
+	mutationRestrictList.clear();
 
 	highMidFlag |= ROOM_HIGHMID_MUTATIONLIMIT;
 	mutationLimit = gameModeId == 45 ? 40 : 0;
@@ -1102,116 +1104,119 @@ void CRoomSettings::LoadZbCompetitiveSettings(int gameModeId)
 
 void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int changeFlag)
 {
-	if (lowFlag & ROOM_LOW_UNK)
-		lowFlag &= ~ROOM_LOW_UNK;
-
-	if (lowFlag & ROOM_LOW_CLANBATTLE)
-		lowFlag &= ~ROOM_LOW_CLANBATTLE;
-
-	if (lowFlag & ROOM_LOW_LEVELLIMIT)
-		lowFlag &= ~ROOM_LOW_LEVELLIMIT;
-
-	if (lowFlag & ROOM_LOW_UNK7)
-		lowFlag &= ~ROOM_LOW_UNK7;
-
-	if (lowFlag & ROOM_LOW_HOSTAGEKILLLIMIT)
+	if (g_pServerConfig->room.validateSettings)
 	{
-		if (hostageKillLimit > 10)
-			hostageKillLimit = 10;
+		if (lowFlag & ROOM_LOW_UNK)
+			lowFlag &= ~ROOM_LOW_UNK;
+
+		if (lowFlag & ROOM_LOW_CLANBATTLE)
+			lowFlag &= ~ROOM_LOW_CLANBATTLE;
+
+		if (lowFlag & ROOM_LOW_LEVELLIMIT)
+			lowFlag &= ~ROOM_LOW_LEVELLIMIT;
+
+		if (lowFlag & ROOM_LOW_UNK7)
+			lowFlag &= ~ROOM_LOW_UNK7;
+
+		if (lowFlag & ROOM_LOW_HOSTAGEKILLLIMIT)
+		{
+			if (hostageKillLimit > 10)
+				hostageKillLimit = 10;
+		}
+
+		if (lowFlag & ROOM_LOW_FREEZETIME)
+		{
+			if (freezeTime > 10)
+				freezeTime = 10;
+		}
+
+		if (lowFlag & ROOM_LOW_DISPLAYNICKNAME)
+		{
+			if (displayNickname > 2)
+				displayNickname = 2;
+		}
+
+		if (lowFlag & ROOM_LOW_UNK21)
+			lowFlag &= ~ROOM_LOW_UNK21;
+
+		if (lowFlag & ROOM_LOW_FLASHLIGHT)
+			flashlight = flashlight ? 1 : 0;
+
+		if (lowFlag & ROOM_LOW_FOOTSTEPS)
+			lowFlag &= ~ROOM_LOW_FOOTSTEPS;
+
+		if (lowFlag & ROOM_LOW_UNK25)
+			lowFlag &= ~ROOM_LOW_UNK25;
+
+		if (lowFlag & ROOM_LOW_TKPUNISH)
+			lowFlag &= ~ROOM_LOW_TKPUNISH;
+
+		if (lowFlag & ROOM_LOW_AUTOKICK)
+			lowFlag &= ~ROOM_LOW_AUTOKICK;
+
+		if (lowFlag & ROOM_LOW_UNK28)
+			lowFlag &= ~ROOM_LOW_UNK28;
+
+		if (lowFlag & ROOM_LOW_UNK29)
+			lowFlag &= ~ROOM_LOW_UNK29;
+
+		if (lowFlag & ROOM_LOW_VOICECHAT)
+			voiceChat = voiceChat ? 1 : 0;
+
+		if (lowFlag & ROOM_LOW_STATUS)
+			lowFlag &= ~ROOM_LOW_STATUS;
+
+		if (lowFlag & ROOM_LOW_UNK33)
+			lowFlag &= ~ROOM_LOW_UNK33;
+
+		if (lowMidFlag & ROOM_LOWMID_UNK34)
+			lowMidFlag &= ~ROOM_LOWMID_UNK34;
+
+		if (lowMidFlag & ROOM_LOWMID_KDRULE)
+			kdRule = kdRule ? 1 : 0;
+
+		if (lowMidFlag & ROOM_LOWMID_MOVINGSHOT)
+			lowMidFlag &= ~ROOM_LOWMID_MOVINGSHOT;
+
+		if (lowMidFlag & ROOM_LOWMID_STATUSSYMBOL)
+			lowMidFlag &= ~ROOM_LOWMID_STATUSSYMBOL;
+
+		if (lowMidFlag & ROOM_LOWMID_MAPPLAYLISTINDEX)
+			lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLISTINDEX;
+
+		if (lowMidFlag & ROOM_LOWMID_SD)
+			lowMidFlag &= ~ROOM_LOWMID_SD;
+
+		if (lowMidFlag & ROOM_LOWMID_MANNERLIMIT)
+		{
+			if (mannerLimit > 2)
+				mannerLimit = 2;
+		}
+
+		if (lowMidFlag & ROOM_LOWMID_MAPID2)
+			lowMidFlag &= ~ROOM_LOWMID_MAPID2;
+
+		if (lowMidFlag & ROOM_LOWMID_UNK62)
+			lowMidFlag &= ~ROOM_LOWMID_UNK62;
+
+		if (lowMidFlag & ROOM_LOWMID_UNK63)
+			lowMidFlag &= ~ROOM_LOWMID_UNK63;
+
+		if (lowMidFlag & ROOM_LOWMID_UNK64)
+			lowMidFlag &= ~ROOM_LOWMID_UNK64;
+
+		if (lowMidFlag & ROOM_LOWMID_SUPERROOM)
+			lowMidFlag &= ~ROOM_LOWMID_SUPERROOM;
+
+		if (lowMidFlag & ROOM_LOWMID_ISZBCOMPETITIVE)
+			lowMidFlag &= ~ROOM_LOWMID_ISZBCOMPETITIVE;
+
+		if (lowMidFlag & ROOM_LOWMID_UNK73)
+			lowMidFlag &= ~ROOM_LOWMID_UNK73;
+
+		if (highFlag & ROOM_HIGH_UNK77)
+			highFlag &= ~ROOM_HIGH_UNK77;
 	}
-
-	if (lowFlag & ROOM_LOW_FREEZETIME)
-	{
-		if (freezeTime > 10)
-			freezeTime = 10;
-	}
-
-	if (lowFlag & ROOM_LOW_DISPLAYNICKNAME)
-	{
-		if (displayNickname > 2)
-			displayNickname = 2;
-	}
-
-	if (lowFlag & ROOM_LOW_UNK21)
-		lowFlag &= ~ROOM_LOW_UNK21;
-
-	if (lowFlag & ROOM_LOW_FLASHLIGHT)
-		flashlight = flashlight ? 1 : 0;
-
-	if (lowFlag & ROOM_LOW_FOOTSTEPS)
-		lowFlag &= ~ROOM_LOW_FOOTSTEPS;
-
-	if (lowFlag & ROOM_LOW_UNK25)
-		lowFlag &= ~ROOM_LOW_UNK25;
-
-	if (lowFlag & ROOM_LOW_TKPUNISH)
-		lowFlag &= ~ROOM_LOW_TKPUNISH;
-
-	if (lowFlag & ROOM_LOW_AUTOKICK)
-		lowFlag &= ~ROOM_LOW_AUTOKICK;
-
-	if (lowFlag & ROOM_LOW_UNK28)
-		lowFlag &= ~ROOM_LOW_UNK28;
-
-	if (lowFlag & ROOM_LOW_UNK29)
-		lowFlag &= ~ROOM_LOW_UNK29;
-
-	if (lowFlag & ROOM_LOW_VOICECHAT)
-		voiceChat = voiceChat ? 1 : 0;
-
-	if (lowFlag & ROOM_LOW_STATUS)
-		lowFlag &= ~ROOM_LOW_STATUS;
-
-	if (lowFlag & ROOM_LOW_UNK33)
-		lowFlag &= ~ROOM_LOW_UNK33;
-
-	if (lowMidFlag & ROOM_LOWMID_UNK34)
-		lowMidFlag &= ~ROOM_LOWMID_UNK34;
-
-	if (lowMidFlag & ROOM_LOWMID_KDRULE)
-		kdRule = kdRule ? 1 : 0;
-
-	if (lowMidFlag & ROOM_LOWMID_MOVINGSHOT)
-		lowMidFlag &= ~ROOM_LOWMID_MOVINGSHOT;
-
-	if (lowMidFlag & ROOM_LOWMID_STATUSSYMBOL)
-		lowMidFlag &= ~ROOM_LOWMID_STATUSSYMBOL;
-
-	if (lowMidFlag & ROOM_LOWMID_MAPPLAYLISTINDEX)
-		lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLISTINDEX;
-
-	if (lowMidFlag & ROOM_LOWMID_SD)
-		lowMidFlag &= ~ROOM_LOWMID_SD;
-
-	if (lowMidFlag & ROOM_LOWMID_MANNERLIMIT)
-	{
-		if (mannerLimit > 2)
-			mannerLimit = 2;
-	}
-
-	if (lowMidFlag & ROOM_LOWMID_MAPID2)
-		lowMidFlag &= ~ROOM_LOWMID_MAPID2;
-
-	if (lowMidFlag & ROOM_LOWMID_UNK62)
-		lowMidFlag &= ~ROOM_LOWMID_UNK62;
-
-	if (lowMidFlag & ROOM_LOWMID_UNK63)
-		lowMidFlag &= ~ROOM_LOWMID_UNK63;
-
-	if (lowMidFlag & ROOM_LOWMID_UNK64)
-		lowMidFlag &= ~ROOM_LOWMID_UNK64;
-
-	if (lowMidFlag & ROOM_LOWMID_SUPERROOM)
-		lowMidFlag &= ~ROOM_LOWMID_SUPERROOM;
-
-	if (lowMidFlag & ROOM_LOWMID_ISZBCOMPETITIVE)
-		lowMidFlag &= ~ROOM_LOWMID_ISZBCOMPETITIVE;
-
-	if (lowMidFlag & ROOM_LOWMID_UNK73)
-		lowMidFlag &= ~ROOM_LOWMID_UNK73;
-
-	if (highFlag & ROOM_HIGH_UNK77)
-		highFlag &= ~ROOM_HIGH_UNK77;
 
 	if (changeFlag & ROOM_LOW_GAMEMODEID)
 	{
@@ -1230,8 +1235,12 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		lowFlag |= ROOM_LOW_ROUNDTIME;
 		roundTime = GetGameModeDefaultSetting(gameModeId, "mode_roundtime_id");
 
-		lowFlag |= ROOM_LOW_ARMSRESTRICTION;
-		armsRestriction = GetGameModeDefaultArmsRestriction(gameModeId);
+		int limit = GetGameModeDefaultWeaponLimit(gameModeId);
+		if (limit)
+		{
+			lowFlag |= ROOM_LOW_WEAPONLIMIT;
+			weaponLimit = limit;
+		}
 
 		lowFlag |= ROOM_LOW_HOSTAGEKILLLIMIT;
 		hostageKillLimit = 0;
@@ -1289,9 +1298,14 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 			sd = 0;
 
 		lowMidFlag |= ROOM_LOWMID_ZSDIFFICULTY;
-		zsDifficulty = 0;
-		unk56 = 0;
-		unk57 = 0;
+		if (gameModeId != 15)
+		{
+			zsDifficulty = 0;
+			unk56 = 0;
+			unk57 = 0;
+		}
+		else
+			zsDifficulty = 1;
 
 		lowMidFlag |= ROOM_LOWMID_LEAGUERULE;
 		leagueRule = 0;
@@ -1325,13 +1339,19 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		fireBomb = 1;
 
 		highMidFlag |= ROOM_HIGHMID_MUTATIONRESTRICT;
-		mutationRestrictSize = 0;
-		mutationRestrict.clear();
+		mutationRestrict = 0;
+		mutationRestrictList.clear();
 
 		highMidFlag |= ROOM_HIGHMID_MUTATIONLIMIT;
 		mutationLimit = gameModeId == 45 ? 40 : 0;
+
+		highMidFlag |= ROOM_HIGHMID_FLOATINGDAMAGESKIN;
+		floatingDamageSkin = gameModeId == 0 ? 0 : 1;
+
+		highMidFlag |= ROOM_HIGHMID_PLAYERONETEAM;
+		playerOneTeam = (gameModeId == 3 || gameModeId == 5) ? 1 : 0;
 	}
-	else
+	else if (g_pServerConfig->room.validateSettings)
 	{
 		if (lowFlag & ROOM_LOW_MAXPLAYERS)
 		{
@@ -1388,10 +1408,10 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 			}
 		}
 
-		if (lowFlag & ROOM_LOW_ARMSRESTRICTION)
+		if (lowFlag & ROOM_LOW_WEAPONLIMIT)
 		{
-			if (armsRestriction > 17)
-				armsRestriction = 17;
+			if (weaponLimit > 17)
+				weaponLimit = 17;
 		}
 
 		if (lowFlag & ROOM_LOW_BUYTIME)
@@ -1444,16 +1464,8 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		{
 			if (c4Timer)
 			{
-				if (gameModeId == 0 || gameModeId == 3 || gameModeId == 23)
-				{
-					CUserInventoryItem item;
-					c4Timer = g_UserDatabase.GetFirstActiveItemByItemID(user->GetID(), 112 /* C4Sound */, item);
-				}
-				else
-				{
-					Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use c4Timer, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
-					lowMidFlag &= ~ROOM_LOWMID_C4TIMER;
-				}
+				CUserInventoryItem item;
+				c4Timer = g_UserDatabase.GetFirstActiveItemByItemID(user->GetID(), 112 /* C4Sound */, item);
 			}
 		}
 
@@ -1662,26 +1674,23 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 
 		if (highMidFlag & ROOM_HIGHMID_MUTATIONRESTRICT)
 		{
-			if (gameModeId != 45 && (mutationRestrictSize != 0 || !mutationRestrict.empty()))
+			if (gameModeId != 45 && (mutationRestrict != 0 || !mutationRestrictList.empty()))
 			{
 				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use mutationRestrict, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				highMidFlag &= ~ROOM_HIGHMID_MUTATIONRESTRICT;
 			}
-			else if (mutationRestrictSize != 4)
+			else if (!IsMutationRestrictValid(mutationRestrictList))
 			{
-				Console().Warn("User '%d, %s' tried to update a room\'s settings with mutationRestrictSize != 4, mutationRestrictSize: %d\n", user->GetID(), user->GetUsername().c_str(), mutationRestrictSize);
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mutationRestrictList\n", user->GetID(), user->GetUsername().c_str());
 				highMidFlag &= ~ROOM_HIGHMID_MUTATIONRESTRICT;
 			}
-			else if (!IsMutationRestrictValid(mutationRestrict))
-			{
-				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mutationRestrict\n", user->GetID(), user->GetUsername().c_str());
-				highMidFlag &= ~ROOM_HIGHMID_MUTATIONRESTRICT;
-			}
+			else if (mutationRestrict > 1)
+				mutationRestrict = 1;
 		}
 
 		if (highMidFlag & ROOM_HIGHMID_MUTATIONLIMIT)
 		{
-			if (gameModeId != 45 && mutationLimit != 0)
+			if (gameModeId != 45 && mutationLimit != 20)
 			{
 				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't use mutationLimit, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
 				highMidFlag &= ~ROOM_HIGHMID_MUTATIONLIMIT;
@@ -1692,6 +1701,34 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 				highMidFlag &= ~ROOM_HIGHMID_MUTATIONLIMIT;
 			}
 		}
+
+		if (highMidFlag & ROOM_HIGHMID_FLOATINGDAMAGESKIN)
+		{
+			if (!(gameModeId == 0 || gameModeId == 2 || gameModeId == 3 || gameModeId == 5) && floatingDamageSkin != 1)
+			{
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't allow floatingDamageSkin to be changed, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				highMidFlag &= ~ROOM_HIGHMID_FLOATINGDAMAGESKIN;
+			}
+			else if (floatingDamageSkin > 1)
+				floatingDamageSkin = 1;
+		}
+
+		if (highMidFlag & ROOM_HIGHMID_PLAYERONETEAM)
+		{
+			if (!(gameModeId == 3 || gameModeId == 5) && playerOneTeam != 0)
+			{
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId that doesn't allow playerOneTeam to be changed, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				highMidFlag &= ~ROOM_HIGHMID_PLAYERONETEAM;
+			}
+			else if (playerOneTeam > 1)
+				playerOneTeam = 1;
+		}
+
+		if (highMidFlag & ROOM_HIGHMID_WEAPONRESTRICT)
+		{
+			if (weaponRestrict > 13)
+				weaponRestrict = 13;
+		}
 	}
 
 	if (changeFlag & ROOM_LOW_MAPID)
@@ -1699,9 +1736,12 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		lowFlag |= ROOM_LOW_MAXPLAYERS;
 		maxPlayers = g_pMapListTable->GetCell<int>("max_player", to_string(mapId));
 
-		lowFlag |= ROOM_LOW_ARMSRESTRICTION;
-		int restriction = GetMapDefaultArmsRestriction(mapId);
-		if (!armsRestriction) armsRestriction = restriction;
+		int restriction = GetMapDefaultWeaponRestrict(mapId);
+		if (restriction)
+		{
+			highMidFlag |= ROOM_HIGHMID_WEAPONRESTRICT;
+			weaponRestrict = restriction;
+		}
 
 		lowMidFlag |= ROOM_LOWMID_BALLNUMBER;
 		ballNumber = GetMapSetting(mapId, "ball_default");
@@ -1712,26 +1752,13 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		if (isZbCompetitive)
 			LoadZbCompetitiveSettings(gameModeId);
 	}
-	else
+	else if (g_pServerConfig->room.validateSettings)
 	{
 		if (lowFlag & ROOM_LOW_MAXPLAYERS)
 		{
 			int mapMaxPlayers = g_pMapListTable->GetCell<int>("max_player", to_string(mapId));
 			if (maxPlayers > mapMaxPlayers)
-			{
-				Console().Warn("User '%d, %s' tried to update a room\'s settings with maxPlayers > mapMaxPlayers: %d, maxPlayers: %d\n", user->GetID(), user->GetUsername().c_str(), mapMaxPlayers, maxPlayers);
-				lowFlag &= ~ROOM_LOW_MAXPLAYERS;
-			}
-		}
-
-		if (lowFlag & ROOM_LOW_ARMSRESTRICTION)
-		{
-			int mapArmsRestriction = GetMapDefaultArmsRestriction(mapId);
-			if (mapArmsRestriction && armsRestriction != mapArmsRestriction)
-			{
-				Console().Warn("User '%d, %s' tried to update a room\'s settings with armsRestriction != mapArmsRestriction: %d, armsRestriction: %d\n", user->GetID(), user->GetUsername().c_str(), mapArmsRestriction, armsRestriction);
-				lowFlag &= ~ROOM_LOW_ARMSRESTRICTION;
-			}
+				maxPlayers = mapMaxPlayers;
 		}
 
 		if (lowMidFlag & ROOM_LOWMID_BALLNUMBER)
@@ -1753,82 +1780,95 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 				}
 			}
 		}
-	}
 
-	if (lowMidFlag & ROOM_LOWMID_RANDOMMAP)
-	{
-		if (!IsRandomMapAllowed(gameModeId) && randomMap != 0)
+		if (highMidFlag & ROOM_HIGHMID_WEAPONRESTRICT)
 		{
-			Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId which doesn't allow randomMap, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
-			lowMidFlag &= ~ROOM_LOWMID_RANDOMMAP;
-		}
-		else if (randomMap > 2)
-			randomMap = 2;
-	}
-
-	if (lowMidFlag & ROOM_LOWMID_MAPPLAYLIST)
-	{
-		if (mapPlaylistSize < 2)
-		{
-			Console().Warn("User '%d, %s' tried to update a room\'s settings with mapPlaylistSize < 2, mapPlaylistSize: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylistSize);
-			lowFlag &= ~ROOM_LOW_MAPID;
-			lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
-		}
-		else if (!IsMapPlaylistAllowed(gameModeId))
-		{
-			Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId which doesn't allow mapPlaylist, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
-			lowFlag &= ~ROOM_LOW_MAPID;
-			lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
-		}
-		else if (mapPlaylistSize > 5)
-		{
-			Console().Warn("User '%d, %s' tried to update a room\'s settings with mapPlaylistSize > 5, mapPlaylistSize: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylistSize);
-			lowFlag &= ~ROOM_LOW_MAPID;
-			lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
-		}
-		else if (!IsMapPlaylistValid(mapPlaylist))
-		{
-			Console().Warn("User '%d, %s' tried to update a room\'s settings with duplicate mapIds in mapPlaylist\n", user->GetID(), user->GetUsername().c_str());
-			lowFlag &= ~ROOM_LOW_MAPID;
-			lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
-		}
-		else if (mapId != mapPlaylist[0].mapId)
-		{
-			Console().Warn("User '%d, %s' tried to update a room\'s settings with mapId which isn't the first in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId);
-			lowFlag &= ~ROOM_LOW_MAPID;
-			lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
-		}
-		else
-		{
-			for (int i = 0; i < mapPlaylistSize; i++)
+			int mapWeaponRestrict = GetMapDefaultWeaponRestrict(mapId);
+			if (mapWeaponRestrict && weaponRestrict != mapWeaponRestrict)
 			{
-				if (g_pMapListTable->GetRowIdx(to_string(mapPlaylist[i].mapId)) < 0)
-				{
-					Console().Warn("User '%d, %s' tried to update a room\'s settings with an invalid mapId in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
-					lowFlag &= ~ROOM_LOW_MAPID;
-					lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
-					break;
-				}
-
-				if (!IsMapValid(gameModeId, mapPlaylist[i].mapId))
-				{
-					Console().Warn("User '%d, %s' tried to update a room\'s settings with an invalid mapId in mapPlaylist, mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId, gameModeId);
-					lowFlag &= ~ROOM_LOW_MAPID;
-					lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
-					break;
-				}
-
-				if (GetMapDefaultArmsRestriction(mapPlaylist[i].mapId))
-				{
-					Console().Warn("User '%d, %s' tried to update a room\'s settings with mapId which isn't allowed in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
-					lowFlag &= ~ROOM_LOW_MAPID;
-					lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
-					break;
-				}
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with weaponRestrict != mapWeaponRestrict: %d, weaponRestrict: %d\n", user->GetID(), user->GetUsername().c_str(), mapWeaponRestrict, weaponRestrict);
+				highMidFlag &= ~ROOM_HIGHMID_WEAPONRESTRICT;
 			}
+		}
+	}
 
-			lowMidFlag |= ROOM_LOWMID_MAPPLAYLISTINDEX;
-			mapPlaylistIndex = 1;
+	if (g_pServerConfig->room.validateSettings)
+	{
+		if (lowMidFlag & ROOM_LOWMID_RANDOMMAP)
+		{
+			if (!IsRandomMapAllowed(gameModeId) && randomMap != 0)
+			{
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId which doesn't allow randomMap, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				lowMidFlag &= ~ROOM_LOWMID_RANDOMMAP;
+			}
+			else if (randomMap > 2)
+				randomMap = 2;
+		}
+
+		if (lowMidFlag & ROOM_LOWMID_MAPPLAYLIST)
+		{
+			if (mapPlaylistSize < 2)
+			{
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with mapPlaylistSize < 2, mapPlaylistSize: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylistSize);
+				lowFlag &= ~ROOM_LOW_MAPID;
+				lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
+			}
+			else if (!IsMapPlaylistAllowed(gameModeId))
+			{
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with gameModeId which doesn't allow mapPlaylist, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				lowFlag &= ~ROOM_LOW_MAPID;
+				lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
+			}
+			else if (mapPlaylistSize > 5)
+			{
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with mapPlaylistSize > 5, mapPlaylistSize: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylistSize);
+				lowFlag &= ~ROOM_LOW_MAPID;
+				lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
+			}
+			else if (!IsMapPlaylistValid(mapPlaylist))
+			{
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with duplicate mapIds in mapPlaylist\n", user->GetID(), user->GetUsername().c_str());
+				lowFlag &= ~ROOM_LOW_MAPID;
+				lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
+			}
+			else if (mapId != mapPlaylist[0].mapId)
+			{
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with mapId which isn't the first in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId);
+				lowFlag &= ~ROOM_LOW_MAPID;
+				lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
+			}
+			else
+			{
+				for (int i = 0; i < mapPlaylistSize; i++)
+				{
+					if (g_pMapListTable->GetRowIdx(to_string(mapPlaylist[i].mapId)) < 0)
+					{
+						Console().Warn("User '%d, %s' tried to update a room\'s settings with an invalid mapId in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
+						lowFlag &= ~ROOM_LOW_MAPID;
+						lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
+						break;
+					}
+
+					if (!IsMapValid(gameModeId, mapPlaylist[i].mapId))
+					{
+						Console().Warn("User '%d, %s' tried to update a room\'s settings with an invalid mapId in mapPlaylist, mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId, gameModeId);
+						lowFlag &= ~ROOM_LOW_MAPID;
+						lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
+						break;
+					}
+
+					if (GetMapDefaultWeaponRestrict(mapPlaylist[i].mapId))
+					{
+						Console().Warn("User '%d, %s' tried to update a room\'s settings with mapId which isn't allowed in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
+						lowFlag &= ~ROOM_LOW_MAPID;
+						lowMidFlag &= ~ROOM_LOWMID_MAPPLAYLIST;
+						break;
+					}
+				}
+
+				lowMidFlag |= ROOM_LOWMID_MAPPLAYLISTINDEX;
+				mapPlaylistIndex = 1;
+			}
 		}
 	}
 
@@ -1975,7 +2015,7 @@ bool CRoomSettings::CheckSettings(IUser* user)
 					return false;
 				}
 
-				if (GetMapDefaultArmsRestriction(mapPlaylist[i].mapId) != 0)
+				if (GetMapDefaultWeaponRestrict(mapPlaylist[i].mapId) != 0)
 				{
 					Console().Warn("User '%d, %s' tried to create a new room with mapId which isn't allowed in mapPlaylist, mapId: %d\n", user->GetID(), user->GetUsername().c_str(), mapPlaylist[i].mapId);
 					return false;
@@ -2011,59 +2051,71 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 {
 	if (lowFlag & ROOM_LOW_GAMEMODEID && gameModeId != roomSettings->gameModeId)
 	{
-		if (g_pGameModeListTable->GetRowIdx(to_string(gameModeId)) < 0)
+		if (g_pServerConfig->room.validateSettings)
 		{
-			Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
-			return false;
-		}
+			if (g_pGameModeListTable->GetRowIdx(to_string(gameModeId)) < 0)
+			{
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				return false;
+			}
 
-		if (gameModeId != 39 && !IsFunGameMode(gameModeId) && !g_pGameModeListTable->GetCell<int>("mode_select_ui_order", to_string(gameModeId)))
-		{
-			Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
-			return false;
+			if (gameModeId != 39 && !IsFunGameMode(gameModeId) && !g_pGameModeListTable->GetCell<int>("mode_select_ui_order", to_string(gameModeId)))
+			{
+				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), gameModeId);
+				return false;
+			}
 		}
 
 		if (lowFlag & ROOM_LOW_MAPID && mapId != roomSettings->mapId)
 		{
-			if (g_pMapListTable->GetRowIdx(to_string(mapId)) < 0)
+			if (g_pServerConfig->room.validateSettings)
 			{
-				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, gameModeId);
-				return false;
-			}
+				if (g_pMapListTable->GetRowIdx(to_string(mapId)) < 0)
+				{
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, gameModeId);
+					return false;
+				}
 
-			if (!IsMapValid(gameModeId, mapId))
-			{
-				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, gameModeId);
-				return false;
+				if (!IsMapValid(gameModeId, mapId))
+				{
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, gameModeId);
+					return false;
+				}
 			}
 
 			LoadNewSettings(gameModeId, mapId, user, ROOM_LOW_GAMEMODEID | ROOM_LOW_MAPID);
 		}
 		else
 		{
-			if (!IsMapValid(gameModeId, roomSettings->mapId))
+			if (g_pServerConfig->room.validateSettings)
 			{
-				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), roomSettings->mapId, gameModeId);
-				return false;
+				if (!IsMapValid(gameModeId, roomSettings->mapId))
+				{
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), roomSettings->mapId, gameModeId);
+					return false;
+				}
 			}
 
 			LoadNewSettings(gameModeId, roomSettings->mapId, user, ROOM_LOW_GAMEMODEID);
 		}
 	}
-	else 
+	else
 	{
 		if (lowFlag & ROOM_LOW_MAPID && mapId != roomSettings->mapId)
 		{
-			if (g_pMapListTable->GetRowIdx(to_string(mapId)) < 0)
+			if (g_pServerConfig->room.validateSettings)
 			{
-				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, roomSettings->gameModeId);
-				return false;
-			}
+				if (g_pMapListTable->GetRowIdx(to_string(mapId)) < 0)
+				{
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, roomSettings->gameModeId);
+					return false;
+				}
 
-			if (!IsMapValid(roomSettings->gameModeId, mapId))
-			{
-				Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, roomSettings->gameModeId);
-				return false;
+				if (!IsMapValid(roomSettings->gameModeId, mapId))
+				{
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid mapId: %d, gameModeId: %d\n", user->GetID(), user->GetUsername().c_str(), mapId, roomSettings->gameModeId);
+					return false;
+				}
 			}
 
 			LoadNewSettings(roomSettings->gameModeId, mapId, user, ROOM_LOW_MAPID);
@@ -2071,55 +2123,58 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 		else
 			LoadNewSettings(roomSettings->gameModeId, roomSettings->mapId, user);
 
-		if (roomSettings->gameModeId == 0 || roomSettings->gameModeId == 3)
+		if (g_pServerConfig->room.validateSettings)
 		{
-			if ((lowMidFlag & ROOM_LOWMID_LEAGUERULE && leagueRule != roomSettings->leagueRule && !leagueRule) ||
-				(lowMidFlag & ROOM_LOWMID_TEAMSWITCH && teamSwitch != roomSettings->teamSwitch && !teamSwitch)) // requesting league rule or team switch to be deactivated
+			if (roomSettings->gameModeId == 0 || roomSettings->gameModeId == 3)
 			{
-				lowFlag |= ROOM_LOW_WINLIMIT;
-				winLimit = GetGameModeDefaultSetting(roomSettings->gameModeId, "mode_win_limit_id");
-			}
-			else if (lowFlag & ROOM_LOW_WINLIMIT)
-			{
-				if (roomSettings->leagueRule || roomSettings->teamSwitch) // changing winLimit with league rule or team switch
+				if ((lowMidFlag & ROOM_LOWMID_LEAGUERULE && leagueRule != roomSettings->leagueRule && !leagueRule) ||
+					(lowMidFlag & ROOM_LOWMID_TEAMSWITCH && teamSwitch != roomSettings->teamSwitch && !teamSwitch)) // requesting league rule or team switch to be deactivated
 				{
-					if (!IsLeagueRuleWinLimitValid(winLimit))
-					{
-						Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid winLimit: %d\n", user->GetID(), user->GetUsername().c_str(), winLimit);
-						lowFlag &= ~ROOM_LOW_WINLIMIT;
-					}
+					lowFlag |= ROOM_LOW_WINLIMIT;
+					winLimit = GetGameModeDefaultSetting(roomSettings->gameModeId, "mode_win_limit_id");
 				}
-				else // changing winLimit without league rule and team switch
+				else if (lowFlag & ROOM_LOW_WINLIMIT)
 				{
-					if (!IsSettingValid(roomSettings->gameModeId, "mode_win_limit_id", winLimit))
+					if (roomSettings->leagueRule || roomSettings->teamSwitch) // changing winLimit with league rule or team switch
 					{
-						if (winLimit != 6) // turning on league rule or team switch and then creating a new room makes the client sends this incorrectly, so let's just mute this
+						if (!IsLeagueRuleWinLimitValid(winLimit))
+						{
 							Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid winLimit: %d\n", user->GetID(), user->GetUsername().c_str(), winLimit);
+							lowFlag &= ~ROOM_LOW_WINLIMIT;
+						}
+					}
+					else // changing winLimit without league rule and team switch
+					{
+						if (!IsSettingValid(roomSettings->gameModeId, "mode_win_limit_id", winLimit))
+						{
+							if (winLimit != 6) // turning on league rule or team switch and then creating a new room makes the client sends this incorrectly, so let's just mute this
+								Console().Warn("User '%d, %s' tried to update a room\'s settings with invalid winLimit: %d\n", user->GetID(), user->GetUsername().c_str(), winLimit);
 
-						lowFlag &= ~ROOM_LOW_WINLIMIT;
+							lowFlag &= ~ROOM_LOW_WINLIMIT;
+						}
 					}
 				}
 			}
-		}
 
-		if (roomSettings->gameModeId != 9)
-		{
-			if (lowMidFlag & ROOM_LOWMID_ZBLIMIT)
+			if (roomSettings->gameModeId != 9)
 			{
-				if (zbLimitFlag == 1 && !roomSettings->fireBomb)
+				if (lowMidFlag & ROOM_LOWMID_ZBLIMIT)
 				{
-					Console().Warn("User '%d, %s' tried to update a room\'s settings with zbLimitFlag == 1 when roomSettings->fireBomb == 0\n", user->GetID(), user->GetUsername().c_str());
-					lowMidFlag &= ~ROOM_LOWMID_ZBLIMIT;
+					if (zbLimitFlag == 1 && !roomSettings->fireBomb)
+					{
+						Console().Warn("User '%d, %s' tried to update a room\'s settings with zbLimitFlag == 1 when roomSettings->fireBomb == 0\n", user->GetID(), user->GetUsername().c_str());
+						lowMidFlag &= ~ROOM_LOWMID_ZBLIMIT;
+					}
 				}
 			}
-		}
 
-		if (highMidFlag & ROOM_HIGHMID_FIREBOMB)
-		{
-			if (!fireBomb && roomSettings->zbLimitFlag == 1)
+			if (highMidFlag & ROOM_HIGHMID_FIREBOMB)
 			{
-				Console().Warn("User '%d, %s' tried to update a room\'s settings with fireBomb == 0 when roomSettings->zbLimitFlag == 1\n", user->GetID(), user->GetUsername().c_str());
-				highMidFlag &= ~ROOM_HIGHMID_FIREBOMB;
+				if (!fireBomb && roomSettings->zbLimitFlag == 1)
+				{
+					Console().Warn("User '%d, %s' tried to update a room\'s settings with fireBomb == 0 when roomSettings->zbLimitFlag == 1\n", user->GetID(), user->GetUsername().c_str());
+					highMidFlag &= ~ROOM_HIGHMID_FIREBOMB;
+				}
 			}
 		}
 	}

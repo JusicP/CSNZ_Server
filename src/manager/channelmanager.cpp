@@ -935,7 +935,7 @@ bool CChannelManager::OnCommandHandler(IExtendedSocket* socket, IUser* user, con
 					roomSettings->maxPlayers = 10;
 					roomSettings->zsDifficulty = 1;
 
-					if (g_pServerConfig->room.validateSettings && !roomSettings->CheckSettings(user))
+					if (!roomSettings->CheckSettings(user))
 					{
 						g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), "Unable to create a room due to incorrect settings");
 						delete roomSettings;

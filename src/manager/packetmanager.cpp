@@ -1898,8 +1898,8 @@ void BuildRoomInfo(CSendPacket* msg, IRoom* room, int lFlag, int hFlag)
 	if (lFlag & RLFLAG_MAXPLAYERS) {
 		msg->WriteUInt8(roomSettings->maxPlayers);
 	}
-	if (lFlag & RLFLAG_ARMSRESTRICTION) {
-		msg->WriteUInt8(roomSettings->armsRestriction);
+	if (lFlag & RLFLAG_WEAPONLIMIT) {
+		msg->WriteUInt8(roomSettings->weaponLimit);
 	}
 	if (lFlag & RLFLAG_SUPERROOM) {
 		msg->WriteUInt8(roomSettings->superRoom);
@@ -2004,17 +2004,20 @@ void BuildRoomInfo(CSendPacket* msg, IRoom* room, int lFlag, int hFlag)
 	if (hFlag & RLHFLAG_FIREBOMB) {
 		msg->WriteUInt8(roomSettings->fireBomb);
 	}
-	if (hFlag & RLHFLAG_UNK7) {
-		msg->WriteUInt8(roomSettings->mutationRestrictSize);
+	if (hFlag & RLHFLAG_MUTATIONRESTRICT) {
+		msg->WriteUInt8(roomSettings->mutationRestrict);
 	}
-	if (hFlag & RLHFLAG_UNK8) {
-		msg->WriteUInt8(0);
+	if (hFlag & RLHFLAG_MUTATIONLIMIT) {
+		msg->WriteUInt8(roomSettings->mutationLimit);
 	}
 	if (hFlag & RLHFLAG_UNK9) {
-		msg->WriteUInt8(0);
+		msg->WriteUInt8(roomSettings->playerOneTeam);
 	}
 	if (hFlag & RLHFLAG_UNK10) {
-		msg->WriteUInt8(0);
+		msg->WriteUInt8(roomSettings->playerOneTeam);
+	}
+	if (hFlag & RLHFLAG_WEAPONRESTRICT) {
+		msg->WriteUInt8(roomSettings->weaponRestrict);
 	}
 
 	// studio related
@@ -2403,8 +2406,8 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 	if (lowFlag & ROOM_LOW_ROUNDTIME) {
 		msg->WriteUInt8(newSettings->roundTime);
 	}
-	if (lowFlag & ROOM_LOW_ARMSRESTRICTION) {
-		msg->WriteUInt8(newSettings->armsRestriction);
+	if (lowFlag & ROOM_LOW_WEAPONLIMIT) {
+		msg->WriteUInt8(newSettings->weaponLimit);
 	}
 	if (lowFlag & ROOM_LOW_HOSTAGEKILLLIMIT) {
 		msg->WriteUInt8(newSettings->hostageKillLimit);
@@ -2621,12 +2624,12 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 		msg->WriteUInt8(newSettings->fireBomb);
 	}
 	if (highMidFlag & ROOM_HIGHMID_MUTATIONRESTRICT) {
-		msg->WriteUInt8(newSettings->mutationRestrictSize);
-		if (newSettings->mutationRestrict.size() == 4)
+		msg->WriteUInt8(newSettings->mutationRestrict);
+		if (newSettings->mutationRestrictList.size() == 4)
 		{
 			for (int i = 0; i < 4; i++)
 			{
-				msg->WriteUInt8(newSettings->mutationRestrict[i]);
+				msg->WriteUInt8(newSettings->mutationRestrictList[i]);
 			}
 		}
 		else
@@ -2640,14 +2643,14 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 	if (highMidFlag & ROOM_HIGHMID_MUTATIONLIMIT) {
 		msg->WriteUInt8(newSettings->mutationLimit);
 	}
-	if (highMidFlag & ROOM_HIGHMID_UNK78) {
-		msg->WriteUInt8(newSettings->unk78);
+	if (highMidFlag & ROOM_HIGHMID_FLOATINGDAMAGESKIN) {
+		msg->WriteUInt8(newSettings->floatingDamageSkin);
 	}
-	if (highMidFlag & ROOM_HIGHMID_UNK79) {
-		msg->WriteUInt8(newSettings->unk79);
+	if (highMidFlag & ROOM_HIGHMID_PLAYERONETEAM) {
+		msg->WriteUInt8(newSettings->playerOneTeam);
 	}
-	if (highMidFlag & ROOM_HIGHMID_UNK80) {
-		msg->WriteUInt8(newSettings->unk80);
+	if (highMidFlag & ROOM_HIGHMID_WEAPONRESTRICT) {
+		msg->WriteUInt8(newSettings->weaponRestrict);
 	}
 	if (highFlag & ROOM_HIGH_UNK77) {
 		msg->WriteUInt8(newSettings->unk77);
