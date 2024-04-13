@@ -2011,10 +2011,10 @@ void BuildRoomInfo(CSendPacket* msg, IRoom* room, int lFlag, int hFlag)
 		msg->WriteUInt8(roomSettings->mutationLimit);
 	}
 	if (hFlag & RLHFLAG_UNK9) {
-		msg->WriteUInt8(roomSettings->playerOneTeam);
+		msg->WriteUInt8(0);
 	}
 	if (hFlag & RLHFLAG_UNK10) {
-		msg->WriteUInt8(roomSettings->playerOneTeam);
+		msg->WriteUInt8(0);
 	}
 	if (hFlag & RLHFLAG_WEAPONRESTRICT) {
 		msg->WriteUInt8(roomSettings->weaponRestrict);
