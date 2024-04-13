@@ -15,4 +15,5 @@ public:
 	virtual bool IsPoolAvailable() = 0;
 	virtual CDedicatedServer* GetServerBySocket(IExtendedSocket* socket) = 0;
 	virtual void RemoveServer(IExtendedSocket* socket) = 0;
+	virtual void TransferServer(IExtendedSocket* socket, const std::string& ipAddress, int port) = 0;
 };

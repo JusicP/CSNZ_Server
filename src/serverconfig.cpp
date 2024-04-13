@@ -91,7 +91,8 @@ const char* defaultServerConfig = R"(
 		"Item": false,
 		"WeaponProp": true,
 		"Hash": false,
-		"RandomWeaponList": true
+		"RandomWeaponList": true,
+		"ModeEvent": true
 	},
 	"DefaultUser": {
 		"GameMaster": true,

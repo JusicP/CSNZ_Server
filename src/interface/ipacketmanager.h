@@ -89,6 +89,7 @@ public:
 	virtual void SendMetadataPPSystem(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataCodisData(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataItem(IExtendedSocket* socket) = 0;
+	virtual void SendMetadataModeEvent(IExtendedSocket* socket) = 0;
 
 	virtual void SendGameMatchInfo(IExtendedSocket* socket) = 0;
 	virtual void SendGameMatchUnk(IExtendedSocket* socket) = 0;
@@ -190,6 +191,7 @@ public:
 	virtual void SendUDPHostData(IExtendedSocket* socket, bool host, int userID, const std::string& ipAddress, int port) = 0;
 
 	virtual void SendHostServerStop(IExtendedSocket* socket) = 0;
+	virtual void SendHostServerTransfer(IExtendedSocket* socket, const std::string& ipAddress, int port) = 0;
 
 	virtual void SendClanList(IExtendedSocket* socket, const std::vector<ClanList_s>& clans, int pageID, int pageMax) = 0;
 	virtual void SendClanInfo(IExtendedSocket* socket, const Clan_s& clan) = 0;
@@ -231,4 +233,8 @@ public:
 	virtual void SendLeagueGaugePacket(IExtendedSocket* socket, int gameModeId) = 0;
 
 	virtual void SendCrypt(IExtendedSocket* socket, int type, unsigned char* key, unsigned char* iv) = 0;
+
+	virtual void SendUpdateInfo(IExtendedSocket* socket) = 0;
+
+	virtual void SendPacketFromFile(IExtendedSocket* socket, const std::string& filename) = 0;
 };

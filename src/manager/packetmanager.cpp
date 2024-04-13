@@ -54,6 +54,7 @@ CPacketManager::CPacketManager() : CBaseManager("PacketManager")
 	m_pItemZip = NULL;
 	m_pCodisDataZip = NULL;
 	m_pWeaponPropZip = NULL;
+	m_pModeEventZip = NULL;
 	m_pPaintItemList = NULL;
 	m_pReinforceItemsExp = NULL;
 	m_pRandomWeaponList = NULL;
