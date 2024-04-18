@@ -1812,23 +1812,13 @@ void CPacketManager::SendLobbyJoin(IExtendedSocket* socket, CChannel* channel)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(LobbyPacketType::Join);
-	msg->WriteUInt16(channel->GetUsers().size());
-	for (auto user : channel->GetUsers())
+	msg->WriteUInt16(channel->GetOutsideUsers().size());
+	for (auto user : channel->GetOutsideUsers())
 	{
-		//	if (user->currentRoom)
-		//	{
-		//		WriteUInt32(0);
-		//	}
-		//	else
-		//	{
 		msg->WriteUInt32(user->GetID());
-		//	}
 		msg->WriteString("test_lobby");
-
-		CUserCharacter character = user->GetCharacter(0xFFFFFFFF);
-
 		CPacketHelper_FullUserInfo fullUserInfo;
-		fullUserInfo.Build(msg->m_OutStream, user->GetID(), character);
+		fullUserInfo.Build(msg->m_OutStream, user->GetID(), user->GetCharacter(0xFFFFFFFF));
 	}
 	socket->Send(msg);
 }

@@ -228,6 +228,15 @@ std::vector<IUser*> CChannel::GetUsers()
 	return m_Users;
 }
 
+std::vector<IUser*> CChannel::GetOutsideUsers()
+{
+	std::vector<IUser*> temp;
+	for (auto& u : m_Users)
+		if (u->GetCurrentRoom() == nullptr)
+			temp.push_back(u);
+	return temp;
+}
+
 CChannelServer* CChannel::GetParentChannelServer()
 {
 	return m_pParentChannelServer;

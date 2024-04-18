@@ -29,6 +29,7 @@ public:
 	std::string GetName();
 	std::vector<IRoom*> GetRooms();
 	std::vector<IUser*> GetUsers();
+	std::vector<IUser*> GetOutsideUsers();
 
 	CChannelServer* GetParentChannelServer();
 
