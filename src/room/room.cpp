@@ -832,7 +832,7 @@ void CRoom::UpdateHost(IUser* newHost)
 		{
 			EndGame(true);
 		}
-		else if (m_pGameMatch)
+		else
 		{
 			m_pGameMatch->OnHostChanged(newHost);
 		}
@@ -856,7 +856,7 @@ bool CRoom::FindAndUpdateNewHost()
 	{
 		if (m_pGameMatch != NULL)
 		{
-			vector<CGameMatchUserStat*> userStats = GetGameMatch()->m_UserStats;
+			vector<CGameMatchUserStat*> userStats = m_pGameMatch->m_UserStats;
 
 			if (userStats.empty())
 				UpdateHost(m_Users[0]);
