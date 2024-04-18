@@ -97,20 +97,20 @@ void CPacketHelper_FullUserInfo::Build(Buffer& buf, int userID, const CUserChara
 		buf.writeUInt32_LE(character.deaths);
 		buf.writeUInt32_LE(0); // zombie kills
 		buf.writeUInt32_LE(0); // survivals
-		buf.writeUInt32_LE(0);
-		buf.writeUInt32_LE(0);
-		buf.writeUInt32_LE(0);
-		buf.writeUInt32_LE(0);
+		buf.writeUInt32_LE(0); // total zombie kills
+		buf.writeUInt32_LE(0); // total infect count
+		buf.writeUInt32_LE(0); // avg round damage
+		buf.writeUInt32_LE(0); // avg infect count
 		buf.writeUInt32_LE(0); // total num of kills
 		buf.writeUInt32_LE(0); // total num of death
 		buf.writeUInt32_LE(0); // number of CT wins
 		buf.writeUInt32_LE(0); // number of T wins
-		buf.writeUInt32_LE(0);
-		buf.writeUInt32_LE(0);
-		buf.writeUInt32_LE(0);
-		buf.writeUInt32_LE(0);
-		buf.writeUInt32_LE(0);
-		buf.writeUInt32_LE(0);
+		buf.writeUInt32_LE(0); // ZombieTendencyTypeA
+		buf.writeUInt32_LE(0); // weapon
+		buf.writeUInt32_LE(0); // ZombieTendencyTypeC
+		buf.writeUInt32_LE(0); // OriginalTendencyTypeA
+		buf.writeUInt32_LE(0); // weapon
+		buf.writeUInt32_LE(0); // OriginalTendencyTypeC
 	}
 
 	if (character.flag & UFLAG_LOCATION)
