@@ -848,25 +848,18 @@ bool CRoom::FindAndUpdateNewHost()
 		return false;
 	}
 
-	if (m_pServer != NULL)
+	if (m_pServer == NULL && m_pGameMatch != NULL)
 	{
-		UpdateHost(m_Users[0]);
+		vector<CGameMatchUserStat*> userStats = m_pGameMatch->m_UserStats;
+
+		if (userStats.empty())
+			UpdateHost(m_Users[0]);
+		else
+			UpdateHost(userStats[0]->m_pUser);
 	}
 	else
 	{
-		if (m_pGameMatch != NULL)
-		{
-			vector<CGameMatchUserStat*> userStats = m_pGameMatch->m_UserStats;
-
-			if (userStats.empty())
-				UpdateHost(m_Users[0]);
-			else
-				UpdateHost(userStats[0]->m_pUser);
-		}
-		else
-		{
-			UpdateHost(m_Users[0]);
-		}
+		UpdateHost(m_Users[0]);
 	}
 
 	return true;
