@@ -135,6 +135,7 @@ bool CHostManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
 bool CHostManager::OnSaveData(CReceivePacket* msg, CGameMatch* gamematch)
 {
 	int saveDataSize = msg->ReadUInt16();
+	Console().Debug("OnSaveData %d", saveDataSize); // host_restart required
 	if (saveDataSize <= 0)
 	{
 		return false;
@@ -559,11 +560,10 @@ bool CHostManager::OnGameEnd(IExtendedSocket* socket)
 
 void CHostManager::OnHostChanged(IUser* gameMatchUser, IUser* newHost, CGameMatch* match)
 {
-	g_pPacketManager->SendHostRestart(gameMatchUser->GetExtendedSocket(), newHost->GetID(), gameMatchUser == newHost ? true : false, match);
+	g_pPacketManager->SendHostRestart(gameMatchUser->GetExtendedSocket(), newHost->GetID(), gameMatchUser == newHost, match);
 
 	if (gameMatchUser != newHost)
-		//g_pPacketManager->SendHostJoin(gameMatchUser->GetExtendedSocket(), newHost->GetID());
-		g_pPacketManager->SendHostServerJoin(gameMatchUser->GetExtendedSocket(), ip_string_to_int(newHost->GetNetworkConfig().m_szExternalIpAddress), false, newHost->GetNetworkConfig().m_nExternalServerPort, gameMatchUser->GetID());
+		g_pPacketManager->SendHostJoin(gameMatchUser->GetExtendedSocket(), newHost);
 }
 
 bool CHostManager::OnUserWeapon(CReceivePacket* msg, IExtendedSocket* socket)

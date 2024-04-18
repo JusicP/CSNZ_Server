@@ -2659,12 +2659,12 @@ void CPacketManager::SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomI
 		msg->WriteUInt8(0);
 		msg->WriteUInt8(0);
 		msg->WriteUInt8(0);
-		msg->WriteUInt32(ip_string_to_int(network.m_szExternalIpAddress), false);
+		msg->WriteUInt32(ip_string_to_int(network.m_szExternalIpAddress));
 		msg->WriteUInt16(network.m_nExternalServerPort);
 		msg->WriteUInt16(network.m_nExternalClientPort); //user->externalClientPort
-		msg->WriteUInt32(ip_string_to_int(network.m_szLocalIpAddress), false);
+		msg->WriteUInt32(ip_string_to_int(network.m_szLocalIpAddress));
 		msg->WriteUInt16(network.m_nLocalServerPort);
-		msg->WriteUInt16(network.m_nExternalClientPort); //user->localClientPort
+		msg->WriteUInt16(network.m_nLocalClientPort); //user->localClientPort
 
 		CUserCharacter character = user->GetCharacter(0xFFFFFFFF);
 
@@ -2692,12 +2692,12 @@ void CPacketManager::SendRoomPlayerJoin(IExtendedSocket* socket, IUser* user, Ro
 	msg->WriteUInt8(0);
 	msg->WriteUInt8(0);
 	msg->WriteUInt8(0);
-	msg->WriteUInt32(ip_string_to_int(network.m_szExternalIpAddress), false);
+	msg->WriteUInt32(ip_string_to_int(network.m_szExternalIpAddress));
 	msg->WriteUInt16(network.m_nExternalServerPort);
 	msg->WriteUInt16(network.m_nExternalClientPort); //user->externalClientPort
-	msg->WriteUInt32(ip_string_to_int(network.m_szLocalIpAddress), false);
+	msg->WriteUInt32(ip_string_to_int(network.m_szLocalIpAddress));
 	msg->WriteUInt16(network.m_nLocalServerPort);
-	msg->WriteUInt16(network.m_nExternalClientPort); //user->localClientPort
+	msg->WriteUInt16(network.m_nLocalClientPort); //user->localClientPort
 
 	CUserCharacter character = user->GetCharacter(0xFFFFFFFF);
 
@@ -3287,23 +3287,23 @@ void CPacketManager::SendHostZBAddon(IExtendedSocket* socket, int userID, const 
 	socket->Send(msg);
 }
 
-void CPacketManager::SendHostJoin(IExtendedSocket* socket, int hostID)
+void CPacketManager::SendHostJoin(IExtendedSocket* socket, IUser* host)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Host);
 	msg->BuildHeader();
 
 	msg->WriteUInt8(HostPacketType::HostJoin);
-	msg->WriteUInt32(hostID);
+	msg->WriteUInt32(host->GetID());
 	msg->WriteUInt64(0); // что это?
 
-	/*UserNetworkConfig_s network = user->GetNetworkConfig();
+	UserNetworkConfig_s network = host->GetNetworkConfig();
 
-	msg->WriteUInt32(ip_string_to_int(network.m_szExternalIpAddress), false);
-	msg->WriteUInt16(network.m_nExternalServerPort);
+	msg->WriteUInt32(ip_string_to_int(network.m_szExternalIpAddress), false); // below here is a4
+	msg->WriteUInt16(network.m_nExternalServerPort); // a4
 	msg->WriteUInt16(network.m_nExternalClientPort); //user->externalClientPort
 	msg->WriteUInt32(ip_string_to_int(network.m_szLocalIpAddress), false);
 	msg->WriteUInt16(network.m_nLocalServerPort);
-	msg->WriteUInt16(network.m_nExternalClientPort); //user->localClientPort*/
+	msg->WriteUInt16(network.m_nLocalClientPort); //user->localClientPort
 
 	socket->Send(msg);
 }
