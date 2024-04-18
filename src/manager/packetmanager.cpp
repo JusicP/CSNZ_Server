@@ -906,7 +906,8 @@ void CPacketManager::SendUserStart(IExtendedSocket* socket, int userID, const st
 	msg->WriteUInt8(firstConnect); // first connect
 	msg->WriteUInt8(0); // country code
 	msg->WriteUInt8(0); // region code
-	msg->WriteUInt32(0); // 210429
+	msg->WriteUInt32(0); // UserSN
+	msg->WriteUInt8(0); // unk
 	socket->Send(msg);
 }
 
