@@ -826,7 +826,7 @@ void CRoom::UpdateHost(IUser* newHost)
 		g_PacketManager.SendRoomSetHost(u->GetExtendedSocket(), newHost);
 	}
 
-	if (m_pServer == NULL)
+	if (m_pServer == NULL && m_pGameMatch != NULL)
 	{
 		if (m_pGameMatch->m_UserStats.empty())
 		{
@@ -862,6 +862,10 @@ bool CRoom::FindAndUpdateNewHost()
 				UpdateHost(m_Users[0]);
 			else
 				UpdateHost(userStats[0]->m_pUser);
+		}
+		else
+		{
+			UpdateHost(m_Users[0]);
 		}
 	}
 
