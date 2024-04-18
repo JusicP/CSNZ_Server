@@ -29,7 +29,6 @@ public:
 	virtual int GetNumOfRealCts() = 0;
 	virtual int GetNumOfRealTerrorists() = 0;
 	virtual int GetNumOfReadyPlayers() = 0;
-	virtual RoomReadyStatus GetUserReadyStatus(IUser* user) = 0;
 	virtual RoomReadyStatus IsUserReady(IUser* user) = 0;
 	virtual bool IsRoomReady() = 0;
 	virtual bool IsUserIngame(IUser* user) = 0;
@@ -47,7 +46,7 @@ public:
 	virtual void UpdateHost(IUser* newHost) = 0;
 	virtual void HostStartGame() = 0;
 	virtual void UserGameJoin(IUser* user) = 0;
-	virtual void EndGame() = 0;
+	virtual void EndGame(bool forcedEnd) = 0;
 	virtual bool FindAndUpdateNewHost() = 0;
 	virtual void UpdateSettings(CRoomSettings& newSettings) = 0;
 	virtual void OnUserMessage(CReceivePacket* msg, IUser* user) = 0;
@@ -83,4 +82,5 @@ public:
 
 	virtual CDedicatedServer* GetServer() = 0;
 	virtual void SetServer(CDedicatedServer* server) = 0;
+	virtual void ChangeMap(int mapId) = 0;
 };

@@ -188,7 +188,7 @@ void CChannelManager::EndAllGames()
 				if (room->GetStatus() == STATUS_INGAME)
 				{
 					Console().Log(OBFUSCATE("Force ending RoomID: %d game match\n"), room->GetID());
-					room->EndGame();
+					room->EndGame(true);
 				}
 			}
 		}

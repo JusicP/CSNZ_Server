@@ -86,6 +86,7 @@ enum PacketId
 	SeasonSystem = 118,
 	Unk119 = 119,
 	GuideQuest = 120,
+	Unk121 = 121,
 	Unk122 = 122,
 	UserStartStep = 123,
 	// Missing 26 packets
@@ -152,6 +153,7 @@ enum HostPacketType
 	OnUserWeapon = 13, // Or OnUpdateWeapon? not very sure what to name :D
 	OnUpdateClass = 14,
 	OnUserSpawn = 16, // Spawn Location
+	OnChangeMap = 20,
 	OnRoundStart = 24,
 	UseScenItem = 100,
 	SetInventory = 101,

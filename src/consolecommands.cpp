@@ -201,7 +201,7 @@ void CommandShutdown(CCommand* cmd, const vector<string>& args)
 			for (auto room : sub->GetRooms())
 			{
 				Console().Log("Force ending RoomID: %d game\n", room->GetID());
-				room->EndGame();
+				room->EndGame(true);
 			}
 		}
 	}
