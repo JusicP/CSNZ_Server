@@ -854,12 +854,15 @@ bool CRoom::FindAndUpdateNewHost()
 	}
 	else
 	{
-		vector<CGameMatchUserStat*> userStats = GetGameMatch()->m_UserStats;
+		if (m_pGameMatch != NULL)
+		{
+			vector<CGameMatchUserStat*> userStats = GetGameMatch()->m_UserStats;
 
-		if (userStats.empty())
-			UpdateHost(m_Users[0]);
-		else
-			UpdateHost(userStats[0]->m_pUser);
+			if (userStats.empty())
+				UpdateHost(m_Users[0]);
+			else
+				UpdateHost(userStats[0]->m_pUser);
+		}
 	}
 
 	return true;
