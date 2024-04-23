@@ -162,7 +162,7 @@ int CUser::UpdateHolepunch(int portId, int localPort, int externalPort)
 		m_NetworkData.m_nLocalClientPort = localPort;
 		m_NetworkData.m_nExternalClientPort = externalPort;
 		return 0;
-	case 256:
+	case 1:
 		m_NetworkData.m_nLocalServerPort = localPort;
 		m_NetworkData.m_nExternalServerPort = externalPort;
 		return 1;
