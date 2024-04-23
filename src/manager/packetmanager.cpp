@@ -1760,7 +1760,9 @@ void CPacketManager::SendItemEnhanceResult(IExtendedSocket* socket, const EnhRes
 	msg->WriteUInt8(14);
 
 	msg->WriteUInt8(result.status);
-	if (result.status < ENHANCE_FAILURE)
+	if (result.status == ENHANCE_SUCCESS ||
+		result.status == ENHANCE_LEVELDOWN ||
+		result.status == ENHANCE_FULLLEVELDOWN)
 	{
 		msg->WriteUInt16(result.itemSlot);
 		msg->WriteUInt16(result.enhLevel);
@@ -1768,7 +1770,8 @@ void CPacketManager::SendItemEnhanceResult(IExtendedSocket* socket, const EnhRes
 		msg->WriteUInt8(result.enhAttribute);
 	}
 
-	msg->WriteUInt8(0);
+	if (result.status == ENHANCE_SUCCESS || result.status == ENHANCE_FAILURE)
+		msg->WriteUInt8(0);
 
 	socket->Send(msg);
 }
