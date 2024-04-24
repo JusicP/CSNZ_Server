@@ -254,23 +254,6 @@ void CPacketManager::SendUMsgNoticeMessageInChat(IExtendedSocket* socket, const 
 	socket->Send(msg);
 }
 
-void CPacketManager::SendUMsgChatMessage(IExtendedSocket* socket, int type, const string& gameName, const string& text, bool from)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::UMsg);
-	msg->BuildHeader();
-
-	msg->WriteUInt8(type);
-	if (type == UMsgPacketType::WhisperUserMessage)
-	{
-		msg->WriteUInt8(from); // from or to
-	}
-
-	msg->WriteString(gameName);
-	msg->WriteString(text);
-
-	socket->Send(msg);
-}
-
 /*void CPacketManager::SendUMsgNoticeMsgBoxToUuid(IExtendedSocket* socket, const string& text)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::UMsg);
@@ -279,43 +262,6 @@ void CPacketManager::SendUMsgChatMessage(IExtendedSocket* socket, int type, cons
 	msg->WriteString(text);
 	socket->Send(msg);
 }*/
-
-void CPacketManager::SendUMsgWhisperMessage(IExtendedSocket* socket, const string& text, const string& destName, IUser* user, int type)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::UMsg);
-	msg->BuildHeader();
-
-	msg->WriteUInt8(UMsgPacketType::WhisperUserMessage);
-	msg->WriteUInt8(type); // from or to
-	msg->WriteString(destName); // user name
-	msg->WriteString(text); // message
-
-	socket->Send(msg);
-}
-
-void CPacketManager::SendUMsgRoomMessage(IExtendedSocket* socket, const string& senderName, const string& text)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::UMsg);
-	msg->BuildHeader();
-
-	msg->WriteUInt8(UMsgPacketType::RoomUserMessage);
-	msg->WriteString(senderName); // user name
-	msg->WriteString(text); // message
-
-	socket->Send(msg);
-}
-
-void CPacketManager::SendUMsgRoomTeamMessage(IExtendedSocket* socket, const string& senderName, const string& text)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::UMsg);
-	msg->BuildHeader();
-
-	msg->WriteUInt8(UMsgPacketType::RoomTeamUserMessage);
-	msg->WriteString(senderName); // user name
-	msg->WriteString(text); // message
-
-	socket->Send(msg);
-}
 
 void CPacketManager::SendUMsgSystemReply(IExtendedSocket* socket, int type, const string& replyMsg, const vector<string>& additionalText)
 {
@@ -333,12 +279,16 @@ void CPacketManager::SendUMsgSystemReply(IExtendedSocket* socket, int type, cons
 	socket->Send(msg);
 }
 
-void CPacketManager::SendUMsgLobbyMessage(IExtendedSocket* socket, const string& senderName, const string& text)
+void CPacketManager::SendUMsgUserMessage(IExtendedSocket* socket, int type, const string& senderName, const string& text, int whisperType)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::UMsg);
 	msg->BuildHeader();
 
-	msg->WriteUInt8(UMsgPacketType::LobbyUserMessage);
+	msg->WriteUInt8(type);
+
+	if (type == UMsgPacketType::WhisperUserMessage)
+		msg->WriteUInt8(whisperType);
+
 	msg->WriteString(senderName);
 	msg->WriteString(text);
 
@@ -1557,6 +1507,19 @@ void CPacketManager::SendGameMatchUnk9(IExtendedSocket* socket)
 	msg->WriteUInt16(0x0E);
 	msg->WriteUInt16(0x2);
 	msg->WriteUInt16(0xFFFF);
+
+	socket->Send(msg);
+}
+
+void CPacketManager::SendGameMatchFailMessage(IExtendedSocket* socket, int type)
+{
+	CSendPacket* msg = CreatePacket(socket, PacketId::GameMatch);
+	msg->BuildHeader();
+
+	msg->WriteUInt8(100);
+
+	msg->WriteUInt8(0);
+	msg->WriteUInt8(type); // Display message box with string #CSO_MATCH_FAIL_MSG_%d, %d is type
 
 	socket->Send(msg);
 }
@@ -6782,7 +6745,7 @@ void CPacketManager::SendBanMaxSize(IExtendedSocket* socket, int maxSize)
 {
 	CSendPacket* msg = g_PacketManager.CreatePacket(socket, PacketId::Ban);
 	msg->BuildHeader();
-	msg->WriteUInt8(BanPacketType::BanListMaxSize);
+	msg->WriteUInt8(BanPacketType::BanListMaxSizeReply);
 	msg->WriteUInt16(maxSize);
 	socket->Send(msg);
 }

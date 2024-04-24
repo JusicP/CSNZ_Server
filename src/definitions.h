@@ -264,11 +264,17 @@ enum UMsgPacketType
 	RoomUserMessage = 2,
 	ClanUserMessage = 3,
 	RoomTeamUserMessage = 4,
+	PartyUserMessage = 5,
+	ServerYellUserMessage = 6,
 	ServerNoticeMessageMsgBox = 10,
 	ServerNoticeMessageInChat = 11,
 	SystemReply_Red = 20,
 	SystemReply_Green = 21,
 	SystemReply_MsgBox = 30,
+	GMNoticeUserMessage = 40,
+	GMNoticeUserMessage2 = 41,
+	ServerDisconnectMessage = 50,
+	ServerDisconnectMessage2 = 51,
 	RewardNoticeMsgLocalized = 60,
 	RewardNoticeMsg = 61,
 	ExpiredItem = 62,
@@ -1197,8 +1203,6 @@ struct ClanUserJoinRequest
 #define	CFLAG_MAXMEMBERCOUNT				(1<<16)
 #define CFLAG_CHRONICLE				(1<<17)
 
-#define BANLIST_MAX_SIZE 200
-
 enum BanPacketType
 {
 	BanList = 0,
@@ -1208,7 +1212,8 @@ enum BanPacketType
 	BanRemoveNicknameReply = 2,
 	RequestBanSettings = 2,
 	BanSettingsReply = 3,
-	BanListMaxSize = 4,
+	RequestBanListMaxSize = 4,
+	BanListMaxSizeReply = 4,
 };
 
 struct UserBan
@@ -1265,12 +1270,20 @@ enum InRoomType
 
 enum UMsgReceiveType
 {
-	LobbyWhisperChat = 0,
+	WhisperChat = 0,
 	LobbyChat = 1,
 	RoomChat = 2,
 	ClanChat = 3,
 	RoomTeamChat = 4,
+	PartyChat = 5,
+	ServerYellChat = 6,
 	RewardSelect = 67,
+};
+
+enum UMsgWhisperType
+{
+	To = 0,
+	From = 1,
 };
 
 /* SURVEY */

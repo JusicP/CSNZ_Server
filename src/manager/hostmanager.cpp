@@ -208,9 +208,7 @@ bool CHostManager::OnUseInGameItem(CReceivePacket* msg, IExtendedSocket* socket,
 	int count = msg->ReadUInt16();
 
 	vector<CUserInventoryItem> items;
-	g_UserDatabase.GetInventoryItemsByID(destUser->GetID(), itemID, items);
-
-	if (items.size() == 0)
+	if (!g_UserDatabase.GetInventoryItemsByID(destUser->GetID(), itemID, items))
 		return false;
 
 	g_ItemManager.UseItem(destUser, items[0].GetGameSlot());

@@ -38,6 +38,7 @@ CServerConfig::CServerConfig()
 	maxRegistrationsPerIP = 0;
 	crypt = false;
 	mainMenuSkinEvent = 0;
+	banListMaxSize = 0;
 }
 
 CServerConfig::~CServerConfig()
@@ -60,6 +61,7 @@ const char* defaultServerConfig = R"(
 	"MaxRegistrationsPerIP": 3,
 	"Crypt": false,
 	"MainMenuSkinEvent": 0,
+	"BanListMaxSize": 300,
 	"Metadata": {
 		"Maplist": true,
 		"ClientTable": true,
@@ -975,6 +977,7 @@ bool CServerConfig::Load()
 		maxRegistrationsPerIP = cfg.value("MaxRegistrationsPerIP", 1);
 		crypt = cfg.value("Crypt", false);
 		mainMenuSkinEvent = cfg.value("MainMenuSkinEvent", 0);
+		banListMaxSize = cfg.value("BanListMaxSize", 300);
 		if (cfg.contains("Metadata"))
 		{
 			ordered_json jMetadata = cfg["Metadata"];

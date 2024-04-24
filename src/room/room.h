@@ -82,7 +82,6 @@ public:
 	void SendCloseResultWindow(IUser* user);
 	void SendTeamChange(IUser* user, IUser* player, RoomTeamNum newTeamNum);
 	void SendGameEnd(IUser* user);
-	void SendUserMessage(const std::string& senderName, const std::string& msg, IUser* user);
 	void SendRoomStatus(IUser* user);
 	void SendPlayerLeaveIngame(IUser* user);
 

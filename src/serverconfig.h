@@ -41,6 +41,7 @@ public:
 	std::vector<Survey> surveys;
 	bool crypt;
 	int mainMenuSkinEvent;
+	int banListMaxSize;
 };
 
 extern class CServerConfig* g_pServerConfig;

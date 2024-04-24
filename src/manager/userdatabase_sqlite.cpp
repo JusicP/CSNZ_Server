@@ -3096,7 +3096,7 @@ int CUserDatabaseSQLite::UpdateBanList(int userID, string gameName, bool remove)
 				query.bind(1, userID);
 				if (query.executeStep())
 				{
-					if ((int)query.getColumn(0) >= 30)
+					if ((int)query.getColumn(0) >= g_pServerConfig->banListMaxSize)
 					{
 						return -3;
 					}

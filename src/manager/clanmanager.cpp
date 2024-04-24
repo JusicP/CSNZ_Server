@@ -998,7 +998,17 @@ bool CClanManager::OnClanChatMessage(CReceivePacket* msg, IUser* user)
 	for (auto clanUser : userList)
 	{
 		if (clanUser.user)
-			g_PacketManager.SendClanChatMessage(clanUser.user->GetExtendedSocket(), clanUser.character.gameName, message);
+		{
+			CUserCharacterExtended characterExtendedDest = clanUser.user->GetCharacterExtended(EXT_UFLAG_BANSETTINGS);
+
+			// you can't send clan message if dest is blocking your chat
+			if (~characterExtendedDest.banSettings & 2 || characterExtendedDest.banSettings & 2 && !g_UserDatabase.IsInBanList(clanUser.userID, user->GetID()))
+			{
+				CUserCharacter character = user->GetCharacter(UFLAG_GAMENAME);
+
+				g_PacketManager.SendClanChatMessage(clanUser.user->GetExtendedSocket(), character.gameName, message);
+			}
+		}
 	}
 
 	return true;

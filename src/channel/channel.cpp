@@ -1,6 +1,7 @@
 #include "channel.h"
 #include "manager/usermanager.h"
 #include "manager/packetmanager.h"
+#include "manager/userdatabase.h"
 
 using namespace std;
 
@@ -130,11 +131,15 @@ void CChannel::SendRemoveFromRoomList(int roomId)
 	}
 }
 
-void CChannel::SendLobbyMessageToAllUser(const std::string& senderName, const std::string& msg)
+void CChannel::SendUserMessageToAllUser(int type, int senderUserID, const std::string& senderName, const std::string& msg)
 {
-	for (auto u : m_Users)
+	for (auto userDest : m_Users)
 	{
-		g_PacketManager.SendUMsgLobbyMessage(u->GetExtendedSocket(), senderName, msg);
+		CUserCharacterExtended characterExtendedDest = userDest->GetCharacterExtended(EXT_UFLAG_BANSETTINGS);
+
+		// you can't send lobby message if dest is blocking your chat
+		if (~characterExtendedDest.banSettings & 2 || characterExtendedDest.banSettings & 2 && !g_UserDatabase.IsInBanList(userDest->GetID(), senderUserID))
+			g_PacketManager.SendUMsgUserMessage(userDest->GetExtendedSocket(), type, senderName, msg);
 	}
 }
 

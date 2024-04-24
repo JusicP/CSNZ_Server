@@ -367,9 +367,7 @@ bool CUserManager::OnFavoriteSetLoadout(CReceivePacket* msg, IUser* user)
 		}
 
 		vector<CUserInventoryItem> items;
-		g_UserDatabase.GetInventoryItemsByID(user->GetID(), itemID, items);
-
-		if (items.empty())
+		if (!g_UserDatabase.GetInventoryItemsByID(user->GetID(), itemID, items))
 			return false;
 
 		string className = g_pItemTable->GetCell<string>("ClassName", to_string(itemID));
@@ -383,9 +381,7 @@ bool CUserManager::OnFavoriteSetLoadout(CReceivePacket* msg, IUser* user)
 	else if (loadoutType == 0)
 	{
 		vector<CUserInventoryItem> items;
-		g_UserDatabase.GetInventoryItemsByID(user->GetID(), itemID, items);
-
-		if (items.empty())
+		if (!g_UserDatabase.GetInventoryItemsByID(user->GetID(), itemID, items))
 			return false;
 
 		string className = g_pItemTable->GetCell<string>("ClassName", to_string(itemID));
@@ -493,7 +489,6 @@ void CUserManager::SendLoginPacket(IUser* user, const CUserCharacter& character)
 		g_PacketManager.SendBanList(socket, banList);
 
 	g_PacketManager.SendBanSettings(socket, characterExtended.banSettings);
-	g_PacketManager.SendBanMaxSize(socket, BANLIST_MAX_SIZE);
 
 	SendMetadata(socket);
 
@@ -696,20 +691,27 @@ bool CUserManager::OnUserMessage(CReceivePacket* msg, IExtendedSocket* socket)
 	int type = msg->ReadUInt8();
 	switch (type)
 	{
-	case UMsgReceiveType::LobbyWhisperChat:
+	case UMsgReceiveType::WhisperChat:
 		g_ChannelManager.OnWhisperMessage(msg, user);
 		break;
 	case UMsgReceiveType::LobbyChat:
 		g_ChannelManager.OnLobbyMessage(msg, socket, user);
 		break;
-	case UMsgReceiveType::ClanChat:
-		Console().Warn("CUserManager::OnUserMessage: ClanChat!\n");
-		break;
 	case UMsgReceiveType::RoomChat:
 		g_ChannelManager.OnRoomUserMessage(msg, user);
 		break;
+	case UMsgReceiveType::ClanChat:
+		Console().Warn("CUserManager::OnUserMessage: ClanChat!\n");
+		break;
 	case UMsgReceiveType::RoomTeamChat:
 		g_ChannelManager.OnRoomTeamUserMessage(msg, user);
+		break;
+	case UMsgReceiveType::PartyChat:
+		// Party system is not implemented, so let's just say the party doesn't exist
+		g_PacketManager.SendGameMatchFailMessage(socket, 6);
+		break;
+	case UMsgReceiveType::ServerYellChat:
+		g_ChannelManager.OnServerYellMessage(msg, user);
 		break;
 	case UMsgReceiveType::RewardSelect:
 		g_ItemManager.OnRewardSelect(msg, user);
@@ -1110,6 +1112,9 @@ bool CUserManager::OnBanPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		break;
 	case BanPacketType::RequestBanSettings:
 		OnBanSettingsRequest(msg, user);
+		break;
+	case BanPacketType::RequestBanListMaxSize:
+		g_PacketManager.SendBanMaxSize(socket, g_pServerConfig->banListMaxSize);
 		break;
 	default:
 		Console().Warn(OBFUSCATE("[User '%s'] Unknown Packet_Ban type %d (len: %d)\n"), user->GetLogName(), type, msg->GetLength());

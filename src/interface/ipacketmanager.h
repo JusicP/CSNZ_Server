@@ -25,12 +25,8 @@ public:
 
 	virtual void SendUMsgNoticeMsgBoxToUuid(IExtendedSocket* socket, const std::string& text) = 0;
 	virtual void SendUMsgNoticeMessageInChat(IExtendedSocket* socket, const std::string& text) = 0;
-	virtual void SendUMsgChatMessage(IExtendedSocket* socket, int type, const std::string& gameName, const std::string& text, bool from = false) = 0;
-	virtual void SendUMsgWhisperMessage(IExtendedSocket* socket, const std::string& msg, const std::string& destName, IUser* user, int type) = 0; // use SendUMsgChatMessage
-	virtual void SendUMsgRoomMessage(IExtendedSocket* socket, const std::string& senderName, const std::string& text) = 0; // use SendUMsgChatMessage
-	virtual void SendUMsgRoomTeamMessage(IExtendedSocket* socket, const std::string& senderName, const std::string& text) = 0; // use SendUMsgChatMessage
 	virtual void SendUMsgSystemReply(IExtendedSocket* socket, int type, const std::string& msg, const std::vector<std::string>& additionalText = {}) = 0;
-	virtual void SendUMsgLobbyMessage(IExtendedSocket* socket, const std::string& senderName, const std::string& text) = 0; // use SendUMsgChatMessage
+	virtual void SendUMsgUserMessage(IExtendedSocket* socket, int type, const std::string& senderName, const std::string& text, int whisperType = 0) = 0;
 	virtual void SendUMsgNotice(IExtendedSocket* socket, const Notice_s& notice, bool unk = 1) = 0;
 	virtual void SendUMsgExpiryNotice(IExtendedSocket* socket, const std::vector<int>& expiryItems) = 0;
 	virtual void SendUMsgRewardNotice(IExtendedSocket* socket, const RewardNotice& reward, std::string title = "", std::string description = "", bool inGame = false, bool scen = false) = 0;
@@ -94,6 +90,7 @@ public:
 	virtual void SendGameMatchInfo(IExtendedSocket* socket) = 0;
 	virtual void SendGameMatchUnk(IExtendedSocket* socket) = 0;
 	virtual void SendGameMatchUnk9(IExtendedSocket* socket) = 0;
+	virtual void SendGameMatchFailMessage(IExtendedSocket* socket, int type) = 0;
 
 	virtual void SendReply(IExtendedSocket* socket, int type) = 0;
 

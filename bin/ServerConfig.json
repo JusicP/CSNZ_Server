@@ -13,6 +13,7 @@
 	"MaxRegistrationsPerIP": 3,
 	"Crypt": false,
 	"MainMenuSkinEvent": 0,
+	"BanListMaxSize": 300,
 	"Metadata": {
 		"Maplist": true,
 		"ClientTable": true,

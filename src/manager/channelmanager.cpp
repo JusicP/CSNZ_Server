@@ -215,7 +215,7 @@ bool CChannelManager::OnLobbyMessage(CReceivePacket* msg, IExtendedSocket* socke
 			return false;
 		}
 
-		channel->SendLobbyMessageToAllUser(gameName, message);
+		channel->SendUserMessageToAllUser(UMsgPacketType::LobbyUserMessage, user->GetID(), gameName, message);
 	}
 
 	return true;
@@ -260,11 +260,12 @@ bool CChannelManager::OnWhisperMessage(CReceivePacket* msg, IUser* userSender)
 				// you can't send whisper message if dest is blocking all whisper
 				g_PacketManager.SendUMsgSystemReply(socket, UMsgPacketType::SystemReply_Red, "MSG_TELL_LISTENER_USING_BAN_CHAT_ALL");
 			}
-			else
+			// you can't send whisper message if you're blocking the dest's chat/whisper
+			else if (~characterExtendedSender.banSettings & 2 || characterExtendedSender.banSettings & 2 && !g_UserDatabase.IsInBanList(userSender->GetID(), userDest->GetID()))
 			{
-				g_PacketManager.SendUMsgWhisperMessage(socket, message, userNameDest, userSender, 0);
+				g_PacketManager.SendUMsgUserMessage(socket, UMsgPacketType::WhisperUserMessage, userNameDest, message, UMsgWhisperType::To);
 				CUserCharacter character = userSender->GetCharacter(UFLAG_GAMENAME);
-				g_PacketManager.SendUMsgWhisperMessage(userDest->GetExtendedSocket(), message, character.gameName, userDest, 1);
+				g_PacketManager.SendUMsgUserMessage(userDest->GetExtendedSocket(), UMsgPacketType::WhisperUserMessage, character.gameName, message, UMsgWhisperType::From);
 			}
 		}
 	}
@@ -288,6 +289,32 @@ bool CChannelManager::OnRoomTeamUserMessage(CReceivePacket* msg, IUser* user)
 		return false;
 
 	user->GetCurrentRoom()->OnUserTeamMessage(msg, user);
+
+	return true;
+}
+
+bool CChannelManager::OnServerYellMessage(CReceivePacket* msg, IUser* user)
+{
+	if (user == NULL)
+		return false;
+
+	CChannel* channel = user->GetCurrentChannel();
+	if (!channel)
+	{
+		Console().Log(OBFUSCATE("User '%s' tried to send message but he's not in channel\n"), user->GetLogName());
+		return false;
+	}
+
+	vector<CUserInventoryItem> items;
+	if (!g_UserDatabase.GetInventoryItemsByID(user->GetID(), 204 /*server yell*/, items))
+		return false;
+	
+	g_ItemManager.OnItemUse(user, items[0]);
+
+	CUserCharacter character = user->GetCharacter(UFLAG_GAMENAME);
+	string message = msg->ReadString();
+
+	channel->SendUserMessageToAllUser(UMsgPacketType::ServerYellUserMessage, user->GetID(), character.gameName, message);
 
 	return true;
 }
@@ -380,8 +407,8 @@ bool CChannelManager::OnCommandHandler(IExtendedSocket* socket, IUser* user, con
 	}
 	else
 	{
-		CUserCharacterExtended character = user->GetCharacterExtended(EXT_UFLAG_GAMEMASTER);
-		if (character.gameMaster)
+		CUserCharacterExtended characterExtended = user->GetCharacterExtended(EXT_UFLAG_GAMEMASTER);
+		if (characterExtended.gameMaster)
 		{
 			if (args[0] == (char*)OBFUSCATE("/version"))
 			{
@@ -392,14 +419,15 @@ bool CChannelManager::OnCommandHandler(IExtendedSocket* socket, IUser* user, con
 			}
 			else if (args[0] == (char*)OBFUSCATE("/help"))
 			{
-				g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("Available commands: /help, /version, /giveitem, /additem, /removeitem, /getfreeslots, /sendnotice, /addallitems"));
-				g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("/addexp, /status, /ban, /hban, /ipban, /unban, /getuid, /tournament, /givereward, /giverewardtoall"));
-				g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("/addwpnreleasechar, /addpoints, /givepoints, /weaponrelease"));
+				g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("Available commands: /help, /version, /disconnect, /getfreeslots, /additem, /giveitem, /addallitems"));
+				g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("/removeitem, /sendnotice, /addexp, /status, /ban, /hban, /ipban"));
+				g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("/unban, /getuid, /tournament, /givereward, /giverewardtoall, /addwpnreleasechar, /addpoints"));
+				g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("/givepoints, /setitemstatus, /setiteminuse, /sendgmnotice, /weaponrelease, /bingo"));
 				return true;
 			}
 			else if (args[0] == (char*)OBFUSCATE("/disconnect"))
 			{
-				g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("Not implemented\n"));
+				g_UserManager.DisconnectUser(user);
 				return true;
 			}
 			else if (args[0] == (char*)OBFUSCATE("/getfreeslots"))
@@ -626,9 +654,7 @@ bool CChannelManager::OnCommandHandler(IExtendedSocket* socket, IUser* user, con
 						int itemID = stoi(args[1]);
 
 						vector<CUserInventoryItem> items;
-						g_UserDatabase.GetInventoryItemsByID(user->GetID(), itemID, items);
-
-						if (items.size() > 0)
+						if (g_UserDatabase.GetInventoryItemsByID(user->GetID(), itemID, items))
 						{
 							if (args.size() >= 3 && isNumber(args[1]))
 							{
@@ -949,6 +975,7 @@ bool CChannelManager::OnCommandHandler(IExtendedSocket* socket, IUser* user, con
 			}
 			else if (args[0] == (char*)OBFUSCATE("/reqsnapshot"))
 			{
+				g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("Not implemented\n"));
 				return true;
 			}
 #endif
@@ -1021,7 +1048,7 @@ bool CChannelManager::OnCommandHandler(IExtendedSocket* socket, IUser* user, con
 
 				return true;
 			}
-			else if (args[0] == "/setitemstatus")
+			else if (args[0] == (char*)OBFUSCATE("/setitemstatus"))
 			{
 				if (args.size() <= 2 || !isNumber(args[1]) || !isNumber(args[2]))
 				{
@@ -1053,7 +1080,7 @@ bool CChannelManager::OnCommandHandler(IExtendedSocket* socket, IUser* user, con
 
 				return true;
 			}
-			else if (args[0] == "/setiteminuse")
+			else if (args[0] == (char*)OBFUSCATE("/setiteminuse"))
 			{
 				if (args.size() <= 2 || !isNumber(args[1]) || !isNumber(args[2]))
 				{
@@ -1085,15 +1112,39 @@ bool CChannelManager::OnCommandHandler(IExtendedSocket* socket, IUser* user, con
 
 				return true;
 			}
+			else if (args[0] == (char*)OBFUSCATE("/sendgmnotice"))
+			{
+				if (!(args.size() >= 2))
+				{
+					g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("/sendgmnotice usage: /sendgmnotice <msg>"));
+					return true;
+				}
+
+				CChannel* channel = user->GetCurrentChannel();
+				if (!channel)
+				{
+					Console().Log(OBFUSCATE("User '%s' tried to send GM notice but he's not in channel\n"), user->GetLogName());
+					return false;
+				}
+
+				string text = message;
+				text.erase(0, strlen(OBFUSCATE("/sendgmnotice ")));
+
+				CUserCharacter character = user->GetCharacter(UFLAG_GAMENAME);
+
+				channel->SendUserMessageToAllUser(UMsgPacketType::GMNoticeUserMessage, user->GetID(), character.gameName, text);
+
+				return true;
+			}
 		}
 
-		if (args[0] == "/weaponrelease")
+		if (args[0] == (char*)OBFUSCATE("/weaponrelease"))
 		{
 			if (g_pServerConfig->activeMiniGamesFlag & kEventFlag_WeaponRelease)
 				g_MiniGameManager.SendWeaponReleaseUpdate(user);
 			return true;
 		}
-		else if (args[0] == "/bingo")
+		else if (args[0] == (char*)OBFUSCATE("/bingo"))
 		{
 			if (g_pServerConfig->activeMiniGamesFlag & kEventFlag_Bingo_NEW || g_pServerConfig->activeMiniGamesFlag & kEventFlag_Bingo)
 				g_MiniGameManager.OnBingoUpdateRequest(user);
@@ -1529,10 +1580,12 @@ bool CChannelManager::OnRoomSetZBAddonRequest(CReceivePacket* msg, IUser* user)
 		if (g_pItemTable->GetCell<string>("ClassName", to_string(itemID)) == "zbsaddonitem")
 		{
 			vector<CUserInventoryItem> items;
-			if (g_UserDatabase.GetInventoryItemsByID(user->GetID(), itemID, items) == 1
-				&& g_ItemManager.OnItemUse(user, items[0]))
+			if (g_UserDatabase.GetInventoryItemsByID(user->GetID(), itemID, items))
 			{
-				addons.push_back(itemID);
+				if (g_ItemManager.OnItemUse(user, items[0]))
+				{
+					addons.push_back(itemID);
+				}
 			}
 		}
 	}

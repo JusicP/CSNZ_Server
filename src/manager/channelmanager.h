@@ -19,6 +19,7 @@ public:
 	bool OnWhisperMessage(CReceivePacket* msg, IUser* user);
 	bool OnRoomUserMessage(CReceivePacket* msg, IUser* user);
 	bool OnRoomTeamUserMessage(CReceivePacket* msg, IUser* user);
+	bool OnServerYellMessage(CReceivePacket* msg, IUser* user);
 
 	class CChannelServer* GetServerByIndex(int index);
 	void JoinChannel(IUser* user, int channelServerID, int channelID, bool transfer);

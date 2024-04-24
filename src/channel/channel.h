@@ -17,7 +17,7 @@ public:
 	void SendAddRoomToRoomList(IRoom* room);
 	void SendRemoveFromRoomList(int roomId);
 	void OnEmptyRoomCallback(IRoom* room);
-	void SendLobbyMessageToAllUser(const std::string& senderName, const std::string& msg);
+	void SendUserMessageToAllUser(int type, int senderUserID, const std::string& senderName, const std::string& msg);
 	void UpdateUserInfo(IUser* user, const CUserCharacter& character);
 	IRoom* CreateRoom(IUser* host, CRoomSettings* settings);
 	IRoom* GetRoomById(int id);

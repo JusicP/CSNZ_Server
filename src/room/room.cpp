@@ -563,9 +563,13 @@ void CRoom::OnUserMessage(CReceivePacket* msg, IUser* user)
 		return;
 	}
 
-	for (auto user : m_Users)
+	for (auto userDest : m_Users)
 	{
-		g_PacketManager.SendUMsgRoomMessage(user->GetExtendedSocket(), senderName, message);
+		CUserCharacterExtended characterExtendedDest = userDest->GetCharacterExtended(EXT_UFLAG_BANSETTINGS);
+
+		// you can't send room message if dest is blocking your chat
+		if (~characterExtendedDest.banSettings & 2 || characterExtendedDest.banSettings & 2 && !g_UserDatabase.IsInBanList(userDest->GetID(), user->GetID()))
+			g_PacketManager.SendUMsgUserMessage(userDest->GetExtendedSocket(), UMsgPacketType::RoomUserMessage, senderName, message);
 	}
 }
 
@@ -576,11 +580,15 @@ void CRoom::OnUserTeamMessage(CReceivePacket* msg, IUser* user)
 
 	CUserCharacter character = user->GetCharacter(UFLAG_GAMENAME);
 
-	for (auto u : m_Users)
+	for (auto userDest : m_Users)
 	{
-		if (userTeam == GetUserTeam(u))
+		if (userTeam == GetUserTeam(userDest))
 		{
-			g_PacketManager.SendUMsgRoomTeamMessage(u->GetExtendedSocket(), character.gameName, message);
+			CUserCharacterExtended characterExtendedDest = userDest->GetCharacterExtended(EXT_UFLAG_BANSETTINGS);
+
+			// you can't send team message if dest is blocking your chat
+			if (~characterExtendedDest.banSettings & 2 || characterExtendedDest.banSettings & 2 && !g_UserDatabase.IsInBanList(userDest->GetID(), user->GetID()))
+				g_PacketManager.SendUMsgUserMessage(userDest->GetExtendedSocket(), UMsgPacketType::RoomTeamUserMessage, character.gameName, message);
 		}
 	}
 }
@@ -735,11 +743,6 @@ void CRoom::SendGameEnd(IUser* user)
 	{
 		g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), va("m_nKills: %d\nm_nDeaths: %d\nm_nScore: %d", stat->m_nKills, stat->m_nDeaths, stat->m_nScore));
 	}
-}
-
-void CRoom::SendUserMessage(const string& senderName, const string& msg, IUser* user)
-{
-	g_PacketManager.SendUMsgRoomMessage(user->GetExtendedSocket(), senderName, msg);
 }
 
 void CRoom::SendRoomStatus(IUser* user)

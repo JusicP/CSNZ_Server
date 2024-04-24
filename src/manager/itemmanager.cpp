@@ -560,9 +560,7 @@ bool CItemManager::OnItemPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		int a2 = msg->ReadUInt16();
 
 		vector<CUserInventoryItem> items;
-		g_UserDatabase.GetInventoryItemsByID(user->GetID(), 676, items);
-
-		if (items.size() == 0)
+		if (!g_UserDatabase.GetInventoryItemsByID(user->GetID(), 676 /*item extender*/, items))
 			return false;
 
 		UseItem(user, items[0].GetGameSlot(), a1, a2);
@@ -1765,11 +1763,9 @@ RewardNotice CItemManager::GiveReward(int userID, IUser* user, int rewardID, int
 void CItemManager::OnNicknameChangeUse(IUser* user, string newNickname)
 {
 	vector<CUserInventoryItem> items;
-	g_UserDatabase.GetInventoryItemsByID(user->GetID(), 65/*nickname changer*/, items);
-
-	if (!items.size())
+	if (!g_UserDatabase.GetInventoryItemsByID(user->GetID(), 65/*nickname changer*/, items))
 	{
-		// TODO: send reply
+		g_PacketManager.SendUpdateInfoNicknameChangeReply(user->GetExtendedSocket(), 8);
 		return;
 	}
 
@@ -1791,12 +1787,22 @@ void CItemManager::OnNicknameChangeUse(IUser* user, string newNickname)
 
 bool CItemManager::OnDailyRewardsRequest(IUser* user, int requestID)
 {
-	//switch (requestID)
-	//{
-	//default:
+	switch (requestID)
+	{
+	case 0:
+	{
+		Console().Log("CItemManager::OnDailyRewardsRequest: received type 0\n");
+		break;
+	}
+	case 1:
+	{
+		Console().Log("CItemManager::OnDailyRewardsRequest: received type 1\n");
+		break;
+	}
+	default:
 		Console().Warn("CItemManager::OnDailyRewardsRequest: unknown request: %d\n", requestID);
-	//	break;
-	//}
+		break;
+	}
 
 	return true;
 }
