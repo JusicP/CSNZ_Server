@@ -154,15 +154,17 @@ CUserCharacterExtended CUser::GetCharacterExtended(int flag)
 	return character;
 }
 
-int CUser::UpdateHolepunch(int portId, int localPort, int externalPort)
+int CUser::UpdateHolepunch(int portId, const string& localIpAddress, int localPort, int externalPort)
 {
 	switch (portId)
 	{
 	case 0:
+		m_NetworkData.m_szLocalIpAddress = localIpAddress;
 		m_NetworkData.m_nLocalServerPort = localPort;
 		m_NetworkData.m_nExternalServerPort = externalPort;
 		return 0;
 	case 1:
+		m_NetworkData.m_szLocalIpAddress = localIpAddress;
 		m_NetworkData.m_nLocalClientPort = localPort;
 		m_NetworkData.m_nExternalClientPort = externalPort;
 		return 1;

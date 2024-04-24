@@ -33,7 +33,7 @@ public:
 	CUserCharacter GetCharacter(int flag);
 	CUserCharacterExtended GetCharacterExtended(int flag);
 
-	int UpdateHolepunch(int portId, int localPort, int externalPort);
+	int UpdateHolepunch(int portId, const std::string& localIpAddress, int localPort, int externalPort);
 	void UpdateClientUserInfo(int flag, CUserCharacter character);
 	void UpdateGameName(const std::string& gameName);
 	int UpdatePoints(int64_t points);

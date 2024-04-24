@@ -234,7 +234,7 @@ void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
 
 		Console().Log("OnUDPMessage(0) - userID: %d, portID: %d, localAddr: %d (%s), localPort: %d, tries: %d\n", userID, portID, localAddr, localIpAddress.c_str(), localPort, tries);
 
-		if (user->UpdateHolepunch(portID, localPort, port) == -1)
+		if (user->UpdateHolepunch(portID, localIpAddress, localPort, port) == -1)
 		{
 			Console().Warn("UpdateHolepunch Failed: %d, %d, %d\n", portID, localPort, port);
 		}

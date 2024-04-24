@@ -50,7 +50,7 @@ public:
 	virtual CUserCharacter GetCharacter(int flag) = 0;
 	virtual CUserCharacterExtended GetCharacterExtended(int flag) = 0;
 
-	virtual int UpdateHolepunch(int portId, int localPort, int externalPort) = 0;
+	virtual int UpdateHolepunch(int portId, const std::string& localIpAddress, int localPort, int externalPort) = 0;
 	virtual void UpdateClientUserInfo(int flag, CUserCharacter character) = 0;
 	virtual void UpdateGameName(const std::string& gameName) = 0;
 	virtual int UpdatePoints(int64_t points) = 0;
