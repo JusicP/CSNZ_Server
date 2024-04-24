@@ -148,7 +148,7 @@ public:
 	virtual void SendHostUserInventory(IExtendedSocket* socket, int userId, const std::vector<CUserInventoryItem>& items) = 0;
 	virtual void SendHostGameStart(IExtendedSocket* socket, int userId) = 0;
 	virtual void SendHostZBAddon(IExtendedSocket* socket, int userID, const std::vector<int>& addons) = 0;
-	virtual void SendHostJoin(IExtendedSocket* socket, int hostID) = 0;
+	virtual void SendHostJoin(IExtendedSocket* socket, IUser* host) = 0;
 	virtual void SendHostFlyerFlock(IExtendedSocket* socket, int type) = 0;
 	virtual void SendHostAdBalloon(IExtendedSocket* socket) = 0;
 	virtual void SendHostRestart(IExtendedSocket* socket, int newHostUserID, bool host, CGameMatch* match) = 0;

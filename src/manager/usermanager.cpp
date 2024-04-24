@@ -95,37 +95,81 @@ bool CUserManager::OnUdpPacket(CReceivePacket* msg, IExtendedSocket* socket)
 	if (user == NULL)
 		return false;
 
-	int unk = msg->ReadUInt8();
-	if (unk == 0)
+	int type = msg->ReadUInt8();
+	switch (type)
 	{
-		// nothing to read
+	case 0:
+	{
 		Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 0\n"));
+		break;
 	}
-	else if (unk == 1)
+	case 1:
 	{
 		int unk = msg->ReadUInt32();
+
 		Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 1: %d\n"), unk);
+		break;
 	}
-	else if (unk == 2)
+	case 2:
 	{
-		int unk2 = msg->ReadUInt8();
-		if (unk2 == 1)
+		int subType = msg->ReadUInt32();
+		switch (subType)
 		{
-			int ip = msg->ReadUInt32();
-			int unk3 = msg->ReadUInt16();
-			int unk4 = msg->ReadUInt16();
-
-			//user->GetNetworkConfig().m_szLocalIpAddress = ip_to_string(ip);
-
-			Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-1: ip: %d, unk: %d, unk: %d\n"), ip, unk3, unk4);
-		}
-		else if (unk2 == 2)
+		case 0:
 		{
-			int userID = msg->ReadUInt32();
+			int unk = msg->ReadInt32();
+			int unk2 = msg->ReadUInt16();
 			int unk3 = msg->ReadUInt16();
 
-			Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-2: userID: %d, unk: %d\n"), userID, unk3);
+			Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-0: unk: %d, unk2: %d, unk3: %d\n"), unk, unk2, unk3);
+			break;
 		}
+		case 1:
+		{
+			int unk = msg->ReadInt32();
+			int unk2 = msg->ReadUInt16();
+			int unk3 = msg->ReadUInt16();
+
+			Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-1: unk: %d, unk2: %d, unk3: %d\n"), unk, unk2, unk3);
+			break;
+		}
+		case 2:
+		{
+			int unk = msg->ReadInt32();
+			int unk2 = msg->ReadUInt16();
+
+			Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-2: unk: %d, unk2: %d\n"), unk, unk2);
+			break;
+		}
+		case 3:
+		{
+			int unk = msg->ReadInt32();
+			int unk2 = msg->ReadUInt16();
+
+			Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-3: unk: %d, unk2: %d\n"), unk, unk2);
+			break;
+		}
+		case 4:
+		{
+			int unk = msg->ReadInt32();
+
+			Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-4: unk: %d\n"), unk);
+			break;
+		}
+		case 5:
+		{
+			int unk = msg->ReadInt32();
+			int unk2 = msg->ReadUInt16();
+
+			Console().Log(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-5: unk: %d, unk2: %d\n"), unk, unk2);
+			break;
+		}
+		}
+		break;
+	}
+	default:
+		Console().Log(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: unknown request %d\n"), user->GetLogName(), type);
+		break;
 	}
 
 	return true;

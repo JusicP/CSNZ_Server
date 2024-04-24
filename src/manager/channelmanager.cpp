@@ -1355,15 +1355,15 @@ bool CChannelManager::OnConnectionFailure(IUser* user)
 	}
 	else
 	{
-		Console().Log("User '%d, %s' unsuccessfully tried to connect to the game match(%s:%d)\n", user->GetID(), user->GetUsername().c_str(), hostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), hostUser->GetNetworkConfig().m_nExternalServerPort);
+		Console().Log("User '%d, %s' unsuccessfully tried to connect to the game match(%s:%d)\n", user->GetID(), user->GetUsername().c_str(), hostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), hostUser->GetNetworkConfig().m_nExternalClientPort);
 
 		g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), va("Cannot establish connection to %s:%d. Possible reasons:\n"
 			"1. Host connected to the master server with localhost(127.0.0.1) ip\n"
-			"2. Host has a closed %d port or 30002 port (TCP and UDP)\n"
+			"2. Host has port %d or %d closed (UDP)\n"
 			"3. You are trying to connect to the host with private IP.\n"
 			"Host address: %s\n"
 			"Your address: %s",
-			hostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), hostUser->GetNetworkConfig().m_nExternalServerPort, hostUser->GetNetworkConfig().m_nExternalServerPort, hostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), user->GetNetworkConfig().m_szExternalIpAddress.c_str()));
+			hostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), hostUser->GetNetworkConfig().m_nExternalClientPort, hostUser->GetNetworkConfig().m_nLocalClientPort, hostUser->GetNetworkConfig().m_nExternalClientPort, hostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), user->GetNetworkConfig().m_szExternalIpAddress.c_str()));
 	}
 
 	RoomReadyStatus readyStatus = room->ToggleUserReadyStatus(user);

@@ -202,7 +202,7 @@ void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
 	// 7, 14 is well known
 	// 14 = type 0 (Punch)
 	// 7 = type 1 (HeartBeat)
-	if (buf.getBuffer().size() < 6)
+	if (buf.getBuffer().size() < 7)
 	{
 		Console().Error("[CServerInstance::OnUDPMessage] invalid packet???\n");
 		return;
@@ -227,12 +227,12 @@ void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
 
 	if (type == 0) {
 		int portID = buf.readUInt8();
-		long localAddr = ~buf.readUInt32_BE(); // TODO: Fix this...
+		int localAddr = ~buf.readUInt32_BE(); // TODO: Fix this...
 		string localIpAddress = ip_to_string(localAddr);
 		int localPort = buf.readUInt16_LE();
 		int tries = buf.readUInt8();
 
-		//Console().Log("%d, %d(%s), %d, %d\n", portID, localAddr, localIpAddress.c_str(), localPort, tries);
+		Console().Log("OnUDPMessage(0) - userID: %d, portID: %d, localAddr: %d (%s), localPort: %d, tries: %d\n", userID, portID, localAddr, localIpAddress.c_str(), localPort, tries);
 
 		if (user->UpdateHolepunch(portID, localPort, port) == -1)
 		{
@@ -244,6 +244,11 @@ void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
 		replyBuffer.writeUInt8(0);
 		replyBuffer.writeUInt8(1);
 		m_UDPServer.SendTo(replyBuffer);
+	}
+	else if (type == 1) {
+		int tries = buf.readUInt8();
+
+		Console().Log("OnUDPMessage(1) - userID: %d, tries: %d\n", userID, tries);
 	}
 }
 

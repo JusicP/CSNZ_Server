@@ -175,7 +175,7 @@ public:
 	void SendHostUserInventory(IExtendedSocket* socket, int userId, const std::vector<CUserInventoryItem>& items);
 	void SendHostGameStart(IExtendedSocket* socket, int userId);
 	void SendHostZBAddon(IExtendedSocket* socket, int userID, const std::vector<int>& addons);
-	void SendHostJoin(IExtendedSocket* socket, int hostID);
+	void SendHostJoin(IExtendedSocket* socket, IUser* host);
 	void SendHostFlyerFlock(IExtendedSocket* socket, int type);
 	void SendHostAdBalloon(IExtendedSocket* socket);
 	void SendHostRestart(IExtendedSocket* socket, int newHostUserID, bool host, CGameMatch* match);

@@ -164,7 +164,7 @@ void CUDPServer::Listen()
 			Buffer buf(vector<unsigned char>(m_Buffer, m_Buffer + datalen));
 
 			if (m_pListener)
-				m_pListener->OnUDPMessage(buf, m_LastAddr.sin_port);
+				m_pListener->OnUDPMessage(buf, ntohs(m_LastAddr.sin_port));
 		}
 	}
 

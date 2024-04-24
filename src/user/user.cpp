@@ -20,11 +20,11 @@ CUser::CUser(IExtendedSocket* sock, int userID, const std::string& userName)
 	m_Status = UserStatus::STATUS_MENU;
 
 	m_NetworkData.m_szExternalIpAddress = m_pSocket->GetIP();
-	m_NetworkData.m_nExternalClientPort = 27015;
-	m_NetworkData.m_nExternalServerPort = 27005;
+	m_NetworkData.m_nExternalClientPort = 27005;
+	m_NetworkData.m_nExternalServerPort = 27015;
 	m_NetworkData.m_szLocalIpAddress = m_pSocket->GetIP();
-	m_NetworkData.m_nLocalClientPort = 27015;
-	m_NetworkData.m_nLocalServerPort = 27005;
+	m_NetworkData.m_nLocalClientPort = 27005;
+	m_NetworkData.m_nLocalServerPort = 27015;
 
 	m_nUptime = 0;
 }
@@ -159,12 +159,12 @@ int CUser::UpdateHolepunch(int portId, int localPort, int externalPort)
 	switch (portId)
 	{
 	case 0:
-		m_NetworkData.m_nLocalClientPort = localPort;
-		m_NetworkData.m_nExternalClientPort = externalPort;
-		return 0;
-	case 1:
 		m_NetworkData.m_nLocalServerPort = localPort;
 		m_NetworkData.m_nExternalServerPort = externalPort;
+		return 0;
+	case 1:
+		m_NetworkData.m_nLocalClientPort = localPort;
+		m_NetworkData.m_nExternalClientPort = externalPort;
 		return 1;
 	default:
 		return -1;

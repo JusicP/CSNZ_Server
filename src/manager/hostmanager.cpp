@@ -506,11 +506,10 @@ bool CHostManager::OnGameEnd(IExtendedSocket* socket)
 
 void CHostManager::OnHostChanged(IUser* gameMatchUser, IUser* newHost, CGameMatch* match)
 {
-	g_PacketManager.SendHostRestart(gameMatchUser->GetExtendedSocket(), newHost->GetID(), gameMatchUser == newHost ? true : false, match);
+	g_PacketManager.SendHostRestart(gameMatchUser->GetExtendedSocket(), newHost->GetID(), gameMatchUser == newHost, match);
 
 	if (gameMatchUser != newHost)
-		//g_PacketManager.SendHostJoin(gameMatchUser->GetExtendedSocket(), newHost->GetID());
-		g_PacketManager.SendHostServerJoin(gameMatchUser->GetExtendedSocket(), ip_string_to_int(newHost->GetNetworkConfig().m_szExternalIpAddress), false, newHost->GetNetworkConfig().m_nExternalServerPort, gameMatchUser->GetID());
+		g_PacketManager.SendHostJoin(gameMatchUser->GetExtendedSocket(), newHost);
 }
 
 bool CHostManager::OnUserWeapon(CReceivePacket* msg, IExtendedSocket* socket)
