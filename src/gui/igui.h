@@ -7,12 +7,12 @@
 
 class IServerInstance;
 class IManager;
-class IEvent;
+class IEvents;
 
 class IGUI
 {
 public:
-	virtual bool Init(IManager* mgr, IEvent* event) = 0;
+	virtual bool Init(IManager* mgr, IEvents* events) = 0;
 	virtual bool PostInit(IServerInstance* srv) = 0;
 	virtual void Shutdown() = 0;
 	virtual void Exec() = 0;

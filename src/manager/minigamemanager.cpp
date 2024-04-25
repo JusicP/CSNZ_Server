@@ -31,7 +31,7 @@ void CMiniGameManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		break;
 
 	default:
-		Console().Log(OBFUSCATE("[User '%s'] Packet_Minigame request %d is not implemented\n"), user->GetLogName(), requestID);
+		Logger().Info(OBFUSCATE("[User '%s'] Packet_Minigame request %d is not implemented\n"), user->GetLogName(), requestID);
 	}
 }
 
@@ -62,7 +62,7 @@ void CMiniGameManager::OnBingoRequest(CReceivePacket* msg, IUser* user)
 		OnBingoShuffleRequest(user);
 		break;
 	default:
-		Console().Log(OBFUSCATE("[User '%s'] Packet_Minigame bingo request %d is not implemented\n"), user->GetLogName(), requestID);
+		Logger().Info(OBFUSCATE("[User '%s'] Packet_Minigame bingo request %d is not implemented\n"), user->GetLogName(), requestID);
 	}
 }
 
@@ -94,7 +94,7 @@ bool CMiniGameManager::BingoInitDesk(IUser* user, UserBingo& bingo)
 	vector<RewardItem> items = g_pServerConfig->bingo.prizeItems;
 	if (items.size() < 12)
 	{
-		Console().Log(OBFUSCATE("CMiniGameManager::OnBingoUpdateRequest: could not initialize bingo prize desk, items.size() < 12!!!\n"));
+		Logger().Info(OBFUSCATE("CMiniGameManager::OnBingoUpdateRequest: could not initialize bingo prize desk, items.size() < 12!!!\n"));
 		g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("Internal error occurred while initializing bingo desk, tell administrator"));
 		return false;
 	}
@@ -242,7 +242,7 @@ bool CMiniGameManager::BingoOpenRandomNumber(IUser* user, UserBingo& bingo)
 		{
 			if (index > (int)slots.size())
 			{
-				Console().Log(OBFUSCATE("CMiniGameManager::OnBingoOpenRandomNumberRequest: bingo internal error, index > uData->bingo.slots.size(), %d > %d\n"), index, bingo.slots.size());
+				Logger().Info(OBFUSCATE("CMiniGameManager::OnBingoOpenRandomNumberRequest: bingo internal error, index > uData->bingo.slots.size(), %d > %d\n"), index, bingo.slots.size());
 				break;
 			}
 
@@ -365,7 +365,7 @@ void CMiniGameManager::OnWeaponReleaseRequest(CReceivePacket* msg, IUser* user)
 		OnWeaponReleaseGetJokerRequest(user);
 		break;
 	default:
-		Console().Log(OBFUSCATE("[User '%s'] Packet_Minigame weapon release request %d is not implemented\n"), user->GetLogName(), requestID);
+		Logger().Info(OBFUSCATE("[User '%s'] Packet_Minigame weapon release request %d is not implemented\n"), user->GetLogName(), requestID);
 	}
 }
 

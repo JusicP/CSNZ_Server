@@ -17,4 +17,6 @@ public:
 	virtual void DisconnectClient(IExtendedSocket* socket) = 0;
 	virtual std::vector<IExtendedSocket*> GetClients() = 0;
 	virtual IExtendedSocket* GetSocketByID(unsigned int id) = 0;
+
+	virtual void OnCommand(const std::string& command) = 0;
 };

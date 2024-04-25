@@ -1,8 +1,9 @@
 #include "consoletab.h"
-#include "common/console.h"
+#include "common/logger.h"
 #include "gui.h"
 #include "interface/ievent.h"
-#include "../consolecommands.h"
+#include "../command.h"
+#include "interface/iserverinstance.h"
 
 #include <ui_consoletab.h>
 #include <QKeyEvent>
@@ -27,9 +28,9 @@ CConsoleTab::CConsoleTab(QWidget* parent) : QWidget(parent)
 	connect(m_pUI->Entry, SIGNAL(textEdited(const QString&)), this, SLOT(TextChanged(const QString&)));
 
 	// get cmd list
-	g_pEvent->AddEventFunction([]()
+	g_pEvents->AddEventFunction([]()
 		{
-			GUI()->OnCommandListUpdated(CmdList()->GetCommandList());
+			GUI()->OnCommandListUpdated(CmdList().GetCommandList());
 		});
 }
 
@@ -46,11 +47,11 @@ void CConsoleTab::Log(int level, const std::string& msg)
 	// set color for message
 	switch (level)
 	{
-	case CON_ERROR:
-	case CON_FATAL_ERROR:
+	case LOG_LEVEL_ERROR:
+	case LOG_LEVEL_FATAL_ERROR:
 		m_pUI->History->setTextColor(Qt::red);
 		break;
-	case CON_WARNING:
+	case LOG_LEVEL_WARN:
 		m_pUI->History->setTextColor(Qt::yellow);
 		break;
 	default:
@@ -69,7 +70,7 @@ void CConsoleTab::SubmitClicked()
 {
 	QString text = m_pUI->Entry->text();
 
-	g_pEvent->AddEventConsoleCommand(text.toStdString());
+	g_pEvents->AddEventFunction(std::bind(&IServerInstance::OnCommand, g_pServerInstance, text.toStdString()));
 
 	// update command history list
 	QStringListModel* model = (QStringListModel*)(m_pCommandHistory->model());

@@ -2,7 +2,7 @@
 #include "interface/net/iserverlistener.h"
 
 #include "common/utils.h"
-#include "common/console.h"
+#include "common/logger.h"
 
 #include <vector>
 
@@ -29,7 +29,7 @@ CUDPServer::CUDPServer() : m_ListenThread(ListenThread, this)
 	m_nResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (m_nResult != 0)
 	{
-		Console().FatalError("WSAStartup() failed with error: %d\n%s\n", m_nResult, WSAGetLastErrorString());
+		Logger().Fatal("WSAStartup() failed with error: %d\n%s\n", m_nResult, WSAGetLastErrorString());
 	}
 #else
 	m_nResult = 0;
@@ -67,14 +67,14 @@ bool CUDPServer::Start(const string& port)
 	m_nResult = getaddrinfo(NULL, port.c_str(), &hints, &result);
 	if (m_nResult != 0)
 	{
-		Console().FatalError("getaddrinfo() failed with error: %d\n%s\n", m_nResult, WSAGetLastErrorString());
+		Logger().Fatal("getaddrinfo() failed with error: %d\n%s\n", m_nResult, WSAGetLastErrorString());
 		return false;
 	}
 
 	m_Socket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 	if (m_Socket == INVALID_SOCKET)
 	{
-		Console().FatalError("socket() failed with error: %ld\n%s\n", GetNetworkError(), WSAGetLastErrorString());
+		Logger().Fatal("socket() failed with error: %ld\n%s\n", GetNetworkError(), WSAGetLastErrorString());
 		freeaddrinfo(result);
 		return false;
 	}
@@ -83,7 +83,7 @@ bool CUDPServer::Start(const string& port)
 	m_nResult = ioctlsocket(m_Socket, FIONBIO, &iMode);
 	if (m_nResult == SOCKET_ERROR)
 	{
-		Console().FatalError("ioctlsocket() failed with error: %d\n%s\n", GetNetworkError(), WSAGetLastErrorString());
+		Logger().Fatal("ioctlsocket() failed with error: %d\n%s\n", GetNetworkError(), WSAGetLastErrorString());
 		freeaddrinfo(result);
 		closesocket(m_Socket);
 		return false;
@@ -92,7 +92,7 @@ bool CUDPServer::Start(const string& port)
 	m_nResult = ::bind(m_Socket, result->ai_addr, (int)result->ai_addrlen);
 	if (m_nResult == SOCKET_ERROR)
 	{
-		Console().FatalError("bind failed with error: %d\n%s\n", GetNetworkError(), WSAGetLastErrorString());
+		Logger().Fatal("bind failed with error: %d\n%s\n", GetNetworkError(), WSAGetLastErrorString());
 		freeaddrinfo(result);
 		closesocket(m_Socket);
 		return false;
@@ -143,7 +143,7 @@ void CUDPServer::Listen()
 	int activity = select(m_nMaxFD + 1, &m_FdsRead, NULL, NULL, &tv);
 	if (activity == SOCKET_ERROR)
 	{
-		Console().Error("select(udp) failed with error: %d.\n", GetNetworkError());
+		Logger().Error("select(udp) failed with error: %d.\n", GetNetworkError());
 		return;
 	}
 	else if (!activity) // timeout

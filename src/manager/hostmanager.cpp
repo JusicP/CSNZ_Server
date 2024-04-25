@@ -80,7 +80,7 @@ bool CHostManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		int unk1 = msg->ReadUInt32();
 		int unk2 = msg->ReadUInt8();
 
-		Console().Warn("Packet_Host 15: %d, %d\n", unk1, unk2);
+		Logger().Warn("Packet_Host 15: %d, %d\n", unk1, unk2);
 
 		break;
 	}
@@ -88,12 +88,12 @@ bool CHostManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
 	{
 		int userID = msg->ReadUInt32();
 		int arraySize = msg->ReadUInt8();
-		Console().Warn("Packet_Host 17: %d, %d\n", userID, arraySize);
+		Logger().Warn("Packet_Host 17: %d, %d\n", userID, arraySize);
 		for (int i = 0; i < arraySize; i++)
 		{
 			int unk1 = msg->ReadUInt32();
 			int unk2 = msg->ReadUInt32();
-			Console().Warn("Packet_Host 17 array: %d, %d\n", unk1, unk2);
+			Logger().Warn("Packet_Host 17 array: %d, %d\n", unk1, unk2);
 		}
 
 		break;
@@ -103,12 +103,12 @@ bool CHostManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		/*int unk1 = msg->ReadUInt8();
 		int arraySize = msg->ReadUInt8();
 		// array????
-		Console().Warn("Packet_Host 18: %d, %d\n", unk1, arraySize);
+		Logger().Warn("Packet_Host 18: %d, %d\n", unk1, arraySize);
 		for (int i = 0; i < arraySize; i++)
 		{
 			int unk1 = msg->ReadUInt32();
 			int unk2 = msg->ReadUInt16();
-			Console().Warn("Packet_Host 18 array: %d, %d\n", unk1, unk2);
+			Logger().Warn("Packet_Host 18 array: %d, %d\n", unk1, unk2);
 		}*/
 
 		break;
@@ -129,7 +129,7 @@ bool CHostManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		break;
 	}
 	default:
-		Console().Warn("Packet_Host type %d is not implemented, len: %d\n", type, msg->GetLength());
+		Logger().Warn("Packet_Host type %d is not implemented, len: %d\n", type, msg->GetLength());
 		break;
 	}
 
@@ -275,7 +275,7 @@ bool CHostManager::OnUpdateUserStatus(CReceivePacket* msg, IExtendedSocket* sock
 	}
 	else
 	{
-		Console().Log("CHostManager::OnUpdateUserStatus: got %d\n", status);
+		Logger().Info("CHostManager::OnUpdateUserStatus: got %d\n", status);
 	}
 
 	return true;
@@ -426,7 +426,7 @@ bool CHostManager::OnGameEvent(CReceivePacket* msg, IRoom* room)
 
 		// 1 - def hms 
 		// 100 - def zbs zombie
-		//Console().Log(LOG_INTERNAL, CON_WARNING, OBFUSCATE("[User '%s'] Game event - monster kill: userID: %d, monsterType: %d\n"), user->GetLogName(), userID, monsterType);
+		//Logger().Info(LOG_INTERNAL, CON_WARNING, OBFUSCATE("[User '%s'] Game event - monster kill: userID: %d, monsterType: %d\n"), user->GetLogName(), userID, monsterType);
 
 		destUser->GetCurrentRoom()->GetGameMatch()->OnMonsterKill(destUser, monsterType);
 	}
@@ -434,7 +434,7 @@ bool CHostManager::OnGameEvent(CReceivePacket* msg, IRoom* room)
 	{
 		int rewardID = msg->ReadUInt32();
 
-		//Console().Log(LOG_INTERNAL, CON_WARNING, OBFUSCATE("[User '%s'] Game event - dropbox: userID: %d, rewardID: %d\n"), user->GetLogName(), userID, rewardID);
+		//Logger().Info(LOG_INTERNAL, CON_WARNING, OBFUSCATE("[User '%s'] Game event - dropbox: userID: %d, rewardID: %d\n"), user->GetLogName(), userID, rewardID);
 		destUser->GetCurrentRoom()->GetGameMatch()->OnDropBoxPickup(destUser, rewardID);
 	}
 	else if (type == 35) // round restart
@@ -455,7 +455,7 @@ bool CHostManager::OnGameEvent(CReceivePacket* msg, IRoom* room)
 	else
 	{
 		// a lot of spam
-		Console().Log(OBFUSCATE("Packet_Host game event: eventID: %d, userID: %d, len: %d\n"), type, userID, msg->GetLength());
+		Logger().Info(OBFUSCATE("Packet_Host game event: eventID: %d, userID: %d, len: %d\n"), type, userID, msg->GetLength());
 	}
 
 
@@ -485,7 +485,7 @@ bool CHostManager::OnUpdateClass(CReceivePacket* msg, IRoom* room)
 
 bool CHostManager::OnZbsResult(CReceivePacket* msg, IExtendedSocket* socket)
 {
-	Console().Warn("CHostManager::OnZbsResult\n");
+	Logger().Warn("CHostManager::OnZbsResult\n");
 
 	return true;
 }
@@ -495,7 +495,7 @@ bool CHostManager::OnGameEnd(IExtendedSocket* socket)
 	CDedicatedServer* server = g_DedicatedServerManager.GetServerBySocket(socket);
 	IRoom* room = server != NULL ? server->GetRoom() : g_UserManager.GetUserBySocket(socket)->GetCurrentRoom();
 
-	Console().Log("Room (RID: %d) ending game\n", room->GetID());
+	Logger().Info("Room (RID: %d) ending game\n", room->GetID());
 
 	room->EndGame(false);
 

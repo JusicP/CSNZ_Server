@@ -954,7 +954,7 @@ bool CServerConfig::Load()
 
 		if (!f.is_open())
 		{
-			Console().Warn("CServerConfig::Load: couldn't load ServerConfig.json. Loading default config\n");
+			Logger().Warn("CServerConfig::Load: couldn't load ServerConfig.json. Loading default config\n");
 
 			LoadDefaultConfig(cfg);
 		}
@@ -1095,7 +1095,7 @@ bool CServerConfig::Load()
 			}
 			else
 			{
-				Console().Warn("CServerInstance::ParseServerConfig: kvLoadouts == NULL\n");
+				Logger().Warn("CServerInstance::ParseServerConfig: kvLoadouts == NULL\n");
 			}
 
 			if (jDefUser.contains("BuyMenu"))
@@ -1128,12 +1128,12 @@ bool CServerConfig::Load()
 			}
 			else
 			{
-				Console().Warn("CServerInstance::ParseServerConfig: kvBuyMenu == NULL\n");
+				Logger().Warn("CServerInstance::ParseServerConfig: kvBuyMenu == NULL\n");
 			}
 		}
 		else
 		{
-			Console().Warn("CServerInstance::ParseServerConfig: kvDefaultUser == NULL\n");
+			Logger().Warn("CServerInstance::ParseServerConfig: kvDefaultUser == NULL\n");
 		}
 
 		if (cfg.contains("Notices"))
@@ -1337,7 +1337,7 @@ bool CServerConfig::Load()
 	}
 	catch (exception& ex)
 	{
-		Console().FatalError("CServerConfig::Load: an error occured while parsing ServerConfig.json: %s\n", ex.what());
+		Logger().Fatal("CServerConfig::Load: an error occured while parsing ServerConfig.json: %s\n", ex.what());
 		return false;
 	}
 

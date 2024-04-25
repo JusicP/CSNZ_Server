@@ -34,7 +34,6 @@ public:
 	void OnSecondTick();
 	void OnMinuteTick();
 	void OnFunction(std::function<void()>& func);
-	void UpdateConsoleStatus();
 	virtual time_t GetCurrentTime();
 	virtual tm* GetCurrentLocalTime();
 	virtual double GetMemoryInfo();

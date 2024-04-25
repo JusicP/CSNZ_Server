@@ -15,7 +15,7 @@ void CommandHelp(CCommand* cmd, const std::vector<std::string>& args)
 
 void CommandUsers(CCommand* cmd, const std::vector<std::string>& args)
 {
-	Console().Log(va("%-6s|%-32s|%-8s|%-6s|%-15s| (online: %d | connected: %d)\n",
+	Logger().Info(va("%-6s|%-32s|%-8s|%-6s|%-15s| (online: %d | connected: %d)\n",
 		"UserID", "Username/IP", "Uptime", "Status", "IP Address", g_UserManager.GetUsers().size(), g_pServerInstance->GetClients().size()));
 
 	for (auto sock : g_pServerInstance->GetClients())
@@ -23,7 +23,7 @@ void CommandUsers(CCommand* cmd, const std::vector<std::string>& args)
 		IUser* user = g_UserManager.GetUserBySocket(sock);
 		if (user)
 		{
-			Console().Log(va("%-6d|%-32s|%-8s|%-6d|%-15s\n",
+			Logger().Info(va("%-6d|%-32s|%-8s|%-6d|%-15s\n",
 				user->GetID(),
 				user->GetUsername().c_str(),
 				FormatSeconds(user->GetUptime()),
@@ -32,7 +32,7 @@ void CommandUsers(CCommand* cmd, const std::vector<std::string>& args)
 		}
 		else
 		{
-			Console().Log(va("%-6d|%-32s|%-8s|%-6d|%-15s\n",
+			Logger().Info(va("%-6d|%-32s|%-8s|%-6d|%-15s\n",
 				-1,
 				va("[Not Login] %s", sock->GetIP().c_str()),
 				"-1", // todo: make a global timer?
@@ -61,7 +61,7 @@ void CommandShutdown(CCommand* cmd, const std::vector<std::string>& args)
 		{
 			for (auto room : sub->GetRooms())
 			{
-				Console().Log("Force ending RoomID: %d game\n", room->GetID());
+				Logger().Info("Force ending RoomID: %d game\n", room->GetID());
 				room->EndGame(true);
 			}
 		}
@@ -76,14 +76,14 @@ void CommandGiveRewardToAll(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
 	int rewardID = stoi(args[1]);
 	if (rewardID <= 0)
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -98,7 +98,7 @@ void CommandSendNotice(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -110,14 +110,14 @@ void CommandSendNotice(CCommand* cmd, const std::vector<std::string>& args)
 
 	g_UserManager.SendNoticeMsgBoxToAll(out);
 
-	Console().Log("Sent to %d online users: %s\n", g_UserManager.GetUsers().size(), out.c_str());
+	Logger().Info("Sent to %d online users: %s\n", g_UserManager.GetUsers().size(), out.c_str());
 }
 
 void CommandBan(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 5 || !isNumber(args[1]) || !isNumber(args[2]) || !isNumber(args[4]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -128,7 +128,7 @@ void CommandBan(CCommand* cmd, const std::vector<std::string>& args)
 
 	if (!g_UserDatabase.IsUserExists(userID))
 	{
-		Console().Log("[Ban] User does not exist\n");
+		Logger().Info("[Ban] User does not exist\n");
 		return;
 	}
 
@@ -160,7 +160,7 @@ void CommandUnban(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -177,7 +177,7 @@ void CommandUnban(CCommand* cmd, const std::vector<std::string>& args)
 	}
 	else
 	{
-		Console().Log("[UnBan] Failed to find user(%d).\n", userID);
+		Logger().Info("[UnBan] Failed to find user(%d).\n", userID);
 	}
 }
 
@@ -185,14 +185,14 @@ void CommandHban(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
 	int userID = stoi(args[1]);
 	if (!g_UserDatabase.IsUserExists(userID))
 	{
-		Console().Log("[HBan] User does not exist\n");
+		Logger().Info("[HBan] User does not exist\n");
 		return;
 	}
 
@@ -212,7 +212,7 @@ void CommandUnhban(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -225,14 +225,14 @@ void CommandIpban(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
 	int userID = stoi(args[1]);
 	if (!g_UserDatabase.IsUserExists(userID))
 	{
-		Console().Log(OBFUSCATE("[IPBan] User does not exist\n"));
+		Logger().Info(OBFUSCATE("[IPBan] User does not exist\n"));
 		return;
 	}
 
@@ -252,7 +252,7 @@ void CommandUnipban(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -263,14 +263,14 @@ void CommandToggleGameMaster(CCommand* cmd, const std::vector<std::string>& args
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
 	int userID = stoi(args[1]);
 	if (!g_UserDatabase.IsUserExists(userID))
 	{
-		Console().Log(OBFUSCATE("[ToggleGM] User does not exist\n"));
+		Logger().Info(OBFUSCATE("[ToggleGM] User does not exist\n"));
 		return;
 	}
 
@@ -279,7 +279,7 @@ void CommandToggleGameMaster(CCommand* cmd, const std::vector<std::string>& args
 	g_UserDatabase.GetCharacterExtended(userID, character);
 
 	character.gameMaster = character.gameMaster ? false : true;
-	Console().Log(OBFUSCATE("Updated '%d' gameMaster privilege to '%s'\n"), userID, character.gameMaster ? (const char*)OBFUSCATE("true") : (const char*)OBFUSCATE("false"));
+	Logger().Info(OBFUSCATE("Updated '%d' gameMaster privilege to '%s'\n"), userID, character.gameMaster ? (const char*)OBFUSCATE("true") : (const char*)OBFUSCATE("false"));
 
 	g_UserDatabase.UpdateCharacterExtended(userID, character);
 }
@@ -291,14 +291,14 @@ void CommandShopReload(CCommand* cmd, const std::vector<std::string>& args)
 	for (auto u : g_UserManager.GetUsers())
 		g_PacketManager.SendShopUpdate(u->GetExtendedSocket(), g_ShopManager.GetProducts());
 
-	Console().Log("Sent shop update to: %d\n", g_UserManager.GetUsers().size());
+	Logger().Info("Sent shop update to: %d\n", g_UserManager.GetUsers().size());
 }
 
 void CommandDbReload(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (!g_pServerInstance->Reload())
 	{
-		Console().Log("Failed to reload managers!\n");
+		Logger().Info("Failed to reload managers!\n");
 		g_pServerInstance->SetServerActive(false);
 		return;
 	}
@@ -310,15 +310,15 @@ void CommandDbReload(CCommand* cmd, const std::vector<std::string>& args)
 		g_PacketManager.SendUserUpdateInfo(u->GetExtendedSocket(), u, character);
 	}
 
-	Console().Log("Sent user update info to: %d\n", g_UserManager.GetUsers().size());
+	Logger().Info("Sent user update info to: %d\n", g_UserManager.GetUsers().size());
 
 	// send shop update to users
 	for (auto u : g_UserManager.GetUsers())
 		g_PacketManager.SendShopUpdate(u->GetExtendedSocket(), g_ShopManager.GetProducts());
 
-	Console().Log("Sent shop update to: %d\n", g_UserManager.GetUsers().size());
+	Logger().Info("Sent shop update to: %d\n", g_UserManager.GetUsers().size());
 
-	Console().Log("Managers reload successfull.\n");
+	Logger().Info("Managers reload successfull.\n");
 }
 
 void CommandBans(CCommand* cmd, const std::vector<std::string>& args)
@@ -365,14 +365,14 @@ void CommandBans(CCommand* cmd, const std::vector<std::string>& args)
 				aCheck ? (const char*)OBFUSCATE("YES") : (const char*)OBFUSCATE("NO"));
 	}
 
-	Console().Log(log.str().c_str());
+	Logger().Info(log.str().c_str());
 }
 
 void CommandGiveItem(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 3)
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -390,7 +390,7 @@ void CommandGiveItem(CCommand* cmd, const std::vector<std::string>& args)
 
 	if (!userID)
 	{
-		Console().Log(OBFUSCATE("[GiveItem] User not found.\n"));
+		Logger().Info(OBFUSCATE("[GiveItem] User not found.\n"));
 		return;
 	}
 
@@ -399,7 +399,7 @@ void CommandGiveItem(CCommand* cmd, const std::vector<std::string>& args)
 
 	if (itemID <= 0)
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -450,14 +450,14 @@ void CommandGiveItem(CCommand* cmd, const std::vector<std::string>& args)
 
 void CommandStatus(CCommand* cmd, const std::vector<std::string>& args)
 {
-	Console().Log("%s\n", g_pServerInstance->GetMainInfo());
+	Logger().Info("%s\n", g_pServerInstance->GetMainInfo());
 }
 
 void CommandSendEvent(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 3 || !isNumber(args[1]) || !isNumber(args[2]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -467,7 +467,7 @@ void CommandSendEvent(CCommand* cmd, const std::vector<std::string>& args)
 	IUser* user = g_UserManager.GetUserById(userID);
 	if (!user)
 	{
-		Console().Log("User is offline");
+		Logger().Info("User is offline");
 		return;
 	}
 
@@ -478,7 +478,7 @@ void CommandSendEvent2(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -486,7 +486,7 @@ void CommandSendEvent2(CCommand* cmd, const std::vector<std::string>& args)
 	IUser* user = g_UserManager.GetUserById(userID);
 	if (!user)
 	{
-		Console().Log("User is offline");
+		Logger().Info("User is offline");
 		return;
 	}
 
@@ -504,7 +504,7 @@ void CommandSendInventory(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 2 || !isNumber(args[1]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -512,7 +512,7 @@ void CommandSendInventory(CCommand* cmd, const std::vector<std::string>& args)
 	IUser* user = g_UserManager.GetUserById(userID);
 	if (!user)
 	{
-		Console().Log("User is offline");
+		Logger().Info("User is offline");
 		return;
 	}
 
@@ -527,7 +527,7 @@ void CommandSendPacket(CCommand* cmd, const std::vector<std::string>& args)
 {
 	if (args.size() < 3 || !isNumber(args[1]))
 	{
-		Console().Log("%s\n", cmd->GetUsage().c_str());
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
 		return;
 	}
 
@@ -535,7 +535,7 @@ void CommandSendPacket(CCommand* cmd, const std::vector<std::string>& args)
 	IUser* user = g_UserManager.GetUserById(userID);
 	if (!user)
 	{
-		Console().Log("User is offline");
+		Logger().Info("User is offline");
 		return;
 	}
 

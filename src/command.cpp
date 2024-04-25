@@ -1,7 +1,6 @@
-#pragma once
-
 #include "command.h"
 #include "common/utils.h"
+#include "common/logger.h"
 
 using namespace std;
 
@@ -34,7 +33,7 @@ void CCommandList::AddCommand(CCommand* cmd)
 {
 	if (GetCommand(cmd->GetName()))
 	{
-		Console().Warn("CCommandList::AddCommand: command %s duplicate!\n", cmd->GetName());
+		Logger().Warn("CCommandList::AddCommand: command %s duplicate!\n", cmd->GetName().c_str());
 		return;
 	}
 
@@ -104,7 +103,7 @@ string CCommand::GetDescription()
 }
 
 /**
- * Gets command usage std::string, its arguments
+ * Gets command usage, its arguments
  * @return Usage std::string
  */
 string CCommand::GetUsage()

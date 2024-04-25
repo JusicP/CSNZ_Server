@@ -2,10 +2,11 @@
 
 #include <string>
 #include <vector>
+#include <functional>
 
 /**
  * Class that represents command. Contains a name and function that will be executed by calling the Exec() method.
- * When creating a command object, it's added to list of commands and you can find it by its name.
+ * When creating a command object, it's added to list of commands and you can find it by its name (CCommandList::GetInstance().GetCommand(...)).
  */
 class CCommand
 {

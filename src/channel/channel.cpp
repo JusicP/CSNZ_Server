@@ -64,13 +64,13 @@ void CChannel::UserLeft(IUser* user, bool hide)
 {
 	if (user->GetCurrentRoom() && !hide)
 	{
-		Console().Log(OBFUSCATE("User '%d' tried to leave channel with active room\n"), user->GetID());
+		Logger().Info(OBFUSCATE("User '%d' tried to leave channel with active room\n"), user->GetID());
 		return;
 	}
 
 	if (!hide && !RemoveUserById(user->GetID()))
 	{
-		Console().Log(OBFUSCATE("CChannel::UserLeft: couldn't find user with %d ID. User will remain in channel user list\n"), user->GetID());
+		Logger().Info(OBFUSCATE("CChannel::UserLeft: couldn't find user with %d ID. User will remain in channel user list\n"), user->GetID());
 	}
 
 	for (auto u : m_Users) // send lobby update packet for all users in channel
@@ -154,7 +154,7 @@ void CChannel::UpdateUserInfo(IUser* user, const CUserCharacter& character)
 void CChannel::OnEmptyRoomCallback(IRoom* room)
 {
 	if (!RemoveRoomById(room->GetID()))
-		Console().Log(OBFUSCATE("CChannel::OnEmptyRoomCallback: couldn't find room with %d ID. Room will remain in channel room list\n"), room->GetID());
+		Logger().Info(OBFUSCATE("CChannel::OnEmptyRoomCallback: couldn't find room with %d ID. Room will remain in channel room list\n"), room->GetID());
 
 	delete room;
 }

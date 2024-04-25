@@ -6,7 +6,7 @@
 #include "net/receivepacket.h"
 
 #include "common/net/netdefs.h"
-#include "common/console.h"
+#include "common/logger.h"
 #include "common/utils.h"
 
 using namespace std;
@@ -188,7 +188,7 @@ CReceivePacket* CExtendedSocket::Read()
 		if (recvResult < PACKET_HEADER_SIZE)
 		{
 			if (recvResult > 0)
-				Console().Error("CExtendedSocket::Read(%s): result < PACKET_HEADER_SIZE, %d\n", GetIP().c_str(), GetNetworkError());
+				Logger().Error("CExtendedSocket::Read(%s): result < PACKET_HEADER_SIZE, %d\n", GetIP().c_str(), GetNetworkError());
 
 			return NULL;
 		}
@@ -205,14 +205,14 @@ CReceivePacket* CExtendedSocket::Read()
 			int outLen = 0;
 			if (EVP_DecryptUpdate(m_pDecEVPCTX, packetDataBuf.data(), &outLen, packetDataBuf.data(), recvResult) != 1)
 			{
-				Console().Error("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+				Logger().Error("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
 				return NULL;
 			}
 
 			int finalLen = 0;
 			if (EVP_DecryptFinal_ex(m_pDecEVPCTX, packetDataBuf.data() + outLen, &finalLen) != 1)
 			{
-				Console().Error("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+				Logger().Error("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
 				return NULL;
 			}
 		}
@@ -221,7 +221,7 @@ CReceivePacket* CExtendedSocket::Read()
 		m_pMsg = new CReceivePacket(Buffer(packetDataBuf));
 		if (!m_pMsg->IsValid())
 		{
-			Console().Error("CExtendedSocket::Read(%s): received invalid packet\n", GetIP().c_str());
+			Logger().Error("CExtendedSocket::Read(%s): received invalid packet\n", GetIP().c_str());
 			delete m_pMsg;
 			m_pMsg = NULL;
 			return NULL;
@@ -229,7 +229,7 @@ CReceivePacket* CExtendedSocket::Read()
 
 		if (m_pMsg->GetSequence() != m_nNextExpectedSeq)
 		{
-			Console().Error("CExtendedSocket::Read(%s): sequence mismatch, got: %d, expected: %d\n", GetIP().c_str(), m_pMsg->GetSequence(), m_nNextExpectedSeq);
+			Logger().Error("CExtendedSocket::Read(%s): sequence mismatch, got: %d, expected: %d\n", GetIP().c_str(), m_pMsg->GetSequence(), m_nNextExpectedSeq);
 			delete m_pMsg;
 			m_pMsg = NULL;
 			return NULL;
@@ -255,7 +255,7 @@ CReceivePacket* CExtendedSocket::Read()
 		if (recvResult <= 0) // error or peer disconnected
 		{
 			if (recvResult < 0)
-				Console().Error("CExtendedSocket::Read(%s): result < 0, %d\n", GetIP().c_str(), GetNetworkError());
+				Logger().Error("CExtendedSocket::Read(%s): result < 0, %d\n", GetIP().c_str(), GetNetworkError());
 
 			delete m_pMsg;
 			m_pMsg = NULL;
@@ -270,7 +270,7 @@ CReceivePacket* CExtendedSocket::Read()
 			int outLen = 0;
 			if (EVP_DecryptUpdate(m_pDecEVPCTX, packetDataBuf.data(), &outLen, packetDataBuf.data(), recvResult) != 1)
 			{
-				Console().Error("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+				Logger().Error("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
 				delete m_pMsg;
 				m_pMsg = NULL;
 				return NULL;
@@ -279,7 +279,7 @@ CReceivePacket* CExtendedSocket::Read()
 			int finalLen = 0;
 			if (EVP_DecryptFinal_ex(m_pDecEVPCTX, packetDataBuf.data() + outLen, &finalLen) != 1)
 			{
-				Console().Error("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
+				Logger().Error("CExtendedSocket::Read: EVP_DecryptUpdate failed\n");
 				delete m_pMsg;
 				m_pMsg = NULL;
 				return NULL;
@@ -302,7 +302,7 @@ CReceivePacket* CExtendedSocket::Read()
 	}
 
 #if 0
-	Console().Log("CExtendedSocket::Read: recvResult: %d, packetDataBuf.size: %d, m_nPacketReceivedSize: %d, m_pMsg->GetLength: %d, m_pMsg->GetSequence: %d, m_nPacketToReceiveFullSize: %d\n", recvResult, packetDataBuf.size(), m_nPacketReceivedSize, m_pMsg->GetLength(), m_pMsg->GetSequence(), m_nPacketToReceiveFullSize);
+	Logger().Info("CExtendedSocket::Read: recvResult: %d, packetDataBuf.size: %d, m_nPacketReceivedSize: %d, m_pMsg->GetLength: %d, m_pMsg->GetSequence: %d, m_nPacketToReceiveFullSize: %d\n", recvResult, packetDataBuf.size(), m_nPacketReceivedSize, m_pMsg->GetLength(), m_pMsg->GetSequence(), m_nPacketToReceiveFullSize);
 #endif
 
 	m_pMsg->GetData().setReadOffset(0);
@@ -320,7 +320,7 @@ int CExtendedSocket::Send(vector<unsigned char>& buffer, bool serverHelloMsg)
 {
 	if (!serverHelloMsg && buffer.size() > PACKET_MAX_SIZE)
 	{
-		Console().Error("CExtendedSocket::Send() buffer.size(): %d > PACKET_MAX_SIZE!!!, ID: %d, seq: %d. Packet not sent.\n", buffer.size(), buffer[4], buffer[1]);
+		Logger().Error("CExtendedSocket::Send() buffer.size(): %d > PACKET_MAX_SIZE!!!, ID: %d, seq: %d. Packet not sent.\n", buffer.size(), buffer[4], buffer[1]);
 		m_nSequence--; /// @fixme I don't think we need to do this
 		return 0;
 	}
@@ -330,20 +330,20 @@ int CExtendedSocket::Send(vector<unsigned char>& buffer, bool serverHelloMsg)
 		int encLen = 0;
 		if (EVP_EncryptUpdate(m_pEncEVPCTX, buffer.data(), &encLen, buffer.data(), buffer.size()) != 1)
 		{
-			Console().Log("CExtendedSocket::Send: EVP_EncryptUpdate failed\n");
+			Logger().Info("CExtendedSocket::Send: EVP_EncryptUpdate failed\n");
 			return 0;
 		}
 
 		int finalLen = 0;
 		if (EVP_EncryptFinal_ex(m_pEncEVPCTX, buffer.data() + encLen, &finalLen) != 1)
 		{
-			Console().Log("CExtendedSocket::Read: EVP_EncryptUpdate failed\n");
+			Logger().Info("CExtendedSocket::Read: EVP_EncryptUpdate failed\n");
 			return 0;
 		}
 
 		if (encLen != buffer.size())
 		{
-			Console().Log("CExtendedSocket::Send: encLen != buffer.size()\n");
+			Logger().Info("CExtendedSocket::Send: encLen != buffer.size()\n");
 			return 0;
 		}
 	}
@@ -362,7 +362,7 @@ int CExtendedSocket::Send(vector<unsigned char>& buffer, bool serverHelloMsg)
 
 #ifdef _DEBUG
 	if (!serverHelloMsg)
-		Console().Log("CExtendedSocket::Send() seq: %d, buffer.size(): %d, bytesSent: %d, id: %d\n", buffer[1], buffer.size(), bytesSent, buffer[4]);
+		Logger().Info("CExtendedSocket::Send() seq: %d, buffer.size(): %d, bytesSent: %d, id: %d\n", buffer[1], buffer.size(), bytesSent, buffer[4]);
 #endif
 
 	return bytesSent;
@@ -397,7 +397,7 @@ int CExtendedSocket::Send(CSendPacket* msg, bool ignoreQueue)
 			}
 			else
 			{
-				Console().Error("CExtendedSocket::Send() WSAGetLastError: %d\n", error);
+				Logger().Error("CExtendedSocket::Send() WSAGetLastError: %d\n", error);
 				delete msg;
 			}
 		}

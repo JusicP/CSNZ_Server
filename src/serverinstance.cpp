@@ -61,7 +61,7 @@ bool CServerInstance::Init()
 
 	if (!LoadConfigs())
 	{
-		Console().Error("Server initialization failed.\n");
+		Logger().Error("Server initialization failed.\n");
 		m_bIsServerActive = false;
 		return false;
 	}
@@ -74,31 +74,31 @@ bool CServerInstance::Init()
 		!m_TCPServer.Start(g_pServerConfig->tcpPort, g_pServerConfig->tcpSendBufferSize) ||
 		!m_UDPServer.Start(g_pServerConfig->udpPort))
 	{
-		Console().Error("Server initialization failed.\n");
+		Logger().Error("Server initialization failed.\n");
 		m_bIsServerActive = false;
 		return false;
 	}
 	else if (g_pItemTable->IsLoadFailed())
 	{
-		Console().Error("Server initialization failed. Couldn't load Item.csv.\n");
+		Logger().Error("Server initialization failed. Couldn't load Item.csv.\n");
 		m_bIsServerActive = false;
 		return false;
 	}
 	else if (g_pMapListTable->IsLoadFailed())
 	{
-		Console().Error("Server initialization failed. Couldn't load MapList.csv.\n");
+		Logger().Error("Server initialization failed. Couldn't load MapList.csv.\n");
 		m_bIsServerActive = false;
 		return false;
 	}
 	else if (g_pGameModeListTable->IsLoadFailed())
 	{
-		Console().Error("Server initialization failed. Couldn't load GameModeList.csv.\n");
+		Logger().Error("Server initialization failed. Couldn't load GameModeList.csv.\n");
 		m_bIsServerActive = false;
 		return false;
 	}
 
-	Console().Log("Server starts listening. Server developers: Jusic, Hardee, NekoMeow. Thx to Ochii for CSO2 server.\nFor more information visit discord.gg/EvUAY6D\n");
-	Console().Log("Server build: %s, %s\n", build_number(),
+	Logger().Info("Server starts listening. Server developers: Jusic, Hardee, NekoMeow. Thx to Ochii for CSO2 server.\nFor more information visit discord.gg/EvUAY6D\n");
+	Logger().Info("Server build: %s, %s\n", build_number(),
 #ifdef PUBLIC_RELEASE
 		"Public Release");
 #else
@@ -151,7 +151,7 @@ void CServerInstance::OnTCPConnectionCreated(IExtendedSocket* socket)
 {
 	if (g_UserDatabase.IsIPBanned(socket->GetIP()))
 	{
-		Console().Log("Client (%d, %s) disconnected from the server due to banned ip\n", socket->GetID(), socket->GetIP().c_str());
+		Logger().Info("Client (%d, %s) disconnected from the server due to banned ip\n", socket->GetID(), socket->GetIP().c_str());
 		DisconnectClient(socket);
 
 		// return false;
@@ -176,7 +176,7 @@ void CServerInstance::OnTCPConnectionClosed(IExtendedSocket* socket)
 		userName = user->GetUsername();
 		g_UserManager.RemoveUser(user);
 
-		Console().Log("User logged out (%d, '%s', 0x%X)\n", userID, userName.c_str(), user);
+		Logger().Info("User logged out (%d, '%s', 0x%X)\n", userID, userName.c_str(), user);
 	}
 	else
 	{
@@ -188,7 +188,7 @@ void CServerInstance::OnTCPConnectionClosed(IExtendedSocket* socket)
 
 void CServerInstance::OnTCPMessage(IExtendedSocket* socket, CReceivePacket* msg)
 {
-	g_Event.AddEventPacket(socket, msg);
+	g_Events.AddEventFunction(std::bind(&CServerInstance::OnPackets, this, socket, msg));
 }
 
 void CServerInstance::OnTCPError(int errorCode)
@@ -204,14 +204,14 @@ void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
 	// 7 = type 1 (HeartBeat)
 	if (buf.getBuffer().size() < 7)
 	{
-		Console().Error("[CServerInstance::OnUDPMessage] invalid packet???\n");
+		Logger().Error("[CServerInstance::OnUDPMessage] invalid packet???\n");
 		return;
 	}
 
 	char signature = buf.readUInt8();
 	if (signature != UDP_HOLEPUNCH_PACKET_SIGNATURE_1)
 	{
-		Console().Log(OBFUSCATE("[CServerInstance::OnUDPMessage] signature error\n"));
+		Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] signature error\n"));
 		return;
 	}
 
@@ -221,7 +221,7 @@ void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
 	IUser* user = g_UserManager.GetUserById(userID);
 	if (!user)
 	{
-		Console().Log(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Packet but not inside g_UserManager\n"), userID);
+		Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Packet but not inside g_UserManager\n"), userID);
 		return;
 	}
 
@@ -232,11 +232,11 @@ void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
 		int localPort = buf.readUInt16_LE();
 		int tries = buf.readUInt8();
 
-		Console().Log("OnUDPMessage(0) - userID: %d, portID: %d, localAddr: %d (%s), localPort: %d, tries: %d\n", userID, portID, localAddr, localIpAddress.c_str(), localPort, tries);
+		Logger().Info("OnUDPMessage(0) - userID: %d, portID: %d, localAddr: %d (%s), localPort: %d, tries: %d\n", userID, portID, localAddr, localIpAddress.c_str(), localPort, tries);
 
 		if (user->UpdateHolepunch(portID, localIpAddress, localPort, port) == -1)
 		{
-			Console().Warn("UpdateHolepunch Failed: %d, %d, %d\n", portID, localPort, port);
+			Logger().Warn("UpdateHolepunch Failed: %d, %d, %d\n", portID, localPort, port);
 		}
 
 		Buffer replyBuffer;
@@ -248,7 +248,7 @@ void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
 	else if (type == 1) {
 		int tries = buf.readUInt8();
 
-		Console().Log("OnUDPMessage(1) - userID: %d, tries: %d\n", userID, tries);
+		Logger().Info("OnUDPMessage(1) - userID: %d, tries: %d\n", userID, tries);
 	}
 }
 
@@ -258,7 +258,7 @@ void CServerInstance::OnUDPError(int errorCode)
 
 void CServerInstance::OnCommand(const string& command)
 {
-	Console().Log("Command: %s\n", command.c_str());
+	Logger().Info("Command: %s\n", command.c_str());
 
 	istringstream iss(command);
 	vector<string> args((istream_iterator<string>(iss)), istream_iterator<string>());
@@ -277,8 +277,9 @@ void* EventThread(void*)
 {
 	while (g_pServerInstance->IsServerActive())
 	{
-		g_Event.WaitForSignal();
+		g_Events.WaitForSignal();
 
+		// check for IsServerActive again because the state may change
 		if (g_pServerInstance->IsServerActive())
 			g_pServerInstance->OnEvent();
 	}
@@ -295,7 +296,7 @@ void* ReadConsoleThread(void*)
 
 		// TODO: ignore empty line?
 
-		g_Event.AddEventConsoleCommand(cmd);
+		g_Events.AddEventFunction(std::bind(&CServerInstance::OnCommand, g_pServerInstance, cmd));
 	}
 	
 	return NULL;
@@ -308,7 +309,7 @@ void CServerInstance::SetServerActive(bool active)
 	if (!m_bIsServerActive)
 	{
 		// wake up event thread
-		g_Event.Signal();
+		g_Events.Signal();
 	}
 }
 
@@ -317,39 +318,21 @@ bool CServerInstance::IsServerActive()
 	return m_bIsServerActive;
 }
 
+/**
+ * Processes server events from the queue
+ */
 void CServerInstance::OnEvent()
 {
-	/// @todo
-	bool empty;
-	Event_s ev = g_Event.GetNextEvent(empty);
-	while (!empty)
+	IEvent* ev = g_Events.GetNextEvent();
+	while (ev)
 	{
 		g_ServerCriticalSection.Enter();
 
-		switch (ev.type)
-		{
-		case SERVER_EVENT_CONSOLE_COMMAND:
-			OnCommand(ev.cmd);
-			break;
-		case SERVER_EVENT_TCP_PACKET:
-			OnPackets(ev.socket, ev.msg);
-			break;
-		case SERVER_EVENT_SECOND_TICK:
-			OnSecondTick();
-			break;
-		case SERVER_EVENT_FUNCTION:
-			OnFunction(ev.func);
-			break; 
-		}
-
-		if (ev.type == SERVER_EVENT_TCP_PACKET)
-		{
-			delete ev.msg;
-		}
+		ev->Execute();
 
 		g_ServerCriticalSection.Leave();
 
-		ev = g_Event.GetNextEvent(empty);
+		ev = g_Events.GetNextEvent();
 	}
 }
 
@@ -359,6 +342,7 @@ void CServerInstance::OnPackets(IExtendedSocket* s, CReceivePacket* msg)
 	if (find(m_TCPServer.GetClients().begin(), m_TCPServer.GetClients().end(), s) == m_TCPServer.GetClients().end())
 	{
 		// skip packets with deleted socket object
+		delete msg;
 		return;
 	}
 
@@ -457,9 +441,11 @@ void CServerInstance::OnPackets(IExtendedSocket* s, CReceivePacket* msg)
 		g_UserManager.OnLeaguePacket(msg, s);
 		break;
 	default:
-		Console().Warn("Unimplemented packet: %d\n", msg->GetID());
+		Logger().Warn("Unimplemented packet: %d\n", msg->GetID());
 		break;
 	}
+
+	delete msg;
 }
 
 void CServerInstance::OnSecondTick()
@@ -470,8 +456,6 @@ void CServerInstance::OnSecondTick()
 	m_pCurrentLocalTime = localtime(&m_CurrentTime);
 	m_CurrentTime /= 60; // get current time in minutes(last CSO builds use timestamp in minutes)
 	m_nUptime++;
-
-	UpdateConsoleStatus();
 
 #ifdef USE_GUI
 	GUI()->UpdateInfo(m_bIsServerActive, m_TCPServer.GetClients().size(), m_nUptime, GetMemoryInfo());
@@ -487,7 +471,7 @@ void CServerInstance::OnSecondTick()
 
 void CServerInstance::OnMinuteTick()
 {
-	Console().Log("%s\n", GetMainInfo());
+	Logger().Info("%s\n", GetMainInfo());
 
 	Manager().MinuteTick(m_CurrentTime);
 }
@@ -505,11 +489,11 @@ double CServerInstance::GetMemoryInfo()
 
 	SIZE_T mem = pmc.WorkingSetSize;
 	if (mem >= 10e9)
-		Console().Warn("[ALERT] Server is using more than 1G of memory.\n");
+		Logger().Warn("[ALERT] Server is using more than 1G of memory.\n");
 
 	return mem / (1024.0 * 1024.0);
 #else
-	Console().Log("CServerInstance::GetMemoryInfo: not implemented\n");
+	Logger().Info("CServerInstance::GetMemoryInfo: not implemented\n");
 	return 0;
 #endif
 }
@@ -539,12 +523,6 @@ IExtendedSocket* CServerInstance::GetSocketByID(unsigned int id)
 			return s;
 
 	return NULL;
-}
-
-void CServerInstance::UpdateConsoleStatus()
-{
-	Console().SetStatus(GetMainInfo());
-	Console().UpdateStatus();
 }
 
 time_t CServerInstance::GetCurrentTime()

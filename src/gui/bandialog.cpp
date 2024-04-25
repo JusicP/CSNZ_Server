@@ -98,7 +98,7 @@ void CBanDialog::Ban()
 	}
 
 	int clientID = m_Session.clientID;
-	g_pEvent->AddEventFunction([clientID]()
+	g_pEvents->AddEventFunction([clientID]()
 		{
 			g_pServerInstance->DisconnectClient(g_pServerInstance->GetSocketByID(clientID));
 		});

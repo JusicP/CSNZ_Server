@@ -4,7 +4,7 @@
 static CGUI g_GUI;
 IGUI* g_pGUI = NULL;
 
-IEvent* g_pEvent = NULL;
+IEvents* g_pEvents = NULL;
 IManager* g_pManager = NULL;
 IServerInstance* g_pServerInstance = NULL;
 IUserManager* g_pUserManager = NULL;
@@ -24,10 +24,10 @@ CGUI::~CGUI()
 	Shutdown();
 }
 
-bool CGUI::Init(IManager* mgr, IEvent* event)
+bool CGUI::Init(IManager* mgr, IEvents* events)
 {
 	g_pManager = mgr;
-	g_pEvent = event;
+	g_pEvents = events;
 
 	int argc = 0;
 	m_pApplication = new QApplication(argc, NULL);

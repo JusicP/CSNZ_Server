@@ -17,7 +17,7 @@ target_sources(net PRIVATE "udpserver.cpp")
 target_sources(net PRIVATE "../common/utils.cpp")
 target_sources(net PRIVATE "../common/thread.cpp")
 target_sources(net PRIVATE "../common/buffer.cpp")
-target_sources(net PRIVATE "../common/console.cpp")
+target_sources(net PRIVATE "../common/logger.cpp")
 
 target_include_directories(net PUBLIC
 	"../"

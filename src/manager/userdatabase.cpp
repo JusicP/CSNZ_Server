@@ -1017,6 +1017,6 @@ void CUserDatabaseProxy::ExecCalcEnd(const string& funcName)
 	auto duration = chrono::duration_cast<chrono::milliseconds>(end - m_StartTime).count();
 
 	if (duration > 0)
-		Console().Warn(OBFUSCATE("%s: %d ms\n"), funcName.c_str(), duration);
+		Logger().Warn(OBFUSCATE("%s: %d ms\n"), funcName.c_str(), duration);
 }
 #endif

@@ -46,7 +46,7 @@ void CNoticeDialog::SendClicked()
 
 	std::string str = text.toStdString();
 	std::vector<int> users = m_SelectedUsers;
-	g_pEvent->AddEventFunction([str, users]()
+	g_pEvents->AddEventFunction([str, users]()
 		{
 			for (auto userID : users)
 			{

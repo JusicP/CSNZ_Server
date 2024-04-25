@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/console.h"
+#include "common/logger.h"
 
 #define NOMINMAX
 
@@ -36,5 +36,5 @@
 #include "serverinstance.h"
 #include "event.h"
 
-extern CEvent g_Event;
+extern CEvents g_Events;
 extern CCriticalSection g_ServerCriticalSection;

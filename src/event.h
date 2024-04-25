@@ -3,18 +3,48 @@
 #include "interface/ievent.h"
 #include "common/thread.h"
 
-class CEvent : public IEvent
+/**
+ * Representation of event as a function
+ */
+class CEvent_Function : public IEvent
 {
 public:
-	CEvent()
+	CEvent_Function(const std::function<void()>& func)
 	{
+		m_Func = func;
 	}
 
-	~CEvent()
+	virtual void Execute()
 	{
+		m_Func();
 	}
 
-	virtual void AddEvent(const Event_s& ev)
+private:
+	std::function<void()> m_Func;
+};
+
+/**
+ * Class that implements a queue of server events such as incoming message, second tick, console command
+ * To process events, use WaitForSignal() method which waits until event is added
+ */
+class CEvents : public IEvents
+{
+public:
+	CEvents()
+	{
+		m_pCurrentEvent = NULL;
+	}
+
+	~CEvents()
+	{
+		if (m_pCurrentEvent)
+			delete m_pCurrentEvent;
+	}
+
+	/**
+	 * Adds event and signals about it
+	 */
+	virtual void AddEvent(IEvent* ev)
 	{
 		m_Mutex.Enter();
 
@@ -27,72 +57,55 @@ public:
 		m_Mutex.Leave();
 	}
 
-	virtual void AddEventConsoleCommand(const std::string& cmd)
-	{
-		Event_s ev;
-		ev.type = SERVER_EVENT_CONSOLE_COMMAND;
-		ev.cmd = cmd;
-
-		AddEvent(ev);
-	}
-
-	virtual void AddEventPacket(IExtendedSocket* socket, CReceivePacket* packet)
-	{
-		Event_s ev;
-		ev.type = SERVER_EVENT_TCP_PACKET;
-		ev.msg = packet;
-		ev.socket = socket;
-
-		AddEvent(ev);
-	}
-
-	virtual void AddEventSecondTick()
-	{
-		Event_s ev;
-		ev.type = SERVER_EVENT_SECOND_TICK;
-
-		AddEvent(ev);
-	}
-
 	virtual void AddEventFunction(const std::function<void()>& func)
 	{
-		Event_s ev;
-		ev.type = SERVER_EVENT_FUNCTION;
-		ev.func = func;
-
+		CEvent_Function* ev = new CEvent_Function(func);
 		AddEvent(ev);
 	}
 
-	Event_s GetNextEvent(bool& empty)
+	/**
+	 * Get next event and delete previous one
+	 */
+	IEvent* GetNextEvent()
 	{
-		Event_s ev;
+		if (m_pCurrentEvent)
+		{
+			delete m_pCurrentEvent;
+			m_pCurrentEvent = NULL;
+		}
 
 		m_Mutex.Enter();
-
-		empty = m_Events.empty();
-		if (!empty)
+		if (!m_Events.empty())
 		{
-			ev = m_Events.front();
+			// get first event and remove it from vector
+			m_pCurrentEvent = m_Events.front();
 			m_Events.erase(m_Events.begin());
 		}
 
 		m_Mutex.Leave();
 
-		return ev;
+		return m_pCurrentEvent;
 	}
 
+	/**
+	 * Waits until event is added
+	 */
 	void WaitForSignal()
 	{
 		m_Object.WaitForSignal();
 	}
 
+	/**
+	 * Signals that event is added
+	 */
 	void Signal()
 	{
 		m_Object.Signal();
 	}
 
 private:
-	std::vector<Event_s> m_Events;
+	std::vector<IEvent*> m_Events;
 	CObjectSync m_Object;
 	CCriticalSection m_Mutex;
+	IEvent* m_pCurrentEvent;
 };

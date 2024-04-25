@@ -80,7 +80,7 @@ void CQuestEventTask::IncrementCount(IUser* user, int count, bool setForce)
 	if (g_UserDatabase.UpdateQuestEventTaskProgress(user->GetID(), m_pQuest->GetID(), progress) > 0)
 	{
 #if 0
-		Console().Log(LOG_USER, CON_LOG, "[User '%s'] CQuestEventTask::IncrementCount: quest name: %s, done: %d, goal: %d\n", user->GetLogName(), m_pQuest->GetName().c_str(), progress.unitsDone, m_nGoal);
+		Logger().Info(LOG_USER, CON_LOG, "[User '%s'] CQuestEventTask::IncrementCount: quest name: %s, done: %d, goal: %d\n", user->GetLogName(), m_pQuest->GetName().c_str(), progress.unitsDone, m_nGoal);
 #endif
 		if (progress.unitsDone >= m_nGoal)
 		{

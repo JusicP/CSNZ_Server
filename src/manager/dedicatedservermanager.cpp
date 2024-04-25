@@ -76,7 +76,7 @@ bool CDedicatedServerManager::OnPacket(CReceivePacket* msg, IExtendedSocket* soc
 	{
 		// Something related to a file named "rev.txt", what the fuck?
 		int unk = msg->ReadUInt32();
-		Console().Warn("CDedicatedServerManager::OnPacket(2): %d\n", unk);
+		Logger().Warn("CDedicatedServerManager::OnPacket(2): %d\n", unk);
 
 		break;
 	}
@@ -84,12 +84,12 @@ bool CDedicatedServerManager::OnPacket(CReceivePacket* msg, IExtendedSocket* soc
 	{
 		// Supposedly it's a variable size, but it doesn't tell what size it sends and it's always sending one byte, so...
 		int unk = msg->ReadUInt8();
-		Console().Warn("CDedicatedServerManager::OnPacket(3): %d\n", unk);
+		Logger().Warn("CDedicatedServerManager::OnPacket(3): %d\n", unk);
 
 		break;
 	}
 	default:
-		Console().Warn("Unknown host server request %d\n", type);
+		Logger().Warn("Unknown host server request %d\n", type);
 		break;
 	}
 

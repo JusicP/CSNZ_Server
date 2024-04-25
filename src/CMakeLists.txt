@@ -32,7 +32,7 @@ target_link_libraries(PROJECTNAME PRIVATE net)
 if (SERVER_USE_GUI)
 	target_link_libraries(PROJECTNAME PRIVATE gui)
 	qt6_disable_unicode_defines(PROJECTNAME)
-	add_definitions(-DUSE_GUI)
+	target_compile_definitions(PROJECTNAME PRIVATE USE_GUI)
 endif()
 
 target_sources(PROJECTNAME PRIVATE "main.cpp")
@@ -52,6 +52,7 @@ target_sources(PROJECTNAME PRIVATE "channel/channelserver.cpp")
 target_sources(PROJECTNAME PRIVATE "csvtable.cpp")
 target_sources(PROJECTNAME PRIVATE "quest/quest.cpp")
 target_sources(PROJECTNAME PRIVATE "quest/questevent.cpp")
+target_sources(PROJECTNAME PRIVATE "command.cpp")
 
 target_sources(PROJECTNAME PRIVATE "manager/manager.cpp")
 target_sources(PROJECTNAME PRIVATE "manager/usermanager.cpp")
@@ -78,9 +79,9 @@ if (WIN32)
 	target_sources(PROJECTNAME PRIVATE "crashdump.cpp")
 endif()
 
-target_sources(PROJECTNAME PRIVATE "common/console.cpp")
 target_sources(PROJECTNAME PRIVATE "common/thread.cpp")
 target_sources(PROJECTNAME PRIVATE "common/utils.cpp")
+target_sources(PROJECTNAME PRIVATE "common/logger.cpp")
 
 target_include_directories(PROJECTNAME PUBLIC
 	"."
@@ -96,14 +97,12 @@ target_include_directories(PROJECTNAME PUBLIC
 
 target_precompile_headers(PROJECTNAME PRIVATE main.h)
 
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-
 if (SERVER_PROTECTION)
-	add_definitions(-DPROTECTION)
+	target_compile_definitions(PROJECTNAME PRIVATE PROTECTION)
 endif()
 
 if (SERVER_DBSQLITE)
-	add_definitions(-DDB_SQLITE)
+	target_compile_definitions(PROJECTNAME PRIVATE DB_SQLITE)
 	target_link_libraries(PROJECTNAME PRIVATE SQLiteCpp sqlite3)
 endif()
 
@@ -121,21 +120,17 @@ set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING "Reset
 set_target_properties(PROJECTNAME PROPERTIES OUTPUT_NAME "CSNZ_Server")
 
 set(EXECUTABLE_OUTPUT_PATH  ${PROJECT_SOURCE_DIR}/../bin)
-
-# define max numbers of connected users by changing FD_SETSIZE
 if (SERVER_PUBLIC)
-	add_definitions(-DFD_SETSIZE=40)
-	add_definitions(-DPUBLIC_RELEASE)
-else()
-	add_definitions(-DFD_SETSIZE=1024)
+	target_compile_definitions(PROJECTNAME PRIVATE PUBLIC_RELEASE=1)
 endif()
 
 if (NOT WIN32)
-	add_definitions(-DPOSIX=1)
+	target_compile_definitions(PROJECTNAME PRIVATE POSIX=1)
 endif()
 
 if (MSVC)
-	add_definitions(-DWIN32_LEAN_AND_MEAN)
+	target_compile_definitions(PROJECTNAME PRIVATE WIN32_LEAN_AND_MEAN)
+	target_compile_definitions(PROJECTNAME PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:CONSOLE")
 

@@ -10,7 +10,7 @@
 
 CServerInstance* g_pServerInstance;
 
-CEvent g_Event;
+CEvents g_Events;
 CCriticalSection g_ServerCriticalSection;
 
 #ifdef WIN32
@@ -18,7 +18,7 @@ void invalid_parameter_function(const wchar_t* expression, const wchar_t* functi
 {
 	printf("invalid_parameter_function called\n");
 
-	Console().Log(OBFUSCATE("%ls, %ls, %ls, %d, %p\n"), expression, function, file, line, pReserved);
+	Logger().Info(OBFUSCATE("%ls, %ls, %ls, %d, %p\n"), expression, function, file, line, pReserved);
 }
 
 BOOL WINAPI CtrlHandler(DWORD ctrlType)
@@ -40,7 +40,7 @@ CObjectSync g_GUIInitEvent;
 
 void* GUIThread(void*)
 {
-	if (!GUI()->Init(&Manager(), &g_Event))
+	if (!GUI()->Init(&Manager(), &g_Events))
 	{
 		printf("error!\n");
 	}
@@ -80,7 +80,10 @@ int main(int argc, char* argv[])
 
 	// wait for gui init before we init the server
 	g_GUIInitEvent.WaitForSignal();
+
+	AddLogger(new CGUILogger());
 #endif
+	AddLogger(new CFileLogger("Server"));
 
 	g_pServerInstance = new CServerInstance();
 	if (!g_pServerInstance->Init())
@@ -110,7 +113,7 @@ int main(int argc, char* argv[])
 
 	while (g_pServerInstance->IsServerActive())
 	{
-		g_Event.AddEventSecondTick();
+		g_Events.AddEventFunction(std::bind(&CServerInstance::OnSecondTick, g_pServerInstance));
 
 		SleepMS(1000);
 	}

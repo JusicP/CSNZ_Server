@@ -5,7 +5,7 @@
 #include "interface/net/iserverlistener.h"
 
 #include "common/utils.h"
-#include "common/console.h"
+#include "common/logger.h"
 
 using namespace std;
 
@@ -30,7 +30,7 @@ CTCPClient::CTCPClient() : m_ListenThread(ListenThread, this)
 	int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (result != 0)
 	{
-		Console().FatalError("WSAStartup() failed with error: %d\n%s\n", m_nResult, WSAGetLastErrorString());
+		Logger().Fatal("WSAStartup() failed with error: %d\n%s\n", m_nResult, WSAGetLastErrorString());
 	}
 #endif
 }
@@ -60,14 +60,14 @@ bool CTCPClient::Start(const string& ip, const string& port)
 	addrinfo* result;
 	if (getaddrinfo(ip.data(), port.data(), &hints, &result) != 0)
 	{
-		Console().FatalError("getaddrinfo() failed with error: %ld\n%s\n", GetNetworkError(), WSAGetLastErrorString());
+		Logger().Fatal("getaddrinfo() failed with error: %ld\n%s\n", GetNetworkError(), WSAGetLastErrorString());
 		return false;
 	}
 
 	SOCKET sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 	if (sock == INVALID_SOCKET)
 	{
-		Console().FatalError("socket() failed with error: %ld\n%s\n", GetNetworkError(), WSAGetLastErrorString());
+		Logger().Fatal("socket() failed with error: %ld\n%s\n", GetNetworkError(), WSAGetLastErrorString());
 		freeaddrinfo(result);
 		return false;
 	}
@@ -76,7 +76,7 @@ bool CTCPClient::Start(const string& ip, const string& port)
 	u_long iMode = 1;
 	if (ioctlsocket(sock, FIONBIO, &iMode) == SOCKET_ERROR)
 	{
-		Console().FatalError("ioctlsocket() failed with error: %d\n%s\n", GetNetworkError(), WSAGetLastErrorString());
+		Logger().Fatal("ioctlsocket() failed with error: %d\n%s\n", GetNetworkError(), WSAGetLastErrorString());
 		freeaddrinfo(result);
 		closesocket(sock);
 		return false;
@@ -84,7 +84,7 @@ bool CTCPClient::Start(const string& ip, const string& port)
 
 	if (connect(sock, result->ai_addr, result->ai_addrlen) == SOCKET_ERROR && GetNetworkError() != WSAEWOULDBLOCK)
 	{
-		Console().FatalError("connect() failed with error: %d\n%s\n", GetNetworkError(), WSAGetLastErrorString());
+		Logger().Fatal("connect() failed with error: %d\n%s\n", GetNetworkError(), WSAGetLastErrorString());
 		freeaddrinfo(result);
 		closesocket(sock);
 		return false;
@@ -138,7 +138,7 @@ void CTCPClient::Listen()
 	int activity = select(1, &m_FdsRead, &m_FdsWrite, &m_FdsExcept, &tv);
 	if (activity == SOCKET_ERROR)
 	{
-		Console().Error("select() failed with error: %d\n", GetNetworkError());
+		Logger().Fatal("select() failed with error: %d\n", GetNetworkError());
 		return;
 	}
 	else if (!activity) // timeout
@@ -217,7 +217,7 @@ void CTCPClient::Listen()
 			CSendPacket* msg = m_pSocket->GetPacketsToSend()[0];
 			if (m_pSocket->Send(msg, true) <= 0)
 			{
-				Console().Error("An error occurred while sending packet from queue: WSAGetLastError: %d, queue.size: %d\n", GetNetworkError(), m_pSocket->GetPacketsToSend().size());
+				Logger().Fatal("An error occurred while sending packet from queue: WSAGetLastError: %d, queue.size: %d\n", GetNetworkError(), m_pSocket->GetPacketsToSend().size());
 
 				Stop();
 			}

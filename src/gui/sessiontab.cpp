@@ -51,7 +51,7 @@ void CSessionTab::Refresh()
 
 	m_pUI->RefreshBtn->setEnabled(false);
 
-	g_pEvent->AddEventFunction([]()
+	g_pEvents->AddEventFunction([]()
 		{
 			std::vector<Session> sessions;
 			std::vector<IExtendedSocket*> sockets = g_pServerInstance->GetClients();
@@ -108,7 +108,7 @@ void CSessionTab::Kick()
 
 	if (!clientsToKick.empty())
 	{
-		g_pEvent->AddEventFunction([clientsToKick]()
+		g_pEvents->AddEventFunction([clientsToKick]()
 			{
 				for (auto id : clientsToKick)
 				{

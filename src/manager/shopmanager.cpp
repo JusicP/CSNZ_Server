@@ -28,7 +28,7 @@ bool CShopManager::Init()
 	if (!LoadProducts())
 		return false;
 
-	Console().Log("[Shop] Loaded %d products.\n", m_Products.size());
+	Logger().Info("[Shop] Loaded %d products.\n", m_Products.size());
 
 	return true;
 }
@@ -47,14 +47,14 @@ bool CShopManager::LoadProducts()
 
 		if (cfg.is_discarded())
 		{
-			Console().Warn("CShopManager::LoadProducts: couldn't load Shop.json.\n");
+			Logger().Warn("CShopManager::LoadProducts: couldn't load Shop.json.\n");
 			return true; // just a warning
 		}
 
 		int version = cfg.value("Version", 0);
 		if (version != SHOP_JSON_VERSION)
 		{
-			Console().Error("CShopManager::LoadProducts: %d != SHOP_JSON_VERSION(%d)\n", version, SHOP_JSON_VERSION);
+			Logger().Error("CShopManager::LoadProducts: %d != SHOP_JSON_VERSION(%d)\n", version, SHOP_JSON_VERSION);
 			return false;
 		}
 
@@ -122,7 +122,7 @@ bool CShopManager::LoadProducts()
 	}
 	catch (exception& ex)
 	{
-		Console().FatalError("CShopManager::LoadProducts: an error occured while parsing Shop.json: %s\n", ex.what());
+		Logger().Fatal("CShopManager::LoadProducts: an error occured while parsing Shop.json: %s\n", ex.what());
 		return false;
 	}
 

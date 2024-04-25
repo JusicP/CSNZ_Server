@@ -1,5 +1,5 @@
 #include "manager.h"
-#include "common/console.h"
+#include "common/logger.h"
 
 using namespace std;
 
@@ -60,7 +60,7 @@ void CManager::AddManager(IBaseManager* pElem)
 	{
 		if (p->GetName() == pElem->GetName())
 		{
-			Console().Error("CManager::AddManager: %s duplicate!!\n", pElem->GetName().c_str());
+			Logger().Error("CManager::AddManager: %s duplicate!!\n", pElem->GetName().c_str());
 			return;
 		}
 	}

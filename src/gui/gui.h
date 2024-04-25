@@ -15,7 +15,7 @@ public:
 	CGUI();
 	virtual ~CGUI();
 	
-	virtual bool Init(IManager* mgr, IEvent* event);
+	virtual bool Init(IManager* mgr, IEvents* events);
 	virtual bool PostInit(IServerInstance* srv);
 	virtual void Shutdown();
 	virtual void Exec();
@@ -34,7 +34,7 @@ private:
 	CMainWindow* m_pMainWindow;
 };
 
-extern IEvent* g_pEvent;
+extern IEvents* g_pEvents;
 extern IManager* g_pManager;
 extern IServerInstance* g_pServerInstance;
 extern class IPacketManager* g_pPacketManager;

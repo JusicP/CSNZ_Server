@@ -80,7 +80,7 @@ void CMainWindow::closeEvent(QCloseEvent* event)
 	if (msgBox.clickedButton() == (QAbstractButton*)quitAndSendMaintenanceMsgBtn)
 	{
 		// send maintenance msg to all users and quit
-		g_pEvent->AddEventFunction([]()
+		g_pEvents->AddEventFunction([]()
 			{
 				g_pUserManager->SendNoticeMsgBoxToAll("Server down for maintenance");
 			});

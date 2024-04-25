@@ -65,14 +65,14 @@ void CQuestManager::LoadEventQuests()
 
 		if (jEventQuests.is_discarded())
 		{
-			Console().Error("CQuestManager::LoadEventQuests: couldn't load EventQuests.json.\n");
+			Logger().Error("CQuestManager::LoadEventQuests: couldn't load EventQuests.json.\n");
 			return;
 		}
 
 		int version = jEventQuests.value("Version", 0);
 		if (version != EVENT_QUESTS_VERSION)
 		{
-			Console().Error("CQuestManager::LoadEventQuests: %d != EVENT_QUESTS_VERSION(%d)\n", version, EVENT_QUESTS_VERSION);
+			Logger().Error("CQuestManager::LoadEventQuests: %d != EVENT_QUESTS_VERSION(%d)\n", version, EVENT_QUESTS_VERSION);
 			return;
 		}
 
@@ -80,7 +80,7 @@ void CQuestManager::LoadEventQuests()
 	}
 	catch (exception& ex)
 	{
-		Console().Error("CQuestManager::LoadEventQuests: an error occured while parsing EventQuests.json: %s\n", ex.what());
+		Logger().Error("CQuestManager::LoadEventQuests: an error occured while parsing EventQuests.json: %s\n", ex.what());
 	}
 }
 
@@ -207,7 +207,7 @@ void CQuestManager::ParseCondititons(CQuestEventTask* task, ordered_json& jCondi
 		}
 		else
 		{
-			Console().Warn("CQuestManager::LoadEventQuests: got unknown eventType: %d\n", eventType);
+			Logger().Warn("CQuestManager::LoadEventQuests: got unknown eventType: %d\n", eventType);
 		}
 	}
 }
@@ -238,7 +238,7 @@ void CQuestManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		//OnSetFavouriteRequest(user, msg);
 		break;
 	default:
-		Console().Warn(OBFUSCATE("[User '%s'] Packet_Quest type %d is not implemented\n"), user->GetLogName(), requestID);
+		Logger().Warn(OBFUSCATE("[User '%s'] Packet_Quest type %d is not implemented\n"), user->GetLogName(), requestID);
 		break;
 	};
 }
@@ -264,7 +264,7 @@ void CQuestManager::OnTitlePacket(CReceivePacket* msg, IExtendedSocket* socket)
 		OnTitleListRemoveRequest(user, msg);
 		break;
 	default:
-		Console().Warn(OBFUSCATE("[User '%s'] Packet_Title type %d is not implemented\n"), user->GetLogName(), requestID);
+		Logger().Warn(OBFUSCATE("[User '%s'] Packet_Title type %d is not implemented\n"), user->GetLogName(), requestID);
 		break;
 	};
 }
@@ -492,7 +492,7 @@ void CQuestManager::OnQuestFinished(IUser* user, CQuest* quest, UserQuestProgres
 	g_PacketManager.SendQuestUpdateMainInfo(user->GetExtendedSocket(), 0xFFFF, quest, questProgress);
 	g_UserDatabase.UpdateQuestProgress(user->GetID(), questProgress);
 
-	Console().Log(OBFUSCATE("[User '%s'] completed quest %d, %s, room id: %d\n"), user->GetLogName(), quest->GetID(), quest->GetName().c_str(), user->GetCurrentRoom() ? user->GetCurrentRoom()->GetID() : 0);
+	Logger().Info(OBFUSCATE("[User '%s'] completed quest %d, %s, room id: %d\n"), user->GetLogName(), quest->GetID(), quest->GetName().c_str(), user->GetCurrentRoom() ? user->GetCurrentRoom()->GetID() : 0);
 }
 
 void CQuestManager::OnReceiveReward(IUser* user, int rewardID, int questID)
@@ -541,7 +541,7 @@ void CQuestManager::OnSpecialMissionRequest(IUser* user, CReceivePacket* msg)
 
 	g_PacketManager.SendQuestUpdateMainInfo(user->GetExtendedSocket(), 0xFFFF, quest, questProgress);
 
-	Console().Log(OBFUSCATE("[User '%s'] CQuestManager::OnSpecialMissionRequest: %d\n"), user->GetLogName(), questID);
+	Logger().Info(OBFUSCATE("[User '%s'] CQuestManager::OnSpecialMissionRequest: %d\n"), user->GetLogName(), questID);
 }
 
 void CQuestManager::OnSetFavouriteRequest(IUser* user, CReceivePacket* msg)

@@ -162,7 +162,7 @@ bool CClanManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
 	case ClanPacketType::RequestClanInactiveAccounts:
 		break;
 	default:
-		Console().Warn(OBFUSCATE("[User '%s'] Unknown clan type %d\n"), user->GetLogName(), type);
+		Logger().Warn(OBFUSCATE("[User '%s'] Unknown clan type %d\n"), user->GetLogName(), type);
 		break;
 	}
 
@@ -187,7 +187,7 @@ bool CClanManager::OnClanListRequest(CReceivePacket* msg, IUser* user)
 
 	if (unk3 != 0)
 	{
-		Console().Warn(OBFUSCATE("CClanManager::OnClanListRequest: pageID: %d, unk2: %d, gameModeID: %d, unk3: %d, unk4: %d... unk3 is not NULL!!!\n"), pageID, flag, gameModeID, unk3, playTime);
+		Logger().Warn(OBFUSCATE("CClanManager::OnClanListRequest: pageID: %d, unk2: %d, gameModeID: %d, unk3: %d, unk4: %d... unk3 is not NULL!!!\n"), pageID, flag, gameModeID, unk3, playTime);
 	}
 
 	return true;
@@ -473,7 +473,7 @@ bool CClanManager::OnClanInviteRequest(CReceivePacket* msg, IUser* user)
 	int type = msg->ReadUInt8();
 	if (type == 1)
 	{
-		Console().Warn(OBFUSCATE("CClanManager::OnClanInviteRequest: type 1 received\n"));
+		Logger().Warn(OBFUSCATE("CClanManager::OnClanInviteRequest: type 1 received\n"));
 		return true;
 	}
 
@@ -599,7 +599,7 @@ bool CClanManager::OnClanUpdateMarkRequest(CReceivePacket* msg, IUser* user)
 	int type = msg->ReadUInt8();
 	if (type != 0)
 	{
-		Console().Warn(OBFUSCATE("CClanManager::OnClanUpdateMarkRequest: unk type: %d\n"), type);
+		Logger().Warn(OBFUSCATE("CClanManager::OnClanUpdateMarkRequest: unk type: %d\n"), type);
 		return false;
 	}
 	int subType = msg->ReadUInt8();
@@ -660,7 +660,7 @@ bool CClanManager::OnClanUpdateMarkRequest(CReceivePacket* msg, IUser* user)
 	}
 	else
 	{
-		Console().Warn(OBFUSCATE("CClanManager::OnClanUpdateMarkRequest: unk subType: %d\n"), type);
+		Logger().Warn(OBFUSCATE("CClanManager::OnClanUpdateMarkRequest: unk subType: %d\n"), type);
 	}
 
 	return true;
@@ -723,7 +723,7 @@ bool CClanManager::OnClanUpdateConfigRequest(CReceivePacket* msg, IUser* user)
 	}
 	else
 	{
-		Console().Warn(OBFUSCATE("CClanManager::OnClanUpdateConfigRequest: unknown type: %d\n"), type);
+		Logger().Warn(OBFUSCATE("CClanManager::OnClanUpdateConfigRequest: unknown type: %d\n"), type);
 	}
 
 	return true;
@@ -887,7 +887,7 @@ bool CClanManager::OnClanStorageRequest(CReceivePacket* msg, IUser* user)
 	}
 	else
 	{
-		Console().Warn(OBFUSCATE("CClanManager::OnClanStorageRequest: unknown type: %d\n"), type);
+		Logger().Warn(OBFUSCATE("CClanManager::OnClanStorageRequest: unknown type: %d\n"), type);
 	}
 
 	return true;

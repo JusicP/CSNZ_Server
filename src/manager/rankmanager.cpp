@@ -114,7 +114,7 @@ bool CRankManager::OnRankPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		//int page = msg->ReadUInt32();
 		//int unk = msg->ReadUInt8();
 
-		//Console().Log(OBFUSCATE("[User '%s'] Packet_Rank type %d leagueid: %d page: %d unk: %d\n"), user->GetLogName(), type, leagueid, page, unk);
+		//Logger().Info(OBFUSCATE("[User '%s'] Packet_Rank type %d leagueid: %d page: %d unk: %d\n"), user->GetLogName(), type, leagueid, page, unk);
 
 		//auto msg = g_PacketManager.CreatePacket(socket, PacketId::Rank);
 		//msg->BuildHeader();
@@ -199,7 +199,7 @@ bool CRankManager::OnRankPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		//int unk = msg->ReadUInt8();
 		//int leagueID = msg->ReadUInt8();
 
-		//Console().Log(OBFUSCATE("[User '%s'] Packet_Rank type %d\n"), user->GetLogName(), type);
+		//Logger().Info(OBFUSCATE("[User '%s'] Packet_Rank type %d\n"), user->GetLogName(), type);
 
 		//user->UpdateRank(leagueID);
 
@@ -212,7 +212,7 @@ bool CRankManager::OnRankPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		break;
 	}
 	default:
-		Console().Log(OBFUSCATE("[User '%s'] Unknown Packet_Rank type %d\n"), user->GetLogName(), type);
+		Logger().Info(OBFUSCATE("[User '%s'] Unknown Packet_Rank type %d\n"), user->GetLogName(), type);
 		break;
 	}
 #endif

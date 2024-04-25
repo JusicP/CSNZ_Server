@@ -10,7 +10,7 @@ void CPacketIn_UDP::Parse()
 	m_nSignature = buffer.readUInt8();
 	if (m_nSignature != 'W')
 	{
-		Console().Error("CPacketIn_UDP::Parse: signature error\n");
+		Logger().Error("CPacketIn_UDP::Parse: signature error\n");
 	}
 	m_nUserID = buffer.readUInt32_LE();
 	m_nPortID = buffer.readUInt16_LE();

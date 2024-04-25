@@ -109,7 +109,7 @@ bool CPacketManager::Init()
 		!m_pShopItemList_DediZip || !m_pZBCompetitiveZip || !m_pPPSystemZip || !m_pItemZip || !m_pCodisDataZip || !m_pWeaponPropZip ||
 		!m_pPaintItemList || !m_pReinforceItemsExp || !m_pRandomWeaponList || !m_pUnk3 || !m_pUnk8 || !m_pUnk15 || !m_pUnk20 || !m_pUnk31 || !m_pUnk43 || !m_pUnk49 || !m_pModeEventZip)
 	{
-		Console().FatalError("Failed to load metadata\n");
+		Logger().Fatal("Failed to load metadata\n");
 		return false;
 	}
 
@@ -192,7 +192,7 @@ CBinMetadata* CPacketManager::LoadBinaryMetadata(const char* fileName, bool zip)
 	FILE* f = fopen(path, "rb");
 	if (!f)
 	{
-		Console().Error("CPacketManager::LoadBinaryMetadata: couldn't load Data/%s\n", fileName);
+		Logger().Error("CPacketManager::LoadBinaryMetadata: couldn't load Data/%s\n", fileName);
 		return NULL;
 	}
 
@@ -203,7 +203,7 @@ CBinMetadata* CPacketManager::LoadBinaryMetadata(const char* fileName, bool zip)
 	void* buffer = malloc(sizeof(char) * size);
 	if (buffer == NULL)
 	{
-		Console().Error("CPacketManager::LoadBinaryMetadata: failed to allocate memory for Data/%s\n", fileName);
+		Logger().Error("CPacketManager::LoadBinaryMetadata: failed to allocate memory for Data/%s\n", fileName);
 		fclose(f);
 		return NULL;
 	}
@@ -211,7 +211,7 @@ CBinMetadata* CPacketManager::LoadBinaryMetadata(const char* fileName, bool zip)
 	size_t result = fread(buffer, sizeof(char), size, f);
 	if (result != size)
 	{
-		Console().Error("CPacketManager::LoadBinaryMetadata: failed to read file Data/%s\n", fileName);
+		Logger().Error("CPacketManager::LoadBinaryMetadata: failed to read file Data/%s\n", fileName);
 		fclose(f);
 		free(buffer);
 		return NULL;
@@ -3515,27 +3515,27 @@ void CPacketManager::SendMiniGameWeaponReleaseIGNotice(IExtendedSocket* socket, 
 
 void CPacketManager::SendQuests(IExtendedSocket* socket, int userID, const vector<CQuest*>& quests, const vector<UserQuestProgress>& questsProgress, int infoFlag, int taskFlag, int rewardFlag, int statFlag)
 {
-	Console().Warn("SendQuests TODO: reverse\n");
+	Logger().Warn("SendQuests TODO: reverse\n");
 }
 
 void CPacketManager::SendQuestUpdateMainInfo(IExtendedSocket* socket, int flag, CQuest* quest, const UserQuestProgress& questProgress)
 {
-	Console().Warn("SendQuestUpdateMainInfo TODO: reverse\n");
+	Logger().Warn("SendQuestUpdateMainInfo TODO: reverse\n");
 }
 
 void CPacketManager::SendQuestUpdateTaskInfo(IExtendedSocket* socket, int flag, int questID, CQuestTask* task, const UserQuestTaskProgress& taskProgress)
 {
-	Console().Warn("SendQuestUpdateTaskInfo TODO: reverse\n");
+	Logger().Warn("SendQuestUpdateTaskInfo TODO: reverse\n");
 }
 
 void CPacketManager::SendQuestUpdateRewardInfo(IExtendedSocket* socket, int flag, int questID, const QuestReward_s& reward)
 {
-	Console().Warn("SendQuestUpdateRewardInfo TODO: reverse\n");
+	Logger().Warn("SendQuestUpdateRewardInfo TODO: reverse\n");
 }
 
 void CPacketManager::SendQuestUpdateQuestStat(IExtendedSocket* socket, int flag, int honorPoints, const UserQuestStat& stat)
 {
-	Console().Warn("SendQuestUpdateQuestStat TODO: reverse\n");
+	Logger().Warn("SendQuestUpdateQuestStat TODO: reverse\n");
 }
 
 void CPacketManager::SendFavoriteLoadout(IExtendedSocket* socket, int characterItemID, int currentLoadout, const CUserLoadout& loadouts)

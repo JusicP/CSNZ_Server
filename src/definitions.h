@@ -8,7 +8,8 @@
 #define CSO_24_HOURS_IN_MINUTES 1440
 #define CSO_24_HOURS_IN_SECONDS 86400
 
-#define LOG_PACKET Console().SetLastPacket(__FUNCTION__);
+//#define LOG_PACKET Console().SetLastPacket(__FUNCTION__);
+#define LOG_PACKET
 
 enum PacketId
 {
