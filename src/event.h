@@ -9,9 +9,10 @@
 class CEvent_Function : public IEvent
 {
 public:
-	CEvent_Function(const std::function<void()>& func)
+	CEvent_Function(const std::function<void()>& func, EventFunctionType type = EventFunctionType::NotSpecified)
 	{
 		m_Func = func;
+		m_Type = type;
 	}
 
 	virtual void Execute()
@@ -19,8 +20,37 @@ public:
 		m_Func();
 	}
 
+	EventFunctionType GetType()
+	{
+		return m_Type;
+	}
+
 private:
+	EventFunctionType m_Type;
 	std::function<void()> m_Func;
+};
+
+class CReceiveMessage;
+
+/**
+ * Separate event for TCP packet.
+ * We need an extended socket object to be able to remove events associated with it.
+ */
+class CEvent_TCPPacket : public CEvent_Function
+{
+public:
+	CEvent_TCPPacket(IExtendedSocket* socket, const std::function<void()>& func) : CEvent_Function(func, EventFunctionType::TCPPacket)
+	{
+		m_pSocket = socket;
+	}
+
+	IExtendedSocket* GetSocket()
+	{
+		return m_pSocket;
+	}
+
+private:
+	IExtendedSocket* m_pSocket;
 };
 
 /**
@@ -61,6 +91,35 @@ public:
 	{
 		CEvent_Function* ev = new CEvent_Function(func);
 		AddEvent(ev);
+	}
+
+	void AddEventTCPPacket(IExtendedSocket* socket, const std::function<void()>& func)
+	{
+		CEvent_TCPPacket* ev = new CEvent_TCPPacket(socket, func);
+		AddEvent(ev);
+	}
+
+	/**
+	 * Removes all events associated with socket obj 
+	 */
+	void RemoveEventsBySocket(IExtendedSocket* socket)
+	{
+		m_Events.erase(std::remove_if(m_Events.begin(), m_Events.end(),
+			[socket](IEvent* ev)
+			{
+				if (ev->GetType() == EventFunctionType::TCPPacket)
+				{
+					CEvent_TCPPacket* evPacket = static_cast<CEvent_TCPPacket*>(ev);
+					if (evPacket->GetSocket() == socket)
+					{
+						delete evPacket; /// @todo: use unique_ptr...
+						return true;
+					}
+				}
+
+				return false;
+			}
+		), m_Events.end());
 	}
 
 	/**

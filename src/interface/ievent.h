@@ -4,10 +4,17 @@
 #include <vector>
 #include <functional>
 
+enum class EventFunctionType
+{
+	NotSpecified = 0,
+	TCPPacket = 1,
+};
+
 class IEvent
 {
 public:
 	virtual void Execute() = 0;
+	virtual EventFunctionType GetType() = 0;
 };
 
 class IExtendedSocket;

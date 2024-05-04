@@ -73,7 +73,6 @@ public:
 	void SetSecondTick(bool tick) { m_bSecondTick = tick; }
 
 private:
-	bool m_bInitialized;
 	std::string m_Name;
 	bool m_bSecondTick;
 	bool m_bMinuteTick;
