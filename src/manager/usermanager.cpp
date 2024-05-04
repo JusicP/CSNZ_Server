@@ -25,6 +25,11 @@ CUserManager::CUserManager() : CBaseManager("UserManager", true)
 {
 }
 
+CUserManager::~CUserManager()
+{
+	printf("~CUserManager\n");
+}
+
 bool CUserManager::Init()
 {
 	for (size_t i = 0; i < g_pServerConfig->defUser.defaultItems.size(); i++)
@@ -35,6 +40,8 @@ bool CUserManager::Init()
 
 void CUserManager::Shutdown()
 {
+	g_UserManager.SendNoticeMsgBoxToAll("Server down for maintenance");
+
 	m_DefaultItems.clear();
 }
 

@@ -54,21 +54,6 @@ void CommandCrash(CCommand* cmd, const std::vector<std::string>& args)
 
 void CommandShutdown(CCommand* cmd, const std::vector<std::string>& args)
 {
-	// kick user from game
-	for (auto channel : g_ChannelManager.channelServers)
-	{
-		for (auto sub : channel->GetChannels())
-		{
-			for (auto room : sub->GetRooms())
-			{
-				Logger().Info("Force ending RoomID: %d game\n", room->GetID());
-				room->EndGame(true);
-			}
-		}
-	}
-
-	g_UserManager.SendNoticeMsgBoxToAll("Server down for maintenance");
-
 	g_pServerInstance->SetServerActive(false);
 }
 

@@ -1102,7 +1102,7 @@ void CRoomSettings::LoadZbCompetitiveSettings(int gameModeId)
 	mutationLimit = gameModeId == 45 ? 40 : 0;
 }
 
-void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int changeFlag)
+void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 {
 	if (g_pServerConfig->room.validateSettings)
 	{
@@ -1218,7 +1218,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 			highFlag &= ~ROOM_HIGH_UNK77;
 	}
 
-	if (changeFlag & ROOM_LOW_GAMEMODEID)
+	if (lowFlag & ROOM_LOW_GAMEMODEID)
 	{
 		lowFlag |= ROOM_LOW_MAXPLAYERS;
 		maxPlayers = g_pGameModeListTable->GetCell<int>("mode_maxplayer", to_string(gameModeId));
@@ -1733,7 +1733,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 		}
 	}
 
-	if (changeFlag & ROOM_LOW_MAPID)
+	if (lowFlag & ROOM_LOW_MAPID)
 	{
 		lowFlag |= ROOM_LOW_MAXPLAYERS;
 		maxPlayers = g_pMapListTable->GetCell<int>("max_player", to_string(mapId));
@@ -1876,13 +1876,11 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user, int 
 
 	if (lowFlag & ROOM_LOW_MAPID)
 	{
+		// Even if there's no map playlist change, this needs to be sent for the map to change visually
 		lowMidFlag |= ROOM_LOWMID_MAPPLAYLIST;
 
-		if (changeFlag & ROOM_LOW_MAPID)
-		{
-			lowMidFlag |= ROOM_LOWMID_MAPID2;
-			mapId2 = mapId;
-		}
+		lowMidFlag |= ROOM_LOWMID_MAPID2;
+		mapId2 = mapId;
 	}
 }
 
@@ -2085,7 +2083,7 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 				}
 			}
 
-			LoadNewSettings(gameModeId, mapId, user, ROOM_LOW_GAMEMODEID | ROOM_LOW_MAPID);
+			LoadNewSettings(gameModeId, mapId, user);
 		}
 		else
 		{
@@ -2098,7 +2096,7 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 				}
 			}
 
-			LoadNewSettings(gameModeId, roomSettings->mapId, user, ROOM_LOW_GAMEMODEID);
+			LoadNewSettings(gameModeId, roomSettings->mapId, user);
 		}
 	}
 	else
@@ -2120,7 +2118,7 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 				}
 			}
 
-			LoadNewSettings(roomSettings->gameModeId, mapId, user, ROOM_LOW_MAPID);
+			LoadNewSettings(roomSettings->gameModeId, mapId, user);
 		}
 		else
 			LoadNewSettings(roomSettings->gameModeId, roomSettings->mapId, user);

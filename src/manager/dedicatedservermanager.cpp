@@ -58,7 +58,7 @@ bool CDedicatedServerManager::OnPacket(CReceivePacket* msg, IExtendedSocket* soc
 	case HostServerPacketType::AddServer:
 	{
 		int port = msg->ReadUInt16();
-		int ip = msg->ReadUInt32(false);
+		int ip = msg->ReadUInt32(true);
 
 		g_DedicatedServerManager.AddServer(new CDedicatedServer(socket, ip, port));
 
@@ -167,7 +167,12 @@ void CDedicatedServerManager::RemoveServer(IExtendedSocket* socket)
 
 	IRoom* room = server->GetRoom();
 	if (room)
+	{
 		room->SetServer(NULL);
+
+		if (room->GetGameMatch())
+			room->EndGame(true);
+	}
 
 	vServerPools.erase(remove(vServerPools.begin(), vServerPools.end(), server), vServerPools.end());
 }
@@ -177,10 +182,6 @@ void CDedicatedServerManager::TransferServer(IExtendedSocket* socket, const std:
 	CDedicatedServer* server = GetServerBySocket(socket);
 	if (!server)
 		return;
-
-	IRoom* room = server->GetRoom();
-	if (room)
-		room->SetServer(NULL);
 
 	g_PacketManager.SendHostServerTransfer(socket, ipAddress, port);
 }

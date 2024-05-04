@@ -20,6 +20,7 @@ class CUserDatabaseSQLite : public CBaseManager<IUserDatabase>
 {
 public:
 	CUserDatabaseSQLite();
+	~CUserDatabaseSQLite();
 
 	virtual bool Init();
 

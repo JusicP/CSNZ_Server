@@ -17,6 +17,8 @@ enum RoomReadyStatus;
 class IRoom
 {
 public:
+	virtual ~IRoom() {}
+
 	virtual int GetNumOfPlayers() = 0;
 	virtual int GetFreeSlots() = 0;
 	virtual bool HasFreeSlots() = 0;

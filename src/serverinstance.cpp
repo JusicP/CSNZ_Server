@@ -51,6 +51,8 @@ CServerInstance::~CServerInstance()
 	Manager().ShutdownAll();
 
 	delete g_pItemTable;
+	delete g_pMapListTable;
+	delete g_pGameModeListTable;
 	delete g_pServerConfig;
 }
 

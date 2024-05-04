@@ -3181,12 +3181,12 @@ void CPacketManager::SendHostOnItemUse(IExtendedSocket* socket, int userId, int 
 	socket->Send(msg);
 }
 
-void CPacketManager::SendHostServerJoin(IExtendedSocket* socket, int ipAddress, bool bigEndian, int port, int userId)
+void CPacketManager::SendHostServerJoin(IExtendedSocket* socket, int ipAddress, int port, int userId)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Host);
 	msg->BuildHeader();
 	msg->WriteUInt8(HostPacketType::HostServerJoin);
-	msg->WriteUInt32(ipAddress, bigEndian);
+	msg->WriteUInt32(ipAddress, false);
 	msg->WriteUInt16(port);
 	msg->WriteUInt64(userId);
 	socket->Send(msg);

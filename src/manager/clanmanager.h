@@ -7,6 +7,7 @@ class CClanManager : public CBaseManager<IClanManager>
 {
 public:
 	CClanManager();
+	~CClanManager();
 
 	bool OnPacket(CReceivePacket* msg, IExtendedSocket* socket);
 	bool OnClanListRequest(CReceivePacket* msg, IUser* user);

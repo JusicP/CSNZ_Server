@@ -53,7 +53,7 @@ public:
 	bool IsRandomMapAllowed(int gameModeId);
 	void LoadDefaultSettings(int gameModeId, int mapId);
 	void LoadZbCompetitiveSettings(int gameModeId);
-	void LoadNewSettings(int gameModeId, int mapId, IUser* user, int changeFlag = 0);
+	void LoadNewSettings(int gameModeId, int mapId, IUser* user);
 	bool IsSettingValid(int gameModeId, const std::string& setting, int value);
 	bool IsLeagueRuleWinLimitValid(int winLimit);
 	bool IsBuyTimeValid(int gameModeId, int buyTime);

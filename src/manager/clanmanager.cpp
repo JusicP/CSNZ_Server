@@ -17,6 +17,11 @@ CClanManager::CClanManager() : CBaseManager("ClanManager")
 {
 }
 
+CClanManager::~CClanManager()
+{
+	printf("~CClanManager\n");
+}
+
 // fuck, it has tons of flags
 // 0 list
 // 1 ClanInfo

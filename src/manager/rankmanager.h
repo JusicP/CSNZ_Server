@@ -7,6 +7,7 @@ class CRankManager : public CBaseManager<IRankManager>
 {
 public:
 	CRankManager();
+	~CRankManager();
 
 	bool OnRankPacket(CReceivePacket* msg, IExtendedSocket* socket);
 	

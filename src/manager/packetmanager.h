@@ -166,7 +166,7 @@ public:
 	void SendRoomWeaponSurvey(IExtendedSocket* socket, const std::vector<int>& weapons);
 	
 	void SendHostOnItemUse(IExtendedSocket* socket, int userId, int itemId);
-	void SendHostServerJoin(IExtendedSocket* socket, int ipAddress, bool bigEndian, int port, int userId);
+	void SendHostServerJoin(IExtendedSocket* socket, int ipAddress, int port, int userId);
 	void SendHostStop(IExtendedSocket* socket);
 	void SendHostLeaveResultWindow(IExtendedSocket* socket);
 	void SendHostUserInventory(IExtendedSocket* socket, int userId, const std::vector<CUserInventoryItem>& items);

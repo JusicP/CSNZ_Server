@@ -8,6 +8,7 @@ class CMiniGameManager : public CBaseManager<IMiniGameManager>
 {
 public:
 	CMiniGameManager();
+	~CMiniGameManager();
 
 	void OnPacket(CReceivePacket* msg, IExtendedSocket* socket);
 

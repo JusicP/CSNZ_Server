@@ -9,6 +9,7 @@ class CUserManager : public CBaseManager<IUserManager>
 {
 public:
 	CUserManager();
+	~CUserManager();
 
 	virtual bool Init();
 	virtual void Shutdown();

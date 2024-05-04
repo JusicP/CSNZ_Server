@@ -8,6 +8,7 @@ class CChannel
 {
 public:
 	CChannel(CChannelServer* server, int id, const std::string& channelName, int maxPlayers, const std::string& loginMsg);
+	~CChannel();
 
 	bool UserJoin(IUser* user, bool unhide = false);
 	void UserLeft(IUser* user, bool hide = false);
@@ -16,14 +17,13 @@ public:
 	void SendUpdateRoomList(IRoom* room);
 	void SendAddRoomToRoomList(IRoom* room);
 	void SendRemoveFromRoomList(int roomId);
-	void OnEmptyRoomCallback(IRoom* room);
 	void SendUserMessageToAllUser(int type, int senderUserID, const std::string& senderName, const std::string& msg);
 	void UpdateUserInfo(IUser* user, const CUserCharacter& character);
 	IRoom* CreateRoom(IUser* host, CRoomSettings* settings);
 	IRoom* GetRoomById(int id);
 	IUser* GetUserById(int userID);
-	bool RemoveRoomById(int roomID);
-	bool RemoveUserById(int userID);
+	void RemoveRoom(IRoom* room);
+	bool RemoveUser(IUser* user);
 
 	int GetID();
 	std::string GetName();

@@ -35,7 +35,7 @@ class CDedicatedServerManager : public CBaseManager<IDedicatedServerManager>
 {
 public:
 	CDedicatedServerManager();
-	virtual ~CDedicatedServerManager();
+	~CDedicatedServerManager();
 
 	virtual void Shutdown();
 

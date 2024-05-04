@@ -25,6 +25,21 @@ CChannelManager::CChannelManager() : CBaseManager("ChannelManager")
 	channelServers.push_back(new CChannelServer("Channel server", 1, 1, 1));
 }
 
+CChannelManager::~CChannelManager()
+{
+	printf("~CChannelManager\n");
+}
+
+void CChannelManager::Shutdown()
+{
+	EndAllGames();
+
+	for (auto channelServer : channelServers)
+	{
+		delete channelServer;
+	}
+}
+
 bool CChannelManager::OnChannelListPacket(IExtendedSocket* socket)
 {
 	LOG_PACKET;
@@ -170,24 +185,24 @@ void CChannelManager::JoinChannel(IUser* user, int channelServerID, int channelI
 
 void CChannelManager::EndAllGames()
 {
-	for (auto channel : channelServers)
+	for (auto channelServer : channelServers)
 	{
-		if (!channel)
+		if (!channelServer)
 			continue;
 
-		for (auto sub : channel->GetChannels())
+		for (auto channel : channelServer->GetChannels())
 		{
-			if (!sub)
+			if (!channel)
 				continue;
 
-			for (auto room : sub->GetRooms())
+			for (auto room : channel->GetRooms())
 			{
 				if (!room)
 					continue;
 
-				if (room->GetStatus() == STATUS_INGAME)
+				if (room->GetGameMatch())
 				{
-					Logger().Info(OBFUSCATE("Force ending RoomID: %d game match\n"), room->GetID());
+					Logger().Info(OBFUSCATE("Force ending RoomID %d\n"), room->GetID());
 					room->EndGame(true);
 				}
 			}
@@ -1267,6 +1282,13 @@ bool CChannelManager::OnJoinRoomRequest(CReceivePacket* msg, IUser* user)
 		room->SendTeamChange(u, user, user->GetRoomData()->m_Team);
 	}
 
+	CDedicatedServer* server = room->GetServer();
+	if (server)
+	{
+		g_PacketManager.SendRoomPlayerJoin(server->GetSocket(), user, RoomTeamNum::CounterTerrorist);
+		g_PacketManager.SendRoomSetUserTeam(server->GetSocket(), user, user->GetRoomData()->m_Team);
+	}
+
 	// hide user from channel users list
 	channel->UserLeft(user, true);
 
@@ -1302,6 +1324,12 @@ bool CChannelManager::OnSetTeamRequest(CReceivePacket* msg, IUser* user)
 		currentRoom->SendTeamChange(u, user, (RoomTeamNum)newTeam);
 	}
 
+	CDedicatedServer* server = currentRoom->GetServer();
+	if (server)
+	{
+		g_PacketManager.SendRoomSetUserTeam(server->GetSocket(), user, (RoomTeamNum)newTeam);
+	}
+
 	Logger().Info("User '%d, %s' changed room team to %d (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), newTeam, currentRoom->GetID());
 
 	return true;
@@ -1327,22 +1355,6 @@ bool CChannelManager::OnLeaveRoomRequest(IUser* user)
 	Logger().Info("User '%d, %s' left a room (RID: %d)\n", user->GetID(), user->GetUsername().c_str(), currentRoom->GetID());
 
 	currentRoom->RemoveUser(user);
-
-	if (!currentRoom->GetUsers().size())
-	{
-		currentChannel->SendRemoveFromRoomList(currentRoom->GetID());
-
-		CDedicatedServer* server = currentRoom->GetServer();
-		if (currentRoom->GetServer())
-		{
-			server->SetRoom(NULL);
-			g_PacketManager.SendHostStop(server->GetSocket());
-		}
-	}
-	else
-	{
-		currentChannel->SendUpdateRoomList(currentRoom);
-	}
 
 	currentChannel->SendFullUpdateRoomList(user);
 

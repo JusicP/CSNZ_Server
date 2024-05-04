@@ -9,6 +9,7 @@ class CHostManager : public CBaseManager<IHostManager>
 {
 public:
 	CHostManager();
+	~CHostManager();
 
 	bool OnPacket(CReceivePacket* msg, IExtendedSocket* socket);
 
