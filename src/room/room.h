@@ -66,6 +66,8 @@ public:
 	void OnUserMessage(CReceivePacket* msg, IUser* user);
 	void OnUserTeamMessage(CReceivePacket* msg, IUser* user);
 	void OnGameStart();
+	void AddKickedUser(IUser* user);
+	void ClearKickedUsers();
 	void KickUser(IUser* user);
 	void VoteKick(IUser* user, bool kick);
 	void SendJoinNewRoom(IUser* user);

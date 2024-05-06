@@ -29,6 +29,8 @@ public:
 	virtual bool OnMessengerPacket(CReceivePacket* msg, IExtendedSocket* socket) = 0;
 	virtual bool OnAddonPacket(CReceivePacket* msg, IExtendedSocket* socket) = 0;
 	virtual bool OnLeaguePacket(CReceivePacket* msg, IExtendedSocket* socket) = 0;
+	virtual bool OnCryptPacket(CReceivePacket* msg, IExtendedSocket* socket) = 0;
+	virtual bool OnKickPacket(CReceivePacket* msg, IExtendedSocket* socket) = 0;
 
 	virtual void SendNoticeMessageToAll(const std::string& msg) = 0;
 	virtual void SendNoticeMsgBoxToAll(const std::string& msg) = 0;

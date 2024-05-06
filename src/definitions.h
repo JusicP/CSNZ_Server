@@ -1257,7 +1257,7 @@ enum InRoomType
 	GameStartRequest = 4,
 	RequestUpdateSettings = 5,
 	OnCloseResultWindow = 6, // (result confirm)
-	ForceKick = 7,
+	KickRequest = 7,
 	VoteKick = 8,
 	VoteReply = 9,
 	OnConnectionFailure = 11,

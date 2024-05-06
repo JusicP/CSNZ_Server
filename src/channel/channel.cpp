@@ -181,10 +181,8 @@ IUser* CChannel::GetUserById(int userId)
 
 IRoom* CChannel::CreateRoom(IUser* host, CRoomSettings* settings)
 {
-	CRoom* newRoom = new CRoom(m_nNextRoomID++, host, this, settings);
-	m_Rooms.push_back(newRoom);
-
-	return newRoom;
+	m_Rooms.push_back(new CRoom(m_nNextRoomID++, host, this, settings));
+	return m_Rooms.back();
 }
 
 void CChannel::RemoveRoom(IRoom* room)

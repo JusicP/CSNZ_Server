@@ -3335,7 +3335,8 @@ void CPacketManager::SendHostRestart(IExtendedSocket* socket, int newHostUserID,
 
 	if (host)
 	{
-		vector<unsigned char>& saveData = match->GetSaveData();
+		//vector<unsigned char>& saveData = match->GetSaveData();
+		vector<unsigned char> saveData = {};
 		msg->WriteUInt16(saveData.size());
 		msg->WriteData(saveData.data(), saveData.size());
 
@@ -3347,7 +3348,7 @@ void CPacketManager::SendHostRestart(IExtendedSocket* socket, int newHostUserID,
 	}
 	else
 	{
-		msg->WriteUInt8(1);
+		msg->WriteUInt8(0);
 	}
 
 	socket->Send(msg);
@@ -6905,4 +6906,17 @@ void CPacketManager::SendPacketFromFile(IExtendedSocket* socket, const std::stri
 	socket->Send(msg);
 
 	delete buf;
+}
+
+void CPacketManager::SendKickPacket(IExtendedSocket* socket, int userID)
+{
+	CSendPacket* msg = CreatePacket(socket, PacketId::Kick);
+	msg->BuildHeader();
+
+	msg->WriteUInt8(3);
+
+	msg->WriteUInt32(userID);
+	msg->WriteUInt8(1);
+
+	socket->Send(msg);
 }

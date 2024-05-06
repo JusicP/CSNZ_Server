@@ -54,6 +54,8 @@ public:
 	virtual void OnUserMessage(CReceivePacket* msg, IUser* user) = 0;
 	virtual void OnUserTeamMessage(CReceivePacket* msg, IUser* user) = 0;
 	virtual void OnGameStart() = 0;
+	virtual void AddKickedUser(IUser* user) = 0;
+	virtual void ClearKickedUsers() = 0;
 	virtual void KickUser(IUser* user) = 0;
 	virtual void VoteKick(IUser* user, bool kick) = 0;
 	virtual void SendJoinNewRoom(IUser* user) = 0;

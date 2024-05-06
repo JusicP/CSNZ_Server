@@ -262,6 +262,8 @@ public:
 
 	void SendPacketFromFile(IExtendedSocket* socket, const std::string& filename);
 
+	void SendKickPacket(IExtendedSocket* socket, int userID);
+
 private:
 	CBinMetadata* LoadBinaryMetadata(const char* fileName, bool zip = false);
 

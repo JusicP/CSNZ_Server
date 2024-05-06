@@ -443,6 +443,9 @@ void CServerInstance::OnPackets(IExtendedSocket* s, CReceivePacket* msg)
 	case PacketId::League:
 		g_UserManager.OnLeaguePacket(msg, s);
 		break;
+	case PacketId::Kick:
+		g_UserManager.OnKickPacket(msg, s);
+		break;
 	default:
 		Logger().Warn("Unimplemented packet: %d\n", msg->GetID());
 		break;

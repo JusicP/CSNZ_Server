@@ -612,14 +612,21 @@ void CRoom::OnGameStart()
 	}
 }
 
-void CRoom::KickUser(IUser* user)
+void CRoom::AddKickedUser(IUser* user)
 {
 	m_KickedUsers.push_back(user->GetID());
+}
 
-	for (auto u : m_Users)
-	{
-		g_PacketManager.SendRoomKick(u->GetExtendedSocket(), user->GetID());
-	}
+void CRoom::ClearKickedUsers()
+{
+	m_KickedUsers.clear();
+}
+
+void CRoom::KickUser(IUser* user)
+{
+	AddKickedUser(user);
+
+	g_PacketManager.SendRoomKick(user->GetExtendedSocket(), user->GetID());
 }
 
 void CRoom::VoteKick(IUser* user, bool kick)
@@ -834,6 +841,9 @@ void CRoom::UpdateHost(IUser* newHost)
 		g_PacketManager.SendRoomSetHost(u->GetExtendedSocket(), newHost);
 	}
 
+	CheckForHostItems();
+	ClearKickedUsers();
+
 	if (m_pServer == NULL && m_pGameMatch != NULL)
 	{
 		if (m_pGameMatch->m_UserStats.empty())
@@ -845,8 +855,6 @@ void CRoom::UpdateHost(IUser* newHost)
 			m_pGameMatch->OnHostChanged(newHost);
 		}
 	}
-
-	CheckForHostItems();
 }
 
 bool CRoom::FindAndUpdateNewHost()

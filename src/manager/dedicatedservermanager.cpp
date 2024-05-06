@@ -82,9 +82,9 @@ bool CDedicatedServerManager::OnPacket(CReceivePacket* msg, IExtendedSocket* soc
 	}
 	case HostServerPacketType::Unk3:
 	{
-		// Supposedly it's a variable size, but it doesn't tell what size it sends and it's always sending one byte, so...
-		int unk = msg->ReadUInt8();
-		Logger().Warn("CDedicatedServerManager::OnPacket(3): %d\n", unk);
+		// I think it's a string
+		std::string unk = msg->ReadString();
+		Logger().Warn("CDedicatedServerManager::OnPacket(3): %s\n", unk.c_str());
 
 		break;
 	}
