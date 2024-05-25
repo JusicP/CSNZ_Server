@@ -105,7 +105,11 @@ const char* CLoggerPrefix::FormatPrefix(int level, const char* msg)
 	char timePrefix[MAX_TIME_PREFIX_LEN];
 	GetCurrTimePrefix(timePrefix, sizeof(timePrefix));
 
-	snprintf(m_szBuf, sizeof(m_szBuf), "[%s][%s] %s", timePrefix, GetLevelPrefix(level), msg);
+	int levelLen = 0;
+	const char* levelStr = GetLevelPrefix(level, levelLen);
+	int indent = GetLevelPrefixMaxLen() - levelLen; // this is how much extra blank characters need to be added for indent
+
+	snprintf(m_szBuf, sizeof(m_szBuf), "[%s][%s]%*s %s", timePrefix, levelStr, indent, "", msg);
 
 	return m_szBuf;
 }
@@ -127,23 +131,52 @@ void CLoggerPrefix::GetCurrTimePrefix(char* timePrefix, int prefixLen)
 	snprintf(timePrefix, prefixLen, "%s %s", szDate, szTime);
 }
 
-const char* CLoggerPrefix::GetLevelPrefix(int level)
+const char* CLoggerPrefix::GetLevelPrefix(int level, int& levelLen)
 {
 	switch (level)
 	{
 	case LOG_LEVEL_INFO:
+		levelLen = sizeof("INFO");
 		return "INFO";
 	case LOG_LEVEL_WARN:
+		levelLen = sizeof("WARN");
 		return "WARN";
 	case LOG_LEVEL_ERROR:
+		levelLen = sizeof("ERROR");
 		return "ERROR";
 	case LOG_LEVEL_FATAL_ERROR:
+		levelLen = sizeof("FATAL");
 		return "FATAL";
 	case LOG_LEVEL_DEBUG:
+		levelLen = sizeof("DEBUG");
 		return "DEBUG";
 	default:
-		return "INFO";
+		levelLen = 0;
+		return "";
 	}
+}
+
+/**
+ * Get maximum length of level prefix strings for indentation, calculated only once
+ */
+int CLoggerPrefix::GetLevelPrefixMaxLen()
+{
+	static int maxLevelStrLen = 0;
+	if (maxLevelStrLen)
+		return maxLevelStrLen;
+
+	int levelLen = 0;
+	for (int i = LOG_LEVEL_INFO; i != LOG_LEVEL_END; i *= 2)
+	{
+		GetLevelPrefix(i, levelLen);
+		if (!levelLen)
+			break;
+
+		if (levelLen > maxLevelStrLen)
+			maxLevelStrLen = levelLen;
+	}
+
+	return maxLevelStrLen;
 }
 
 ILogger* CLoggerPrefix::GetLogger()

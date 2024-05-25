@@ -7,11 +7,14 @@
 
 enum LogLevel
 {
+	// values must be in order, otherwise indentation won't work
 	LOG_LEVEL_INFO = 1 << 0,
 	LOG_LEVEL_WARN = 1 << 1,
 	LOG_LEVEL_ERROR = 1 << 2,
 	LOG_LEVEL_FATAL_ERROR = 1 << 3,
 	LOG_LEVEL_DEBUG = 1 << 4,
+
+	LOG_LEVEL_END = 1 << 30
 };
 
 /**
@@ -134,7 +137,8 @@ public:
 
 	const char* FormatPrefix(int level, const char* msg);
 	static void GetCurrTimePrefix(char* timePrefix, int prefixLen);
-	static const char* GetLevelPrefix(int level);
+	static const char* GetLevelPrefix(int level, int& levelLen);
+	static int GetLevelPrefixMaxLen();
 
 	ILogger* GetLogger();
 

@@ -23,6 +23,7 @@ public:
 
 	bool InitAll();
 	void ShutdownAll();
+	bool ReloadAll();
 	void AddManager(IBaseManager* pElem);
 	void RemoveManager(IBaseManager* pElem);
 	IBaseManager* GetManager(const std::string& name);
@@ -49,6 +50,7 @@ public:
 		m_Name = name;
 		m_bSecondTick = secondTick;
 		m_bMinuteTick = minuteTick;
+		m_bCanReload = true;
 
 		Manager().AddManager(this);
 	}
@@ -63,6 +65,7 @@ public:
 	// stub methods
 	virtual bool Init() { return true; }
 	virtual void Shutdown() { printf("Shutdown called, %p\n", this); }
+	virtual bool CanReload() { return m_bCanReload; }
 	virtual std::string GetName() { return m_Name; }
 	virtual void OnSecondTick(time_t curTime) {}
 	virtual void OnMinuteTick(time_t curTime) {}
@@ -71,9 +74,11 @@ public:
 
 	void SetMinuteTick(bool tick) { m_bMinuteTick = tick; }
 	void SetSecondTick(bool tick) { m_bSecondTick = tick; }
+	void SetCanReload(bool canReload) {	m_bCanReload = canReload; }
 
 private:
 	std::string m_Name;
 	bool m_bSecondTick;
 	bool m_bMinuteTick;
+	bool m_bCanReload;
 };

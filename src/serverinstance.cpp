@@ -130,9 +130,7 @@ bool CServerInstance::Reload()
 		}
 	}
 
-	Manager().ShutdownAll();
-
-	if (!Manager().InitAll())
+	if (!Manager().ReloadAll())
 		return false;
 
 	return true;

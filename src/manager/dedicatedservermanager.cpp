@@ -100,6 +100,7 @@ CDedicatedServerManager g_DedicatedServerManager;
 
 CDedicatedServerManager::CDedicatedServerManager() : CBaseManager("DedicatedServerManager")
 {
+	SetCanReload(false);
 }
 
 CDedicatedServerManager::~CDedicatedServerManager()

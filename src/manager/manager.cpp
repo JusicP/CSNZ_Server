@@ -50,7 +50,7 @@ bool CManager::InitAll()
 
 /**
  * Inits all managers in separate threads
- * @return true when managers initialized successfully, false otherwise
+ * @return true when all managers initialized successfully, false otherwise
  */
 bool CManager::InitAll_Multithread()
 {
@@ -58,12 +58,12 @@ bool CManager::InitAll_Multithread()
 
 	// run init threads
 	vector<future<bool>> results;
-	for (auto p : m_Managers)
+	for (auto manager : m_Managers)
 	{
 		results.emplace_back(async(
-			[p]()
+			[manager]()
 			{
-				return p->Init();
+				return manager->Init();
 			}
 		));
 	}
@@ -86,10 +86,30 @@ bool CManager::InitAll_Multithread()
  */
 void CManager::ShutdownAll()
 {
-	for (auto p : m_Managers)
+	for (auto manager : m_Managers)
 	{
-		p->Shutdown();
+		manager->Shutdown();
 	}
+}
+
+/**
+ * Reinitializes all managers that can be reinitialized
+ * @return true when all managers init successfully or there is nothing to init, false otherwise
+ */
+bool CManager::ReloadAll()
+{
+	for (auto manager : m_Managers)
+	{
+		if (manager->CanReload())
+		{
+			manager->Shutdown();
+
+			if (!manager->Init())
+				return false;
+		}
+	}
+
+	return true;
 }
 
 /**
@@ -100,9 +120,9 @@ void CManager::AddManager(IBaseManager* pElem)
 {
 	// check for duplicate by manager name
 	/// @fixme: should duplicate pointers be checked?
-	for (auto p : m_Managers)
+	for (auto manager : m_Managers)
 	{
-		if (p->GetName() == pElem->GetName())
+		if (manager->GetName() == pElem->GetName())
 		{
 			Logger().Error("CManager::AddManager: %s duplicate!!\n", pElem->GetName().c_str());
 			return;

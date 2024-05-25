@@ -8,6 +8,7 @@ class ITestManager : public IBaseManager
 public:
 	virtual void DoSomething() = 0;
 };
+
 /**
  * Test manager class to test basic functionality (init, shutdown, ticks)
  */
@@ -18,12 +19,17 @@ public:
 	{
 		m_bInitCalled = false;
 		m_bShutdownCalled = false;
+		m_bReloaded = false;
 		m_bSecondTickCalled = false;
 		m_bMinuteTickCalled = false;
 	}
 
 	virtual bool Init()
 	{
+		// ReloadAll called
+		if (m_bInitCalled && m_bShutdownCalled)
+			m_bReloaded = true;
+
 		m_bInitCalled = true;
 		return true;
 	}
@@ -49,46 +55,42 @@ public:
 
 	bool m_bInitCalled;
 	bool m_bShutdownCalled;
+	bool m_bReloaded;
 	bool m_bSecondTickCalled;
 	bool m_bMinuteTickCalled;
 };
 
-TEST_CASE("Manager - Test init, ticks")
+TEST_CASE("Manager - Test init/shutdown, reload, remove, ticks")
 {
 	CTestManager mgr;
 
 	CHECK(Manager().GetManager("TestManager") != NULL);
 
-	Manager().InitAll();
+	CHECK(Manager().InitAll() == true);
 	CHECK(mgr.m_bInitCalled == true);
 
-	// test tick calling
-	Manager().SecondTick(0);
-	Manager().MinuteTick(0);
+	SUBCASE("Test remove manager")
+	{
+		// test tick calling
+		Manager().SecondTick(0);
+		Manager().MinuteTick(0);
 
-	CHECK(mgr.m_bSecondTickCalled == true);
-	CHECK(mgr.m_bMinuteTickCalled == true);
+		CHECK(mgr.m_bSecondTickCalled == true);
+		CHECK(mgr.m_bMinuteTickCalled == true);
 
-	// test tick not calling
-	mgr.m_bSecondTickCalled = false;
-	mgr.m_bMinuteTickCalled = false;
+		// test tick not calling
+		mgr.m_bSecondTickCalled = false;
+		mgr.m_bMinuteTickCalled = false;
 
-	mgr.SetSecondTick(false);
-	mgr.SetMinuteTick(false);
+		mgr.SetSecondTick(false);
+		mgr.SetMinuteTick(false);
 
-	Manager().SecondTick(0);
-	Manager().MinuteTick(0);
+		Manager().SecondTick(0);
+		Manager().MinuteTick(0);
 
-	CHECK(mgr.m_bSecondTickCalled == false);
-	CHECK(mgr.m_bMinuteTickCalled == false);
-}
-
-TEST_CASE("Manager - Test ShutdownAll(), RemoveManager()")
-{
-	CTestManager mgr;
-
-	Manager().InitAll();
-	CHECK(mgr.m_bInitCalled == true);
+		CHECK(mgr.m_bSecondTickCalled == false);
+		CHECK(mgr.m_bMinuteTickCalled == false);
+	}
 
 	SUBCASE("Test remove manager")
 	{
@@ -100,5 +102,18 @@ TEST_CASE("Manager - Test ShutdownAll(), RemoveManager()")
 	{
 		Manager().ShutdownAll();
 		CHECK(mgr.m_bShutdownCalled == true);
+	}
+
+	SUBCASE("Test reload all")
+	{
+		CHECK(Manager().ReloadAll() == true);
+		CHECK(mgr.m_bReloaded == true);
+	}
+
+	SUBCASE("Test reload all if manager can't be reloaded")
+	{
+		mgr.SetCanReload(false);
+		CHECK(Manager().ReloadAll() == true);
+		CHECK(mgr.m_bReloaded == false);
 	}
 }

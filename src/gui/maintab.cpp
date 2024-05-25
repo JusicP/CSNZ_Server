@@ -10,6 +10,8 @@
 #include <QTimer.h>
 #include <QMessageBox.h>
 
+const int TIMEOUT_TIME = 120000; // 2 minutes in ms
+
 CMainTab::CMainTab(QWidget* parent) : QWidget(parent)
 {
 	m_pUI = new Ui::MainTab();
@@ -18,7 +20,7 @@ CMainTab::CMainTab(QWidget* parent) : QWidget(parent)
 	m_nConnectedClients = 0;
 
 	m_pServerHeartbeatTimer = new QTimer(this);
-	m_pServerHeartbeatTimer->setInterval(120000); // 2 minutes
+	m_pServerHeartbeatTimer->setInterval(TIMEOUT_TIME);
 
 	connect(m_pUI->SendNoticeBtn, &QPushButton::clicked, this, &CMainTab::SendNoticeBtnClicked);
 	connect(m_pUI->UserBanListBtn, &QPushButton::clicked, this, &CMainTab::OpenUserBanList);
@@ -81,6 +83,6 @@ void CMainTab::OpenHWIDBanList()
 
 void CMainTab::ServerTimeout()
 {
-	QMessageBox::warning(this, "Warning", "The server does not respond for more than 2 minutes.");
 	m_pServerHeartbeatTimer->stop();
+	QMessageBox::warning(this, "Warning", QString("The server does not respond for more than %1 seconds.").arg(TIMEOUT_TIME / 1000));
 }
