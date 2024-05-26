@@ -187,29 +187,17 @@ IRoom* CChannel::CreateRoom(IUser* host, CRoomSettings* settings)
 
 void CChannel::RemoveRoom(IRoom* room)
 {
-	for (auto r : m_Rooms)
-	{
-		if (r == room)
-		{
-			m_Rooms.erase(remove(begin(m_Rooms), end(m_Rooms), r), end(m_Rooms));
-
-			delete r;
-		}
-	}
+	m_Rooms.erase(remove(begin(m_Rooms), end(m_Rooms), room), end(m_Rooms));
+	delete room;
 }
 
 bool CChannel::RemoveUser(IUser* user)
 {
-	for (auto u : m_Users)
-	{
-		if (u == user)
-		{
-			m_Users.erase(remove(begin(m_Users), end(m_Users), u), end(m_Users));
-			return true;
-		}
-	}
+	const auto oldSize = m_Users.size();
 
-	return false;
+	m_Users.erase(remove(begin(m_Users), end(m_Users), user), end(m_Users));
+
+	return oldSize != m_Users.size();
 }
 
 int CChannel::GetID()
@@ -234,11 +222,12 @@ std::vector<IUser*> CChannel::GetUsers()
 
 std::vector<IUser*> CChannel::GetOutsideUsers()
 {
-	std::vector<IUser*> temp;
-	for (auto& u : m_Users)
+	std::vector<IUser*> outsideUsers;
+	for (auto u : m_Users)
 		if (u->GetCurrentRoom() == nullptr)
-			temp.push_back(u);
-	return temp;
+			outsideUsers.push_back(u);
+
+	return outsideUsers;
 }
 
 CChannelServer* CChannel::GetParentChannelServer()
