@@ -17,7 +17,6 @@ CQuestManager::CQuestManager() : CBaseManager("QuestManager")
 
 CQuestManager::~CQuestManager()
 {
-	printf("~CQuestManager\n");
 }
 
 bool CQuestManager::Init()

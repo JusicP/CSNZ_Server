@@ -39,7 +39,6 @@ catch (exception& e)
 
 CUserDatabaseSQLite::~CUserDatabaseSQLite()
 {
-	printf("~CUserDatabaseSQLite\n");
 }
 
 bool CUserDatabaseSQLite::Init()

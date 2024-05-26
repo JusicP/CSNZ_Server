@@ -27,7 +27,6 @@ CItemManager::CItemManager() : CBaseManager("ItemManager", true, true)
 
 CItemManager::~CItemManager()
 {
-	printf("~CItemManager\n");
 }
 
 bool CItemManager::Init()

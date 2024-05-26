@@ -69,7 +69,6 @@ CPacketManager::CPacketManager() : CBaseManager("PacketManager")
 
 CPacketManager::~CPacketManager()
 {
-	printf("~CPacketManager\n");
 }
 
 bool CPacketManager::Init()

@@ -27,7 +27,6 @@ CUserManager::CUserManager() : CBaseManager("UserManager", true)
 
 CUserManager::~CUserManager()
 {
-	printf("~CUserManager\n");
 }
 
 bool CUserManager::Init()
@@ -1253,11 +1252,7 @@ bool CUserManager::OnKickPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		for (auto u : currentRoom->GetUsers())
 			g_PacketManager.SendKickPacket(u->GetExtendedSocket(), userID);
 
-		currentRoom->SendPlayerLeaveIngame(destUser);
-
 		currentRoom->KickUser(destUser);
-
-		currentRoom->RemoveUser(destUser);
 
 		currentChannel->SendFullUpdateRoomList(destUser);
 

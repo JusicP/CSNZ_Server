@@ -27,7 +27,6 @@ CChannelManager::CChannelManager() : CBaseManager("ChannelManager")
 
 CChannelManager::~CChannelManager()
 {
-	printf("~CChannelManager\n");
 }
 
 void CChannelManager::Shutdown()
@@ -1702,11 +1701,7 @@ bool CChannelManager::OnRoomKickRequest(CReceivePacket* msg, IUser* user)
 		return false;
 	}
 
-	currentRoom->SendPlayerLeaveIngame(destUser);
-
 	currentRoom->KickUser(destUser);
-
-	currentRoom->RemoveUser(destUser);
 
 	currentChannel->SendFullUpdateRoomList(destUser);
 

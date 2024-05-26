@@ -23,7 +23,6 @@ CLuckyItemManager::CLuckyItemManager() : CBaseManager("LuckyItemManager")
 
 CLuckyItemManager::~CLuckyItemManager()
 {
-	printf("~CLuckyItemManager\n");
 }
 
 bool CLuckyItemManager::Init()

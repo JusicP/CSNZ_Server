@@ -29,7 +29,9 @@ CRoom::CRoom(int roomId, IUser* hostUser, CChannel* channel, CRoomSettings* sett
 CRoom::~CRoom()
 {
 	delete m_pSettings;
-	delete m_pGameMatch;
+
+	if (m_pGameMatch)
+		delete m_pGameMatch;
 
 	if (m_pServer)
 	{
@@ -70,10 +72,8 @@ bool CRoom::HasUser(IUser* user)
 	{
 		return true;
 	}
-	else
-	{
-		return false;
-	}
+
+	return false;
 }
 
 void CRoom::AddUser(IUser* user)
@@ -624,7 +624,9 @@ void CRoom::ClearKickedUsers()
 
 void CRoom::KickUser(IUser* user)
 {
+	SendPlayerLeaveIngame(user);
 	AddKickedUser(user);
+	RemoveUser(user);
 
 	g_PacketManager.SendRoomKick(user->GetExtendedSocket(), user->GetID());
 }

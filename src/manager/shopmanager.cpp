@@ -18,7 +18,6 @@ CShopManager::CShopManager() : CBaseManager("ShopManager")
 
 CShopManager::~CShopManager()
 {
-	printf("~CShopManager\n");
 }
 
 bool CShopManager::Init()

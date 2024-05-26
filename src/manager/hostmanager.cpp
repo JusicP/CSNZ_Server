@@ -20,7 +20,6 @@ CHostManager::CHostManager() : CBaseManager("HostManager")
 
 CHostManager::~CHostManager()
 {
-	printf("~CHostManager\n");
 }
 
 bool CHostManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
