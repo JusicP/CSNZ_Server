@@ -9,7 +9,7 @@ class IDedicatedServerManager : public IBaseManager
 public:
 	virtual bool OnPacket(CReceivePacket* msg, IExtendedSocket* socket) = 0;
 
-	virtual void AddServer(CDedicatedServer* server) = 0;
+	virtual void AddServer(IExtendedSocket* socket, int ip, int port) = 0;
 
 	virtual CDedicatedServer* GetAvailableServerFromPools(IRoom* room) = 0;
 	virtual bool IsPoolAvailable() = 0;

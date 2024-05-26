@@ -166,14 +166,12 @@ void CServerInstance::OnTCPConnectionClosed(IExtendedSocket* socket)
 	int bytesReceived = socket->GetBytesReceived();
 	int sock = socket->GetSocket();
 
-	// clean up user
+	// clean up user/dedicated server
 	IUser* user = g_UserManager.GetUserBySocket(socket);
-	int userID = 0;
-	string userName = "NULL";
 	if (user)
 	{
-		userID = user->GetID();
-		userName = user->GetUsername();
+		int userID = user->GetID();
+		string userName = user->GetUsername();
 		g_UserManager.RemoveUser(user);
 
 		Logger().Info("User logged out (%d, '%s', 0x%X)\n", userID, userName.c_str(), user);

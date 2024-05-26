@@ -25,6 +25,11 @@
      <height>391</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Consolas</family>
+    </font>
+   </property>
    <property name="acceptRichText">
     <bool>true</bool>
    </property>

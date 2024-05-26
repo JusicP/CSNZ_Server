@@ -1,6 +1,7 @@
 #include "dedicatedservermanager.h"
 #include "usermanager.h"
 #include "packetmanager.h"
+#include "common/utils.h"
 
 CDedicatedServer::CDedicatedServer(IExtendedSocket* socket, int ip, int port)
 {
@@ -48,6 +49,26 @@ int CDedicatedServer::GetPort()
 	return m_iPort;
 }
 
+CDedicatedServerManager g_DedicatedServerManager;
+
+CDedicatedServerManager::CDedicatedServerManager() : CBaseManager("DedicatedServerManager")
+{
+	SetCanReload(false);
+}
+
+CDedicatedServerManager::~CDedicatedServerManager()
+{
+}
+
+/**
+ * Sends a stop message to all dedi
+ */
+void CDedicatedServerManager::Shutdown()
+{
+	for (auto server : m_vServerPools)
+		g_PacketManager.SendHostServerStop(server->GetSocket());
+}
+
 bool CDedicatedServerManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
 {
 	LOG_PACKET;
@@ -57,16 +78,24 @@ bool CDedicatedServerManager::OnPacket(CReceivePacket* msg, IExtendedSocket* soc
 	{
 	case HostServerPacketType::AddServer:
 	{
-		int port = msg->ReadUInt16();
-		int ip = msg->ReadUInt32(true);
+		/// @todo make whitelist...
+		int port = msg->ReadUInt16(); // -port, default is 27015
+		int ip = msg->ReadUInt32(false); // ip from -hostip dedi argument
 
-		g_DedicatedServerManager.AddServer(new CDedicatedServer(socket, ip, port));
+		// if IP is not specified by dedi server, use IP from socket
+		if (ip == 0)
+		{
+			ip = ntohl(ip_string_to_int(socket->GetIP())); // big endian to little endian
+			Logger().Warn("CDedicatedServerManager::OnPacket(AddServer): no IP specified, using IP: %s\n", socket->GetIP().c_str());
+		}
+
+		AddServer(socket, ip, port);
 
 		break;
 	}
 	case HostServerPacketType::MemoryUsage:
 	{
-		CDedicatedServer* server = g_DedicatedServerManager.GetServerBySocket(socket);
+		CDedicatedServer* server = GetServerBySocket(socket);
 		if (server)
 			server->SetMemoryUsage(msg->ReadUInt16());
 
@@ -96,70 +125,63 @@ bool CDedicatedServerManager::OnPacket(CReceivePacket* msg, IExtendedSocket* soc
 	return true;
 }
 
-CDedicatedServerManager g_DedicatedServerManager;
-
-CDedicatedServerManager::CDedicatedServerManager() : CBaseManager("DedicatedServerManager")
-{
-	SetCanReload(false);
-}
-
-CDedicatedServerManager::~CDedicatedServerManager()
-{
-	printf("~CDedicatedServerManager\n");
-}
-
-void CDedicatedServerManager::Shutdown()
-{
-	std::lock_guard<std::mutex> lg(hMutex);
-
-	for (auto s : vServerPools)
-		g_PacketManager.SendHostServerStop(s->GetSocket());
-}
-
+/**
+ * Get free dedi server and link it with room
+ * @return NULL if no such dedi server
+ */
 CDedicatedServer* CDedicatedServerManager::GetAvailableServerFromPools(IRoom* room)
 {
-	std::lock_guard<std::mutex> lg(hMutex);
-
-	for (auto s : vServerPools)
+	for (auto server : m_vServerPools)
 	{
-		if (!s->GetRoom())
+		if (!server->GetRoom())
 		{
-			s->SetRoom(room);
-			return s;
+			server->SetRoom(room);
+			return server;
 		}
 	}
 
 	return NULL;
 }
 
+/**
+ * Checks if there is a free dedi server to play
+ */
 bool CDedicatedServerManager::IsPoolAvailable()
 {
-	std::lock_guard<std::mutex> lg(hMutex);
-
-	for (auto s : vServerPools)
-		if (!s->GetRoom())
+	for (auto server : m_vServerPools)
+		if (!server->GetRoom())
 			return true;
 
 	return false;
 }
 
-void CDedicatedServerManager::AddServer(CDedicatedServer* server)
+/**
+ * Create and add dedi server object to the pool
+ */
+void CDedicatedServerManager::AddServer(IExtendedSocket* socket, int ip, int port)
 {
-	std::lock_guard<std::mutex> lg(hMutex);
-	vServerPools.push_back(server);
+	if (GetServerBySocket(socket))
+	{
+		Logger().Error("CDedicatedServerManager::AddServer: %s:%d duplicate\n", socket->GetIP(), ntohs(port));
+		return;
+	}
+
+	CDedicatedServer* server = new CDedicatedServer(socket, ip, port);
+	m_vServerPools.push_back(server);
 }
 
 CDedicatedServer* CDedicatedServerManager::GetServerBySocket(IExtendedSocket* socket)
 {
-	std::lock_guard<std::mutex> lg(hMutex);
-
-	for (auto s : vServerPools)
-		if (s->GetSocket() == socket)
-			return s;
+	for (auto server : m_vServerPools)
+		if (server->GetSocket() == socket)
+			return server;
 
 	return NULL;
 }
 
+/**
+ * Removes dedicated server from pool if it crashes or just turns off
+ */
 void CDedicatedServerManager::RemoveServer(IExtendedSocket* socket)
 {
 	CDedicatedServer* server = GetServerBySocket(socket);
@@ -175,9 +197,13 @@ void CDedicatedServerManager::RemoveServer(IExtendedSocket* socket)
 			room->EndGame(true);
 	}
 
-	vServerPools.erase(remove(vServerPools.begin(), vServerPools.end(), server), vServerPools.end());
+	delete server;
+	m_vServerPools.erase(remove(m_vServerPools.begin(), m_vServerPools.end(), server), m_vServerPools.end());
 }
 
+/**
+ * Connects dedi server to another master server
+ */
 void CDedicatedServerManager::TransferServer(IExtendedSocket* socket, const std::string& ipAddress, int port)
 {
 	CDedicatedServer* server = GetServerBySocket(socket);

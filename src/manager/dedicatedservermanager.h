@@ -8,10 +8,13 @@ class IRoom;
 class IExtendedSocket;
 class CReceivePacket;
 
+/**
+ * Representation of dedicated server 
+ */
 class CDedicatedServer
 {
 public:
-	CDedicatedServer(IExtendedSocket* s, int ip, int port);
+	CDedicatedServer(IExtendedSocket* socket, int ip, int port);
 
 	void SetRoom(IRoom* room);
 	void SetMemoryUsage(int memShift);
@@ -31,6 +34,10 @@ private:
 	int m_iPort;
 };
 
+/**
+ * Dedicated server manager.
+ * Processes messages from dedi servers, pool management
+ */
 class CDedicatedServerManager : public CBaseManager<IDedicatedServerManager>
 {
 public:
@@ -41,7 +48,7 @@ public:
 
 	bool OnPacket(CReceivePacket* msg, IExtendedSocket* socket);
 
-	void AddServer(CDedicatedServer* server);
+	void AddServer(IExtendedSocket* socket, int ip, int port);
 
 	CDedicatedServer* GetAvailableServerFromPools(IRoom* room);
 	bool IsPoolAvailable();
@@ -50,8 +57,7 @@ public:
 	void TransferServer(IExtendedSocket* socket, const std::string& ipAddress, int port);
 
 private:
-	std::mutex hMutex;
-	std::vector<CDedicatedServer*> vServerPools;
+	std::vector<CDedicatedServer*> m_vServerPools;
 };
 
 extern CDedicatedServerManager g_DedicatedServerManager;
