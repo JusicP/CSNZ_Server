@@ -147,3 +147,6 @@
 349,#CSO_cantera_kr_event_randomrule,NoRibbon,
 350,#CSO_assault_halloween_event_randomrule,ZombieRandomRuleMode,
 350,#CSO_assault_halloween_event_randomrule,NoRibbon,
+364,#CSO_italy_zombiez_ms,ZombieZMutationSelect,
+365,#CSO_dust_zombiez_ms,ZombieZMutationSelect,
+366,#CSO_assault_zombiez_ms,ZombieZMutationSelect,
