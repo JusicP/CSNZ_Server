@@ -15,7 +15,7 @@
 
     "StrongHoldCompetitionInfoRequestDelayTime": 10,
 
-    "OldSeasonList": [1],
+    "OldSeasonList": [1,2],
     "CurSeason": 2,
 
     "ClanAgitEvalGradeAtLeast": 4,
