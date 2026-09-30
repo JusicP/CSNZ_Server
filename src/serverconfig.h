@@ -45,8 +45,6 @@ public:
 	int banListMaxSize;
 	std::string voxelHTTPIP;
 	std::string voxelHTTPPort;
-	std::string voxelVxlURL;
-	std::string voxelVmgURL;
 	std::vector<std::string> dedicatedServerWhitelist;
 };
 

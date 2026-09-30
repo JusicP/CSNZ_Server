@@ -1,6 +1,11 @@
 #include "voxelmanager.h"
 #include "packetmanager.h"
 #include "serverconfig.h"
+#include "common/utils.h"
+
+using namespace std;
+
+#define VOXELCONFIG_LIST_VERSION 1
 
 CVoxelManager g_VoxelManager;
 
@@ -10,6 +15,81 @@ CVoxelManager::CVoxelManager() : CBaseManager("VoxelManager")
 
 CVoxelManager::~CVoxelManager()
 {
+}
+
+bool CVoxelManager::Init()
+{
+	if (!LoadVoxelConfigList())
+		return false;
+
+	return true;
+}
+
+void CVoxelManager::Shutdown()
+{
+	m_VoxelConfigList.clear();
+}
+
+bool CVoxelManager::LoadVoxelConfigList()
+{
+	try
+	{
+		ifstream f("Data/VoxelConfigList.json");
+		ordered_json cfg = ordered_json::parse(f, nullptr, false, true);
+
+		if (cfg.is_discarded())
+		{
+			Logger().Fatal("CUserManager::VoxelConfigList: couldn't load Data/VoxelConfigList.json.\n");
+			return false;
+		}
+
+		int version = cfg.value("Version", 0);
+		if (version != VOXELCONFIG_LIST_VERSION)
+		{
+			Logger().Fatal("CUserManager::VoxelConfigList: %d != VOXELCONFIG_LIST_VERSION(%d)\n", version, VOXELCONFIG_LIST_VERSION);
+			return false;
+		}
+
+		json voxelConfigList = cfg["VoxelConfigList"];
+
+		for (auto& voxelConfig : voxelConfigList)
+		{
+			VoxelConfig voxelCfg;
+			voxelCfg.unk = voxelConfig.value("Unk", 0);
+			voxelCfg.vxlURL = voxelConfig.value("VxlURL", "");
+			voxelCfg.vmgURL = voxelConfig.value("VmgURL", "");
+
+			json httpIPList = voxelConfig["HTTPIPList"];
+
+			for (auto& httpIP : httpIPList)
+			{
+				VoxelHTTP voxelHTTP;
+				voxelHTTP.ip = httpIP.value("IP", "");
+
+				json ports = httpIP["Ports"];
+				for (auto& port : ports)
+				{
+					voxelHTTP.ports.push_back(port);
+				}
+
+				voxelCfg.httpIPList.push_back(voxelHTTP);
+			}
+
+			m_VoxelConfigList.push_back(voxelCfg);
+		}
+	}
+	catch (exception& ex)
+	{
+		Logger().Fatal("CUserManager::LoadVoxelConfigList: an error occured while parsing Data/VoxelConfigList.json: %s\n", ex.what());
+		return false;
+	}
+
+	return true;
+}
+
+std::vector<VoxelConfig> CVoxelManager::GetVoxelConfigList()
+{
+	return m_VoxelConfigList;
 }
 
 bool CVoxelManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
@@ -90,7 +170,7 @@ std::string CVoxelManager::GetSlotDetails(const std::string& slotId)
 		<< "\r\n\r\n";
 	std::string request = ss.str();
 
-	if (send(sock, request.c_str(), request.length(), 0) != (int)request.length())
+	if (send(sock, request.c_str(), (int)request.length(), 0) != (int)request.length())
 	{
 		closesocket(sock);
 		Logger().Warn("CVoxelManager::GetSlotDetails: Error sending request.\n");

@@ -321,7 +321,7 @@ void CGameMatch::OnKillEvent(IUser* user, GameMatch_KillEvent& killEvent)
 		character.killsToGetGachaponItem = 100;
 
 		Randomer rand(1);
-		int randomIndex = rand();
+		int randomIndex = (int)rand();
 		int randomItemID = randomIndex ? 166 : 5101;
 
 		g_PacketManager.SendItemGachapon(user->GetExtendedSocket(), randomIndex);
@@ -590,8 +590,8 @@ void CGameMatch::CalculateGameResult()
 			{
 				BonusPercentage_s bonus = *bonusPlayerCoop;
 
-				int percentageExp = bonus.exp * bonus.coef * m_UserStats.size();
-				int percentagePoints = bonus.points * bonus.coef * m_UserStats.size();
+				int percentageExp = bonus.exp * bonus.coef * (int)m_UserStats.size();
+				int percentagePoints = bonus.points * bonus.coef * (int)m_UserStats.size();
 
 				stat->m_nBonusExpEarned += stat->m_nExpEarned * percentageExp / 100;
 				stat->m_nBonusPointsEarned += stat->m_nPointsEarned * percentagePoints / 100;

@@ -8,6 +8,8 @@
 #include "luckyitemmanager.h"
 #include "clanmanager.h"
 #include "questmanager.h"
+#include "voxelmanager.h"
+#include "classmodmanager.h"
 
 #include "user/userinventoryitem.h"
 
@@ -17,7 +19,7 @@
 
 using namespace std;
 
-#define SUPPORTED_CLIENT_BUILD "30.11.24"
+#define SUPPORTED_CLIENT_BUILD "14.07.26"
 
 #define ZOMBIE_WAR_WEAPON_LIST_VERSION 1
 #define RANDOM_WEAPON_LIST_VERSION 1
@@ -34,7 +36,7 @@ CUserManager::~CUserManager()
 
 bool CUserManager::Init()
 {
-	for (size_t i = 0; i < g_pServerConfig->defUser.defaultItems.size(); i++)
+	for (int i = 0; i < g_pServerConfig->defUser.defaultItems.size(); i++)
 		m_DefaultItems.push_back(CUserInventoryItem(i, g_pServerConfig->defUser.defaultItems[i], 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, {}, 0, 0, 2));
 
 	if (!LoadZombieWarWeaponList())
@@ -57,12 +59,12 @@ bool CUserManager::LoadZombieWarWeaponList()
 {
 	try
 	{
-		ifstream f("ZombieWarWeaponList.json");
+		ifstream f("Data/ZombieWarWeaponList.json");
 		ordered_json cfg = ordered_json::parse(f, nullptr, false, true);
 
 		if (cfg.is_discarded())
 		{
-			Logger().Fatal("CUserManager::LoadZombieWarWeaponList: couldn't load ZombieWarWeaponList.json.\n");
+			Logger().Fatal("CUserManager::LoadZombieWarWeaponList: couldn't load Data/ZombieWarWeaponList.json.\n");
 			return false;
 		}
 
@@ -77,7 +79,7 @@ bool CUserManager::LoadZombieWarWeaponList()
 	}
 	catch (exception& ex)
 	{
-		Logger().Fatal("CUserManager::LoadRandomWeaponList: an error occured while parsing RandomWeaponList.json: %s\n", ex.what());
+		Logger().Fatal("CUserManager::LoadZombieWarWeaponList: an error occured while parsing Data/ZombieWarWeaponList.json: %s\n", ex.what());
 		return false;
 	}
 
@@ -88,12 +90,12 @@ bool CUserManager::LoadRandomWeaponList()
 {
 	try
 	{
-		ifstream f("RandomWeaponList.json");
+		ifstream f("Data/RandomWeaponList.json");
 		ordered_json cfg = ordered_json::parse(f, nullptr, false, true);
 
 		if (cfg.is_discarded())
 		{
-			Logger().Fatal("CUserManager::LoadRandomWeaponList: couldn't load RandomWeaponList.json.\n");
+			Logger().Fatal("CUserManager::LoadRandomWeaponList: couldn't load Data/RandomWeaponList.json.\n");
 			return false;
 		}
 
@@ -132,7 +134,7 @@ bool CUserManager::LoadRandomWeaponList()
 	}
 	catch (exception& ex)
 	{
-		Logger().Fatal("CUserManager::LoadRandomWeaponList: an error occured while parsing RandomWeaponList.json: %s\n", ex.what());
+		Logger().Fatal("CUserManager::LoadRandomWeaponList: an error occured while parsing Data/RandomWeaponList.json: %s\n", ex.what());
 		return false;
 	}
 
@@ -349,8 +351,12 @@ bool CUserManager::OnFavoritePacket(CReceivePacket* msg, IExtendedSocket* socket
 		return OnFavoriteSetFastBuy(msg, user); // obsolete
 	case FavoritePacketType::SetLoadout:
 		return OnFavoriteSetLoadout(msg, user);
+	case FavoritePacketType::SetCurGroupLoadoutCharacter:
+		return OnFavoriteSetCurGroupLoadoutCharacter(msg, user);
 	case FavoritePacketType::SetBookmark:
 		return OnFavoriteSetBookmark(msg, user);
+	case FavoritePacketType::SetLoadoutName:
+		return OnFavoriteSetLoadoutName(msg, user);
 	default:
 		Logger().Warn("CUserManager::OnFavoritePacket: unknown request %d\n", type);
 		break;
@@ -381,16 +387,23 @@ bool CUserManager::OnFavoriteSetFastBuy(CReceivePacket* msg, IUser* user)
 
 bool CUserManager::OnFavoriteSetBookmark(CReceivePacket* msg, IUser* user)
 {
-	int bookmarkSlot = msg->ReadUInt8();
+	int groupID = msg->ReadUInt8();
+	int bookmarkID = msg->ReadUInt8();
 	int itemID = msg->ReadUInt16();
 
-	if (bookmarkSlot >= BOOKMARK_COUNT)
+	if (groupID >= GROUP_COUNT)
 	{
-		Logger().Warn("OnFavoriteSetBookmark: invalid bookmarkSlot %d\n", bookmarkSlot);
+		Logger().Warn("OnFavoriteSetBookmark: invalid groupID %d\n", groupID);
 		return false;
 	}
 
-	g_UserDatabase.UpdateBookmark(user->GetID(), bookmarkSlot, itemID);
+	if (bookmarkID >= BOOKMARK_COUNT)
+	{
+		Logger().Warn("OnFavoriteSetBookmark: invalid bookmarkID %d\n", bookmarkID);
+		return false;
+	}
+
+	g_UserDatabase.UpdateBookmark(user->GetID(), groupID, bookmarkID, itemID);
 
 	return true;
 }
@@ -402,86 +415,71 @@ void CUserManager::SendUserInventory(IUser* user)
 
 	g_PacketManager.SendDefaultItems(user->GetExtendedSocket(), m_DefaultItems);
 	g_PacketManager.SendInventoryAdd(user->GetExtendedSocket(), items);
+
+	
+	items.erase(remove_if(items.begin(), items.end(), [](const CUserInventoryItem& item) -> bool {
+		if (item.m_nItemID == 0)
+			return true;
+		int category = g_pItemTable->GetCell<int>("Category", to_string(item.m_nItemID));
+		return category != 7;
+		}), items.end());
+
+
+	std::vector<ClassModInfo_t> infos;
+	infos.reserve(items.size());
+
+	for (auto& item : items)
+	{
+		if (g_ClassModManager.HasClassMod(user, item.m_nSlot))
+		{
+			infos.push_back(g_ClassModManager.GetClassModBySlot(user, item.m_nSlot));
+			continue;
+		}
+		ClassModInfo_t info = g_ClassModManager.GetClassModPresetById(item.m_nItemID);
+		info.slotId = item.GetGameSlot();
+		infos.push_back(info);
+	}
+
+	// LoadOut Need GameSlot
+	g_PacketManager.SendClassModLoadOut(user->GetExtendedSocket(), infos);
+
 }
 
 bool CUserManager::OnFavoriteSetLoadout(CReceivePacket* msg, IUser* user)
 {
-	int loadoutID = 0;
-	int itemID = 0;
+	int groupID = msg->ReadUInt8();
+	int loadoutID = msg->ReadUInt8();
+	int slotID = msg->ReadUInt8();
+	int itemID = msg->ReadUInt16();
 
-	int loadoutType = msg->ReadUInt8(); // нада как-то узнать что там
-	if (loadoutType == 1) // switch current loadout
-		loadoutID = msg->ReadUInt8();
-	else
-		itemID = msg->ReadUInt16();
-
-	CUserCharacterExtended character = user->GetCharacterExtended(EXT_UFLAG_CURLOADOUT);
-
-	if (loadoutType == 1)
+	if (groupID >= GROUP_COUNT)
 	{
-		if (loadoutID >= LOADOUT_COUNT)
-		{
-			Logger().Info(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid loadout %d\n"), loadoutID);
-			return false;
-		}
-
-		// change current loadout
-		character.flag = EXT_UFLAG_CURLOADOUT;
-		character.curLoadout = loadoutID;
-		g_UserDatabase.UpdateCharacterExtended(user->GetID(), character);
-		return true;
+		Logger().Info(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid groupID %d\n"), groupID);
+		return false;
 	}
-	else if (loadoutType == (character.curLoadout + 1) * 10 ||
-		loadoutType == (character.curLoadout + 1) * 10 + 1 ||
-		loadoutType == (character.curLoadout + 1) * 10 + 2 ||
-		loadoutType == (character.curLoadout + 1) * 10 + 3)
+
+	if (loadoutID >= LOADOUT_COUNT)
 	{
-		int slot = loadoutType - (character.curLoadout + 1) * 10;
-		
-		if (character.curLoadout >= LOADOUT_COUNT)
-		{
-			Logger().Info(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid loadout %d\n"), character.curLoadout);
-			return false;
-		}
-
-		if (slot >= LOADOUT_SLOT_COUNT)
-		{
-			Logger().Info(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid slot %d\n"), slot);
-			return false;
-		}
-
-		vector<CUserInventoryItem> items;
-		if (!g_UserDatabase.GetInventoryItemsByID(user->GetID(), itemID, items))
-			return false;
-
-		int category = g_pItemTable->GetCell<int>("Category", to_string(itemID));
-
-		if (category != 11 && (category < 1 || category > 6))
-			return false;
-
-		g_UserDatabase.UpdateLoadout(user->GetID(), character.curLoadout, slot, itemID);
-		return true;
+		Logger().Info(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid loadoutID %d\n"), loadoutID);
+		return false;
 	}
-	else if (loadoutType == 0)
+
+	if (slotID >= LOADOUT_SLOT_COUNT)
 	{
-		vector<CUserInventoryItem> items;
-		if (!g_UserDatabase.GetInventoryItemsByID(user->GetID(), itemID, items))
-			return false;
-
-		int category = g_pItemTable->GetCell<int>("Category", to_string(itemID));
-
-		if (category != 7)
-			return false;
-
-		// change bg character...
-		character.flag = EXT_UFLAG_CHARACTERID;
-		character.characterID = itemID;
-		g_UserDatabase.UpdateCharacterExtended(user->GetID(), character);
+		Logger().Info(OBFUSCATE("CUserManager::OnFavoriteSetLoadout: invalid slotID %d\n"), slotID);
+		return false;
 	}
-	else
-	{
-		Logger().Warn("CUserManager::OnFavoriteSetLoadout: unknown loadout type: %d\n", loadoutType);
-	}
+
+	vector<CUserInventoryItem> items;
+	if (find(g_pServerConfig->defUser.defaultItems.begin(), g_pServerConfig->defUser.defaultItems.end(), itemID) == g_pServerConfig->defUser.defaultItems.end() && !g_UserDatabase.GetInventoryItemsByID(user->GetID(), itemID, items))
+		return false;
+
+	int category = g_pItemTable->GetCell<int>("Category", to_string(itemID));
+
+	if (category != 11 && (category < 1 || category > 6))
+		return false;
+
+	g_UserDatabase.UpdateLoadout(user->GetID(), groupID, loadoutID, slotID, itemID);
 
 	return true;
 }
@@ -507,6 +505,66 @@ bool CUserManager::OnFavoriteSetBuyMenu(CReceivePacket* msg, IUser* user)
 	g_UserDatabase.UpdateBuyMenu(user->GetID(), subMenuID, subMenuSlot, itemID);
 
 	Logger().Info(OBFUSCATE("User '%d' updated buy menu, %d, %d, %d\n"), user->GetID(), subMenuID, subMenuSlot, itemID);
+
+	return true;
+}
+
+bool CUserManager::OnFavoriteSetCurGroupLoadoutCharacter(CReceivePacket* msg, IUser* user)
+{
+	int characterID = msg->ReadUInt16();
+	int groupID = msg->ReadUInt8();
+	int loadoutID = msg->ReadUInt8();
+	int unk = msg->ReadUInt8();
+
+	vector<CUserInventoryItem> items;
+	if (find(g_pServerConfig->defUser.defaultItems.begin(), g_pServerConfig->defUser.defaultItems.end(), characterID) == g_pServerConfig->defUser.defaultItems.end() && !g_UserDatabase.GetInventoryItemsByID(user->GetID(), characterID, items))
+		return false;
+
+	int category = g_pItemTable->GetCell<int>("Category", to_string(characterID));
+
+	if (category != 7)
+		return false;
+
+	if (groupID >= GROUP_COUNT)
+	{
+		Logger().Info(OBFUSCATE("CUserManager::OnFavoriteSetCurGroupLoadoutCharacter: invalid groupID %d\n"), groupID);
+		return false;
+	}
+
+	if (loadoutID >= LOADOUT_COUNT)
+	{
+		Logger().Info(OBFUSCATE("CUserManager::OnFavoriteSetCurGroupLoadoutCharacter: invalid loadoutID %d\n"), loadoutID);
+		return false;
+	}
+
+	CUserCharacterExtended character(EXT_UFLAG_CHARACTERID | EXT_UFLAG_CURGROUP | EXT_UFLAG_CURLOADOUT);
+	character.characterID = characterID;
+	character.curGroup = groupID;
+	character.curLoadout = loadoutID;
+	g_UserDatabase.UpdateCharacterExtended(user->GetID(), character);
+
+	return true;
+}
+
+bool CUserManager::OnFavoriteSetLoadoutName(CReceivePacket* msg, IUser* user)
+{
+	int groupID = msg->ReadUInt8();
+	int loadoutID = msg->ReadUInt8();
+	string name = msg->ReadString();
+
+	if (groupID >= GROUP_COUNT)
+	{
+		Logger().Info(OBFUSCATE("CUserManager::OnFavoriteSetLoadoutName: invalid groupID %d\n"), groupID);
+		return false;
+	}
+
+	if (loadoutID >= LOADOUT_COUNT)
+	{
+		Logger().Info(OBFUSCATE("CUserManager::OnFavoriteSetLoadoutName: invalid loadoutID %d\n"), loadoutID);
+		return false;
+	}
+
+	g_UserDatabase.UpdateLoadoutName(user->GetID(), groupID, loadoutID, name);
 
 	return true;
 }
@@ -567,7 +625,7 @@ vector<CUserInventoryItem>& CUserManager::GetDefaultInventoryItems()
 
 void CUserManager::SendGuestUserPacket(IExtendedSocket* socket)
 {
-	g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("Welcome to the CSN:S server. Enter /login <username> <password> to login to your account."));
+	g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("Welcome to the CSN server. Enter /login <username> <password> to login to your account."));
 	g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("If you don't have an account enter /register <username> <password>"));
 	g_PacketManager.SendUMsgNoticeMessageInChat(socket, OBFUSCATE("Server developers: Jusic, Hardee, NekoMeow, Smilex_Gamer, xRiseless. Our Discord: https://discord.gg/EvUAY6D"));
 }
@@ -614,8 +672,8 @@ void CUserManager::SendLoginPacket(IUser* user, const CUserCharacter& character)
 	g_PacketManager.SendShopRecommendedProducts(socket, g_ShopManager.GetRecommendedProducts());
 	g_PacketManager.SendShopPopularProducts(socket, g_ShopManager.GetPopularProducts());
 
-	// CN: 欢迎来到CSN:S服务器! 我们的服务器是非商业性的, 不要相信任何人说的售卖CSOL私服的信息.\n官方Discord: https://discord.gg/EvUAY6D \n
-	const char* text = OBFUSCATE("EN: Welcome to the CSN:S server! The project is non-commercial. Don't trust people trying to sell you a server.\nServer developer Discord: https://discord.gg/EvUAY6D \n");
+	// CN: 欢迎来到CSN服务器! 我们的服务器是非商业性的, 不要相信任何人说的售卖CSOL私服的信息.\n官方Discord: https://discord.gg/EvUAY6D \n
+	const char* text = OBFUSCATE("EN: Welcome to the CSN server! The project is non-commercial. Don't trust people trying to sell you a server.\nServer developer Discord: https://discord.gg/EvUAY6D \n");
 	g_PacketManager.SendUMsgNoticeMsgBoxToUuid(socket, text);
 
 	if (!g_pServerConfig->welcomeMessage.empty())
@@ -633,8 +691,6 @@ void CUserManager::SendLoginPacket(IUser* user, const CUserCharacter& character)
 
 	// FROM ~X.03.24: without this packet, client doesn't show inventory and user info on top left, weird
 	g_PacketManager.SendUpdateInfo(socket);
-
-	g_PacketManager.SendVoxelURLs(socket, g_pServerConfig->voxelVxlURL, g_pServerConfig->voxelVmgURL);
 }
 
 void CUserManager::SendMetadata(IExtendedSocket* socket)
@@ -644,8 +700,6 @@ void CUserManager::SendMetadata(IExtendedSocket* socket)
 		g_PacketManager.SendMetadataMaplist(socket);
 	if (flag & kMetadataFlag_ClientTable)
 		g_PacketManager.SendMetadataClientTable(socket);
-	if (flag & kMetadataFlag_ModeList)
-		g_PacketManager.SendMetadataModelist(socket);
 	if (flag & kMetadataFlag_Unk3)
 		g_PacketManager.SendMetadataUnk3(socket);
 	if (flag & kMetadataFlag_ItemBox)
@@ -664,8 +718,6 @@ void CUserManager::SendMetadata(IExtendedSocket* socket)
 		g_PacketManager.SendMetadataMileageShop(socket);
 	if (flag & kMetadataFlag_Unk20)
 		g_PacketManager.SendMetadataUnk20(socket);
-	if (flag & kMetadataFlag_Encyclopedia)
-		g_PacketManager.SendMetadataEncyclopedia(socket);
 	if (flag & kMetadataFlag_GameModeList)
 		g_PacketManager.SendMetadataGameModeList(socket);
 	if (flag & kMetadataFlag_ProgressUnlock)
@@ -698,12 +750,14 @@ void CUserManager::SendMetadata(IExtendedSocket* socket)
 		g_PacketManager.SendMetadataPPSystem(socket);
 	if (flag & kMetadataFlag_Item)
 		g_PacketManager.SendMetadataItem(socket);
+	if (flag & kMetadataFlag_VoxelList)
+		g_PacketManager.SendMetadataVoxelList(socket);
+	if (flag & kMetadataFlag_VoxelItem)
+		g_PacketManager.SendMetadataVoxelItem(socket);
 	if (flag & kMetadataFlag_CodisData)
 		g_PacketManager.SendMetadataCodisData(socket);
 	if (flag & kMetadataFlag_WeaponProp)
 		g_PacketManager.SendMetadataWeaponProp(socket);
-	if (flag & kMetadataFlag_Hash)
-		g_PacketManager.SendMetadataHash(socket);
 	if (flag & kMetadataFlag_RandomWeaponList)
 		g_PacketManager.SendMetadataRandomWeaponList(socket, m_RandomWeaponList);
 	if (flag & kMetadataFlag_ModeEvent)
@@ -718,11 +772,23 @@ void CUserManager::SendMetadata(IExtendedSocket* socket)
 		g_PacketManager.SendMetadataUnk54(socket);
 	if (flag & kMetadataFlag_Unk55)
 		g_PacketManager.SendMetadataUnk55(socket);
+	if (flag & kMetadataFlag_WeaponAscend)
+		g_PacketManager.SendMetadataWeaponAscend(socket);
+	if (flag & kMetadataFlag_Unk57)
+		g_PacketManager.SendMetadataUnk57(socket);
+	if (flag & kMetadataFlag_PerkParam)
+		g_PacketManager.SendMetadataPerkParam(socket);
+	if (flag & kMetadataFlag_Synthesis)
+		g_PacketManager.SendMetadataSynthesis(socket);
+	if (flag & kMetadataFlag_Unk64)
+		g_PacketManager.SendMetadataUnk64(socket);
+	if (flag & kMetadataFlag_VoxelConfigList)
+		g_PacketManager.SendMetadataVoxelConfigList(socket, g_VoxelManager.GetVoxelConfigList());
 }
 
 void CUserManager::SendCrypt(IExtendedSocket* socket)
 {
-	if (!socket->GetSSLObject() && g_pServerConfig->crypt)
+	if (g_pServerConfig->crypt)
 	{
 		if (!socket->SetupCrypt())
 		{
@@ -744,7 +810,7 @@ void CUserManager::SendCrypt(IExtendedSocket* socket)
 
 void CUserManager::SendUserLoadout(IUser* user)
 {
-	vector<CUserLoadout> loadouts;
+	vector<vector<CUserLoadout>> loadouts;
 	g_UserDatabase.GetLoadouts(user->GetID(), loadouts);
 
 	// unknown size error
@@ -754,13 +820,13 @@ void CUserManager::SendUserLoadout(IUser* user)
 	vector<CUserBuyMenu> buyMenu;
 	g_UserDatabase.GetBuyMenu(user->GetID(), buyMenu);
 
-	CUserCharacterExtended character(EXT_UFLAG_CURLOADOUT | EXT_UFLAG_CHARACTERID);
+	CUserCharacterExtended character(EXT_UFLAG_CURLOADOUT | EXT_UFLAG_CHARACTERID | EXT_UFLAG_CURGROUP);
 	g_UserDatabase.GetCharacterExtended(user->GetID(), character);
 
-	vector<int> bookmark;
+	vector<vector<int>> bookmark;
 	g_UserDatabase.GetBookmark(user->GetID(), bookmark);
 
-	g_PacketManager.SendFavoriteLoadout(user->GetExtendedSocket(), character.characterID, character.curLoadout, loadouts);
+	g_PacketManager.SendFavoriteLoadout(user->GetExtendedSocket(), character.characterID, character.curGroup, character.curLoadout, loadouts);
 	//g_PacketManager.SendFavoriteFastBuy(user->GetExtendedSocket(), fastBuy);
 	g_PacketManager.SendFavoriteBuyMenu(user->GetExtendedSocket(), buyMenu);
 	g_PacketManager.SendFavoriteBookmark(user->GetExtendedSocket(), bookmark);
@@ -989,12 +1055,12 @@ int CUserManager::LoginUser(IExtendedSocket* socket, const string& userName, con
 	data.flag = 0;
 	if (data.firstLogonTime == 0)
 	{
-		data.firstLogonTime = g_pServerInstance->GetCurrentTime();
+		data.firstLogonTime = (int)g_pServerInstance->GetCurrentTime();
 		data.flag |= UDATA_FLAG_FIRSTLOGONTIME;
 	}
 
 	data.flag |= UDATA_FLAG_LASTLOGONTIME | UDATA_FLAG_LASTIP | UDATA_FLAG_LASTHWID;
-	data.lastLogonTime = g_pServerInstance->GetCurrentTime();
+	data.lastLogonTime = (int)g_pServerInstance->GetCurrentTime();
 	data.lastIP = socket->GetIP();
 	data.lastHWID = socket->GetHWID();
 
@@ -1344,9 +1410,6 @@ bool CUserManager::OnLeaguePacket(CReceivePacket* msg, IExtendedSocket* socket)
 
 bool CUserManager::OnCryptPacket(CReceivePacket* msg, IExtendedSocket* socket)
 {
-	if (!socket->GetSSLObject() && g_pServerConfig->crypt)
-		socket->SetCryptInput(true);
-
 	return true;
 }
 
@@ -1539,4 +1602,230 @@ void CUserManager::OnBanSettingsRequest(CReceivePacket* msg, IUser* user)
 	user->UpdateBanSettings(settings);
 
 	g_PacketManager.SendBanSettings(user->GetExtendedSocket(), settings);
+}
+
+bool CUserManager::OnClassModPacket(CReceivePacket* msg, IExtendedSocket* socket)
+{
+	LOG_PACKET;
+
+	IUser* user = GetUserBySocket(socket);
+	if (user == NULL)
+		return false;
+
+	int type = msg->ReadUInt8();
+	switch (type)
+	{
+	case ClassModPacketType::EnableSlot:
+		OnEnableSlot(msg, user);
+		break;
+	case ClassModPacketType::ApplyMod:
+		OnApplyMod(msg, user);
+		break;
+	case ClassModPacketType::ClassModInterchange:
+		OnClassModInterchange(msg, user);
+		break;
+	case ClassModPacketType::RemoveMod:
+		OnRemoveMod(msg, user);
+		break;
+	case ClassModPacketType::ChangeStats:
+		OnChangeStats(msg, user);
+		break;
+	case ClassModPacketType::ClassModUnk5:
+		OnClassModUnk5(msg, user);
+		break;
+	case ClassModPacketType::LoadOut:
+		OnClassModLoadOut(msg, user);
+		break;
+	default:
+		Logger().Warn(OBFUSCATE("[User '%s'] Unknown Packet_ClassMod type %d (len: %d)\n"), user->GetLogName(), type, msg->GetLength());
+		break;
+	}
+
+	return true;
+
+}
+
+void CUserManager::OnEnableSlot(CReceivePacket* msg, IUser* user)
+{
+	int unk1 = msg->ReadUInt8(); // 16
+	int gameslot = msg->ReadUInt16();
+	int dbslot = gameslot - (int)g_pServerConfig->defUser.defaultItems.size();
+	int category = msg->ReadUInt8(); // Category
+
+	ClassModInfo_t info;
+	if (g_ClassModManager.HasClassMod(user, dbslot))
+		info = g_ClassModManager.GetClassModBySlot(user, dbslot);
+	else
+	{
+		CUserInventoryItem item;
+		g_UserDatabase.GetInventoryItemBySlot(user->GetID(), dbslot, item);
+		info = g_ClassModManager.GetClassModPresetById(item.m_nItemID);
+		info.slotId = item.GetGameSlot();
+	}
+	int enabledSlot = -1;
+	if (g_ClassModManager.EnableSlot(user, dbslot, category, enabledSlot, info))
+	{
+		std::vector<ClassModInfo_t> v;
+		v.push_back(info);
+		g_PacketManager.SendClassModLoadOut(user->GetExtendedSocket(), v);
+		g_PacketManager.SendClassModUpdate(user->GetExtendedSocket(), 0, ClassModPacketType::EnableSlot, gameslot);
+	}
+}
+
+// BUG : Installing Same PassiveSkill Type will crash the client
+// TODO : Check for Same category
+void CUserManager::OnApplyMod(CReceivePacket* msg, IUser* user)
+{
+	int unk1 = msg->ReadUInt8(); // 16
+	int gameslot = msg->ReadUInt16();
+	int dbslot = gameslot - (int)g_pServerConfig->defUser.defaultItems.size();
+	int category = msg->ReadUInt8(); // Category
+	int slot = msg->ReadUInt8(); // Slot ID
+	int unk5 = msg->ReadUInt8(); // 3
+	int newdbslot = msg->ReadUInt16() - (int)g_pServerConfig->defUser.defaultItems.size(); // Apply ID
+	int unk7 = msg->ReadUInt8(); // 0
+
+	ClassModInfo_t info;
+	if (g_ClassModManager.HasClassMod(user, dbslot))
+		info = g_ClassModManager.GetClassModBySlot(user, dbslot);
+	else
+	{
+		CUserInventoryItem item;
+		g_UserDatabase.GetInventoryItemBySlot(user->GetID(), dbslot, item);
+		info = g_ClassModManager.GetClassModPresetById(item.m_nItemID);
+		info.slotId = item.GetGameSlot();
+	}
+	CUserInventoryItem applyitem;
+	g_UserDatabase.GetInventoryItemBySlot(user->GetID(), newdbslot, applyitem);
+
+	if (g_ClassModManager.ApplyMod(user, dbslot, category, slot, applyitem.m_nItemID, info))
+	{
+		std::vector<ClassModInfo_t> v;
+		v.push_back(info);
+		g_PacketManager.SendClassModLoadOut(user->GetExtendedSocket(), v);
+		g_PacketManager.SendClassModUpdate(user->GetExtendedSocket(), 0, ClassModPacketType::ApplyMod, gameslot);
+	}
+}
+
+void CUserManager::OnRemoveMod(CReceivePacket* msg, IUser* user)
+{
+	int unk1 = msg->ReadUInt8(); // 16
+	int gameslot = msg->ReadUInt16();
+	int dbslot = gameslot - (int)g_pServerConfig->defUser.defaultItems.size();
+	int category = msg->ReadUInt8(); // Category
+	int slot = msg->ReadUInt8(); // Slot ID
+	int unk5 = msg->ReadUInt8(); // 1
+
+	ClassModInfo_t info;
+	if (g_ClassModManager.HasClassMod(user, dbslot))
+		info = g_ClassModManager.GetClassModBySlot(user, dbslot);
+	else
+	{
+		CUserInventoryItem item;
+		g_UserDatabase.GetInventoryItemBySlot(user->GetID(), dbslot, item);
+		info = g_ClassModManager.GetClassModPresetById(item.m_nItemID);
+		info.slotId = item.GetGameSlot();
+	}
+	if (g_ClassModManager.RemoveMod(user, dbslot, category, slot, info))
+	{
+		std::vector<ClassModInfo_t> v;
+		v.push_back(info);
+		g_PacketManager.SendClassModLoadOut(user->GetExtendedSocket(), v);
+		g_PacketManager.SendClassModUpdate(user->GetExtendedSocket(), 0, ClassModPacketType::RemoveMod, gameslot);
+	}
+}
+
+void CUserManager::OnClassModInterchange(CReceivePacket* msg, IUser* user)
+{
+	int unk1 = msg->ReadUInt8(); // 16
+	int gameslot = msg->ReadUInt16();
+	int dbslot = gameslot - (int)g_pServerConfig->defUser.defaultItems.size();
+	int category = msg->ReadUInt8(); // Category
+	int oldslot = msg->ReadUInt8(); // The original slot pos
+	int newslot = msg->ReadUInt8(); // The new slot pos
+
+	ClassModInfo_t info;
+	if (g_ClassModManager.HasClassMod(user, dbslot))
+		info = g_ClassModManager.GetClassModBySlot(user, dbslot);
+	else
+	{
+		CUserInventoryItem item;
+		g_UserDatabase.GetInventoryItemBySlot(user->GetID(), dbslot, item);
+		info = g_ClassModManager.GetClassModPresetById(item.m_nItemID);
+		info.slotId = item.GetGameSlot();
+	}
+	if (g_ClassModManager.InterchangeMod(user, dbslot, category, oldslot, newslot, info))
+	{
+		std::vector<ClassModInfo_t> v;
+		v.push_back(info);
+		g_PacketManager.SendClassModLoadOut(user->GetExtendedSocket(), v);
+		g_PacketManager.SendClassModUpdate(user->GetExtendedSocket(), 0, ClassModPacketType::ClassModInterchange, gameslot);
+	}
+}
+
+void CUserManager::OnChangeStats(CReceivePacket* msg, IUser* user)
+{
+	int unk1 = msg->ReadUInt8(); // 16
+	int gameslot = msg->ReadUInt16();
+	int dbslot = gameslot - (int)g_pServerConfig->defUser.defaultItems.size();
+
+	ClassModInfo_t info;
+	if (g_ClassModManager.HasClassMod(user, dbslot))
+		info = g_ClassModManager.GetClassModBySlot(user, dbslot);
+	else
+	{
+		CUserInventoryItem item;
+		g_UserDatabase.GetInventoryItemBySlot(user->GetID(), dbslot, item);
+		info = g_ClassModManager.GetClassModPresetById(item.m_nItemID);
+		info.slotId = item.GetGameSlot();
+	}
+	if (g_ClassModManager.ChangeStats(user, dbslot, info))
+	{
+		std::vector<ClassModInfo_t> v;
+		v.push_back(info);
+
+		g_PacketManager.SendClassModLoadOut(user->GetExtendedSocket(), v);
+		g_PacketManager.SendClassModUpdate(user->GetExtendedSocket(), 0, ClassModPacketType::ChangeStats, gameslot);
+	}
+}
+
+void CUserManager::OnClassModUnk5(CReceivePacket* msg, IUser* user)
+{
+	Logger().Warn(OBFUSCATE("[User '%s'] Unknown Packet_ClassMod OnClassModUnk5 (len: %d)\n"), user->GetLogName(), msg->GetLength());
+	int unk1 = msg->ReadUInt8(); // 16
+	int unk2 = msg->ReadUInt16(); // playerInventory Slot id?
+	int unk3 = msg->ReadUInt8(); // Category
+	int unk4 = msg->ReadUInt8(); // Slot ID
+	int unk5 = msg->ReadUInt16(); // Item ID?
+
+	Logger().Debug("OnClassModUnk5 %d %d %d %d\n", unk1, unk2, unk3, unk4);
+}
+
+void CUserManager::OnClassModLoadOut(CReceivePacket* msg, IUser* user)
+{
+	std::vector<CUserInventoryItem> items;
+	g_UserDatabase.GetInventoryItems(user->GetID(), items);
+	items.erase(remove_if(items.begin(), items.end(), [](const CUserInventoryItem& item) -> bool {
+		if (item.m_nItemID == 0)
+			return true;
+		int category = g_pItemTable->GetCell<int>("Category", to_string(item.m_nItemID));
+		return category != 7;
+		}), items.end());
+
+
+	std::vector<ClassModInfo_t> infos;
+	infos.reserve(items.size());
+
+	for (auto& item : items)
+	{
+		if (g_ClassModManager.HasClassMod(user, item.m_nSlot))
+		{
+			infos.push_back(g_ClassModManager.GetClassModBySlot(user, item.m_nSlot));
+			continue;
+		}
+		ClassModInfo_t info = g_ClassModManager.GetClassModPresetById(item.m_nItemID);
+		info.slotId = item.GetGameSlot();
+		infos.push_back(info);
+	}
+	g_PacketManager.SendClassModLoadOut(user->GetExtendedSocket(), infos);
 }

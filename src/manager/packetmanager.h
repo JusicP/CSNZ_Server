@@ -9,10 +9,16 @@
 
 struct Notice_s;
 
+typedef struct
+{
+	void* buffer;
+	size_t size;
+} zip_chunk_t;
+
 class CBinMetadata
 {
 public:
-	CBinMetadata(void* buf, size_t bufsize)
+	CBinMetadata(void* buf, unsigned int bufsize)
 	{
 		m_pBuf = buf;
 		m_nBufsize = bufsize;
@@ -29,14 +35,14 @@ public:
 		return m_pBuf;
 	}
 
-	size_t GetBufSize()
+	unsigned int GetBufSize()
 	{
 		return m_nBufsize;
 	}
 
 private:
 	void* m_pBuf;
-	size_t m_nBufsize;
+	unsigned int m_nBufsize;
 };
 
 class CPacketManager : public CBaseManager<IPacketManager>
@@ -83,10 +89,8 @@ public:
 	void SendMetadataMaplist(IExtendedSocket* socket);
 	void SendMetadataClientTable(IExtendedSocket* socket);
 	void SendMetadataWeaponParts(IExtendedSocket* socket);
-	void SendMetadataModelist(IExtendedSocket* socket);
 	void SendMetadataMatchOption(IExtendedSocket* socket);
 	void SendMetadataItemBox(IExtendedSocket* socket, const std::vector<ItemBoxItem>& items);
-	void SendMetadataEncyclopedia(IExtendedSocket* socket);
 	void SendMetadataGameModeList(IExtendedSocket* socket);
 	void SendMetadataReinforceMaxLvl(IExtendedSocket* socket);
 	void SendMetadataReinforceMaxEXP(IExtendedSocket* socket);
@@ -99,7 +103,6 @@ public:
 	void SendMetadataUnk20(IExtendedSocket* socket);
 	void SendMetadataZombieWarWeaponList(IExtendedSocket* socket, std::vector<int>& zombieWarWeapons);
 	void SendMetadataRandomWeaponList(IExtendedSocket* socket, std::vector<RandomWeapon>& randomWeapons);
-	void SendMetadataHash(IExtendedSocket* socket);
 	void SendMetadataUnk31(IExtendedSocket* socket);
 	void SendMetadataHonorMoneyShop(IExtendedSocket* socket);
 	void SendMetadataScenarioTX_Common(IExtendedSocket* socket);
@@ -119,6 +122,14 @@ public:
 	void SendMetadataFamilyTotalWar(IExtendedSocket* socket);
 	void SendMetadataUnk54(IExtendedSocket* socket);
 	void SendMetadataUnk55(IExtendedSocket* socket);
+	void SendMetadataWeaponAscend(IExtendedSocket* socket);
+	void SendMetadataUnk57(IExtendedSocket* socket);
+	void SendMetadataPerkParam(IExtendedSocket* socket);
+	void SendMetadataSynthesis(IExtendedSocket* socket);
+	void SendMetadataVoxelList(IExtendedSocket* socket);
+	void SendMetadataVoxelItem(IExtendedSocket* socket);
+	void SendMetadataUnk64(IExtendedSocket* socket);
+	void SendMetadataVoxelConfigList(IExtendedSocket* socket, std::vector<VoxelConfig>& voxelConfigList);
 
 	void SendGameMatchInfo(IExtendedSocket* socket);
 	void SendGameMatchUnk(IExtendedSocket* socket);
@@ -206,10 +217,10 @@ public:
 	void SendQuestUpdateRewardInfo(IExtendedSocket* socket, int flag, int questID, const QuestReward_s& reward);
 	void SendQuestUpdateQuestStat(IExtendedSocket* socket, int flag, int honorPoints, const UserQuestStat& stat);
 
-	void SendFavoriteLoadout(IExtendedSocket* socket, int characterItemID, int currentLoadout, const std::vector<CUserLoadout>& loadouts);
+	void SendFavoriteLoadout(IExtendedSocket* socket, int characterItemID, int currentGroup, int currentLoadout, const std::vector<std::vector<CUserLoadout>>& loadouts);
 	void SendFavoriteFastBuy(IExtendedSocket* socket, const std::vector<CUserFastBuy>& fastbuy);
 	void SendFavoriteBuyMenu(IExtendedSocket* socket, const std::vector<CUserBuyMenu>& buyMenu);
-	void SendFavoriteBookmark(IExtendedSocket* socket, const std::vector<int>& bookmark);
+	void SendFavoriteBookmark(IExtendedSocket* socket, const std::vector<std::vector<int>>& bookmark);
 
 	void SendAlarm(IExtendedSocket* socket, const std::vector<Notice_s>& notices);
 
@@ -279,14 +290,19 @@ public:
 	void SendVoxelUnk8(IExtendedSocket* socket);
 	void SendVoxelUnk9(IExtendedSocket* socket);
 	void SendVoxelUnk10(IExtendedSocket* socket);
-	void SendVoxelURLs(IExtendedSocket* socket, const std::string& voxelVxlURL, const std::string& voxelVmgURL);
 	void SendVoxelUnk38(IExtendedSocket* socket);
 	void SendVoxelUnk46(IExtendedSocket* socket);
 	void SendVoxelUnk47(IExtendedSocket* socket);
 	void SendVoxelUnk58(IExtendedSocket* socket);
+	void SendClassModLoadOut(IExtendedSocket* socket, const std::vector<ClassModInfo_t>& infos);
+	void SendUserClassModInventory(IExtendedSocket* socket, int userID, const std::vector<ClassModInfo_t>& infos);
+	void SendClassModUnk100(IExtendedSocket* socket, ClassModInfo_t info);
+	void SendClassModUpdate(IExtendedSocket* socket, int category, int slot, int itemslot);
 
 private:
 	CBinMetadata* LoadBinaryMetadata(const char* fileName, bool zip = false);
+	size_t SplitZipMetadata(void* buffer, size_t buffer_size, zip_chunk_t chunks[ZIPMETADATA_MAX_CHUNKS]);
+	void SendChunkedZipMetadata(IExtendedSocket* socket, CBinMetadata* zipMetadata, EMetadataPacketType metadataType);
 
 	CBinMetadata* m_pMapListZip;
 	CBinMetadata* m_pClientTableZip;
@@ -320,6 +336,13 @@ private:
 	CBinMetadata* m_pFamilyTotalWarZip;
 	CBinMetadata* m_pUnk54;
 	CBinMetadata* m_pUnk55;
+	CBinMetadata* m_pWeaponAscendZip;
+	CBinMetadata* m_pUnk57;
+	CBinMetadata* m_pPerkParamZip;
+	CBinMetadata* m_pSynthesisZip;
+	CBinMetadata* m_pVoxelListZip;
+	CBinMetadata* m_pVoxelItemZip;
+	CBinMetadata* m_pUnk64;
 };
 
 extern CPacketManager g_PacketManager;

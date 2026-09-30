@@ -485,11 +485,6 @@ void CUser::OnTick()
 		int hours = m_nUptime / 3600;
 		g_PacketManager.SendUMsgSystemReply(m_pSocket, UMsgPacketType::SystemReply_Red, hours > 2 ? (char*)OBFUSCATE("ETC_PLAYTIME_LONG") : (char*)OBFUSCATE("ETC_PLAYTIME"), vector<string> {to_string(hours)});
 	}
-
-	if (m_nUptime % 1800 == 0)
-	{
-		g_PacketManager.SendUMsgNoticeMessageInChat(m_pSocket, OBFUSCATE("The server team would appreciate your financial support: https://discord.gg/EvUAY6D"));
-	}
 }
 
 bool CUser::IsCharacterExists()

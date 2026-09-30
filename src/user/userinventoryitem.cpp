@@ -70,7 +70,7 @@ void CUserInventoryItem::PushItem(std::vector<CUserInventoryItem>& vec, CUserInv
 
 void CUserInventoryItem::ConvertDurationToExpiryDate()
 {
-	m_nExpiryDate = m_nExpiryDate > 0 ? g_pServerInstance->GetCurrentTime() + m_nExpiryDate * CSO_24_HOURS_IN_MINUTES : 0;
+	m_nExpiryDate = m_nExpiryDate > 0 ? (int)g_pServerInstance->GetCurrentTime() + m_nExpiryDate * CSO_24_HOURS_IN_MINUTES : 0;
 }
 
 bool CUserInventoryItem::IsItemDefault()
@@ -107,17 +107,17 @@ bool CUserInventoryItem::IsItemDefaultOrPseudo(int itemID)
 
 int CUserInventoryItem::GetGameSlot() const
 {
-	return g_pServerConfig->defUser.defaultItems.size() + m_nSlot;
+	return (int)g_pServerConfig->defUser.defaultItems.size() + m_nSlot;
 }
 
 int CUserInventoryItem::GetSlot()
 {
-	return m_nSlot - g_pServerConfig->defUser.defaultItems.size();
+	return m_nSlot - (int)g_pServerConfig->defUser.defaultItems.size();
 }
 
 int CUserInventoryItem::GameSlotToSlot(int gameSlot)
 {
-	return gameSlot - g_pServerConfig->defUser.defaultItems.size();
+	return gameSlot - (int)g_pServerConfig->defUser.defaultItems.size();
 }
 
 int CUserInventoryItem::GetPartCount() const

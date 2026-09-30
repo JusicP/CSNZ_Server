@@ -4,8 +4,8 @@
 		"Normal": 25,
 		"Hero":25
 	},
-	"WeaponCost":[0, 1, 3, 5, 9, 15],
-	"WeaponCostMax":[0, 2, 4, 8, 14, 20],
+	"WeaponCost":[0, 1, 3, 5, 9, 15, 0, 12],
+	"WeaponCostMax":[0, 2, 4, 8, 14, 20, 0, 17],
 	
 	"WeaponCooltime": [
     {
@@ -44,6 +44,23 @@
         {
 			"MaxZLevel": 99999,
 			"Value": 4
+        }
+      ]
+	},
+    {
+		"Grade": 8, // 레전드
+		"List": [
+        {
+			"MaxZLevel": 19,
+			"Value": 1
+        },
+        {
+			"MaxZLevel": 32,
+			"Value": 2
+        },
+        {
+			"MaxZLevel": 99999,
+			"Value": 3
         }
       ]
     }

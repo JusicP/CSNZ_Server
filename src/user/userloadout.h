@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <map>
+#include <string>
 
 class CUserLoadout
 {
@@ -10,11 +11,13 @@ public:
 	{
 	}
 
-	CUserLoadout(std::vector<int>& slots)
+	CUserLoadout(const char* loadoutName, std::vector<int>& slots)
 	{
+		name = loadoutName;
 		items = slots;
 	}
 
+	std::string name;
 	std::vector<int> items;
 };
 

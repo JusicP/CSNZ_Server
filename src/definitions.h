@@ -91,7 +91,9 @@ enum PacketId
 	Unk122 = 122,
 	UserStartStep = 123,
 	CPShop = 124,
-	// Missing 25 packets
+	ZSRift = 125,
+	ClassMod = 126,
+	// Missing 23 packets
 	UserStart = 150,
 	GameMatchRoomList = 151,
 	DefaultItems = 152,
@@ -132,6 +134,8 @@ enum PacketId
 	Captcha = 193,
 	ClanTotalWar = 194,
 	ContributionPassInven = 195,
+	PerkInven = 196,
+	SpeedRun = 197,
 	// missing 60 packets
 };
 
@@ -187,6 +191,8 @@ enum EMetadataPacketType
 	kPacket_Metadata_ReinforceItemsExp = 30,
 	kPacket_Metadata_Unk31 = 31,
 	kPacket_Metadata_Item = 32,
+	kPacket_Metadata_VoxelList = 33,
+	kPacket_Metadata_VoxelItem = 34,
 	kPacket_Metadata_CodisData = 35,
 	kPacket_Metadata_HonorMoneyShop = 36,
 	kPacket_Metadata_ItemExpireTime = 37,
@@ -204,6 +210,12 @@ enum EMetadataPacketType
 	kPacket_Metadata_FamilyTotalWar = 53,
 	kPacket_Metadata_Unk54 = 54,
 	kPacket_Metadata_Unk55 = 55,
+	kPacket_Metadata_WeaponAscend = 56,
+	kPacket_Metadata_Unk57 = 57,
+	kPacket_Metadata_PerkParam = 58,
+	kPacket_Metadata_Synthesis = 63,
+	kPacket_Metadata_Unk64 = 64,
+	kPacket_Metadata_VoxelConfigList = 65,
 	kPacket_Metadata_Hash = 255
 };
 
@@ -236,18 +248,25 @@ enum EServerConfig_MetadataFlag : uint64_t
 	kMetadataFlag_Unk43 = 1LL << 24,
 	kMetadataFlag_Unk49 = 1LL << 25,
 	kMetadataFlag_WeaponProp = 1LL << 26,
-	kMetadataFlag_Hash = 1LL << 27,
-	kMetadataFlag_PPSystem = 1LL << 28,
-	kMetadataFlag_Item = 1LL << 29,
-	kMetadataFlag_CodisData = 1LL << 30,
-	kMetadataFlag_RandomWeaponList = 1LL << 31,
-	kMetadataFlag_ModeEvent = 1LL << 32,
-	kMetadataFlag_MileageShop = 1LL << 33,
-	kMetadataFlag_EventShop = 1LL << 34,
-	kMetadataFlag_FamilyTotalWarMap = 1LL << 35,
-	kMetadataFlag_FamilyTotalWar = 1LL << 36,
-	kMetadataFlag_Unk54 = 1LL << 37,
-	kMetadataFlag_Unk55 = 1LL << 38,
+	kMetadataFlag_PPSystem = 1LL << 27,
+	kMetadataFlag_Item = 1LL << 28,
+	kMetadataFlag_CodisData = 1LL << 29,
+	kMetadataFlag_RandomWeaponList = 1LL << 30,
+	kMetadataFlag_ModeEvent = 1LL << 31,
+	kMetadataFlag_MileageShop = 1LL << 32,
+	kMetadataFlag_EventShop = 1LL << 33,
+	kMetadataFlag_FamilyTotalWarMap = 1LL << 34,
+	kMetadataFlag_FamilyTotalWar = 1LL << 35,
+	kMetadataFlag_Unk54 = 1LL << 36,
+	kMetadataFlag_Unk55 = 1LL << 37,
+	kMetadataFlag_WeaponAscend = 1LL << 38,
+	kMetadataFlag_Unk57 = 1LL << 39,
+	kMetadataFlag_PerkParam = 1LL << 40,
+	kMetadataFlag_Synthesis = 1LL << 41,
+	kMetadataFlag_VoxelList = 1LL << 42,
+	kMetadataFlag_VoxelItem = 1LL << 43,
+	kMetadataFlag_Unk64 = 1LL << 44,
+	kMetadataFlag_VoxelConfigList = 1LL << 45,
 };
 
 enum ItemPacketType
@@ -306,7 +325,9 @@ enum FavoritePacketType
 	SetBuyMenu = 0,
 	SetFastBuy = 1,
 	SetLoadout = 2,
+	SetCurGroupLoadoutCharacter = 3,
 	SetBookmark = 6,
+	SetLoadoutName = 7,
 };
 
 enum RoomListPacketType
@@ -830,6 +851,7 @@ enum RoomStatus
 #define	UFLAG_LOW_UNK21				(1<<21)
 #define UFLAG_LOW_TITLES			(1<<22)
 #define	UFLAG_LOW_UNK23				(1<<23)
+#define	UFLAG_LOW_UNK24				(1<<24)
 #define	UFLAG_LOW_UNK25				(1<<25)
 #define	UFLAG_LOW_UNK26				(1<<26)
 #define	UFLAG_LOW_UNK27				(1<<27)
@@ -840,6 +862,7 @@ enum RoomStatus
 #define	UFLAG_LOW_ALL				(-1)
 
 #define UFLAG_HIGH_CHATCOLOR		(1<<0)
+#define UFLAG_HIGH_UNK2				(1<<2)
 #define UFLAG_HIGH_ALL				(-1)
 
 #define	EXT_UFLAG_GAMEMASTER				(1<<0)
@@ -853,6 +876,7 @@ enum RoomStatus
 #define EXT_UFLAG_SECURITYQNA				(1<<8)
 #define EXT_UFLAG_ZBRESPAWNEFFECT			(1<<9)
 #define EXT_UFLAG_KILLERMARKEFFECT			(1<<10)
+#define EXT_UFLAG_CURGROUP					(1<<11)
 
 #define	UDATA_FLAG_USERNAME			(1<<0)
 #define	UDATA_FLAG_PASSWORD			(1<<1)
@@ -1042,12 +1066,32 @@ class CUserCharacterExtended
 public:
 	CUserCharacterExtended()
 	{
-
+		flag = 0;
+		gameMaster = false;
+		killsToGetGachaponItem = 0;
+		nextInventorySlot = 0;
+		curLoadout = 0;
+		characterID = 0;
+		banSettings = 0;
+		securityQuestion = 0;
+		zbRespawnEffect = 0;
+		killerMarkEffect = 0;
+		curGroup = 0;
 	}
 
 	CUserCharacterExtended(int _flag)
 	{
 		flag = _flag;
+		gameMaster = false;
+		killsToGetGachaponItem = 0;
+		nextInventorySlot = 0;
+		curLoadout = 0;
+		characterID = 0;
+		banSettings = 0;
+		securityQuestion = 0;
+		zbRespawnEffect = 0;
+		killerMarkEffect = 0;
+		curGroup = 0;
 	}
 
 	void Reset()
@@ -1074,6 +1118,7 @@ public:
 	std::vector<unsigned char> securityAnswer;
 	int zbRespawnEffect;
 	int killerMarkEffect;
+	int curGroup;
 };
 
 class CUserQuestStats
@@ -1399,7 +1444,6 @@ enum UserSurveyAnswerResult
 // ROOM LOW FLAGS
 #define	ROOM_LOW_ROOMNAME				(1<<0)
 #define	ROOM_LOW_UNK					(1<<1)
-#define	ROOM_LOW_CLANBATTLE				(1<<2)
 #define	ROOM_LOW_PASSWORD				(1<<3)
 #define	ROOM_LOW_LEVELLIMIT				(1<<4)
 #define	ROOM_LOW_UNK7					(1<<5)
@@ -1428,11 +1472,9 @@ enum UserSurveyAnswerResult
 #define ROOM_LOW_VIEWFLAG				(1<<28)
 #define ROOM_LOW_VOICECHAT				(1<<29)
 #define ROOM_LOW_STATUS					(1<<30)
-#define ROOM_LOW_UNK33					(1<<31)
 #define ROOM_LOW_ALL					(-1)
 
 // ROOM LOW-MID FLAGS
-#define	ROOM_LOWMID_UNK34				(1<<0)
 #define	ROOM_LOWMID_C4TIMER				(1<<1)
 #define	ROOM_LOWMID_BOT					(1<<2)
 #define	ROOM_LOWMID_KDRULE				(1<<3)
@@ -1475,6 +1517,10 @@ enum UserSurveyAnswerResult
 #define ROOM_HIGHMID_WEAPONBUYCOOLTIME	(1<<7)
 #define ROOM_HIGHMID_ZBREBALANCE		(1<<8)
 #define ROOM_HIGHMID_UNK79				(1<<9)
+#define ROOM_HIGHMID_UNK80				(1<<10)
+#define ROOM_HIGHMID_CHANGESHOT			(1<<11)
+#define ROOM_HIGHMID_ZOMBIEREVIVEZHC	(1<<12)
+#define ROOM_HIGHMID_UNK83				(1<<13)
 #define ROOM_HIGHMID_ALL				(-1)
 
 // ROOM HIGH FLAGS
@@ -1494,7 +1540,6 @@ enum UserSurveyAnswerResult
 #define	RLFLAG_SUPERROOM		(1<<9)
 #define RLFLAG_UNK2				(1<<10)
 #define RLFLAG_HOSTNETINFO		(1<<11)
-#define RLFLAG_CLANBATTLE		(1<<12)
 #define RLFLAG_UNK3				(1<<13)
 #define RLFLAG_STATUSSYMBOL		(1<<14)
 #define RLFLAG_UNK4				(1<<15)
@@ -1520,19 +1565,25 @@ enum UserSurveyAnswerResult
 #define	RLHFLAG_ZBAUTOHUNTING		(1<<2)
 #define	RLHFLAG_UNK4				(1<<3)
 #define	RLHFLAG_UNK5				(1<<5)
+#define	RLHFLAG_UNK6				(1<<6)
 #define	RLHFLAG_FIREBOMB			(1<<7)
 #define	RLHFLAG_MUTATIONRESTRICT	(1<<8)
 #define	RLHFLAG_MUTATIONLIMIT		(1<<9)
-#define	RLHFLAG_UNK9				(1<<10)
-#define	RLHFLAG_UNK10				(1<<11)
+#define	RLHFLAG_UNK10				(1<<10)
+#define	RLHFLAG_UNK11				(1<<11)
 #define RLHFLAG_WEAPONRESTRICT		(1<<12)
 #define RLHFLAG_FAMILYBATTLE		(1<<13)
 #define RLHFLAG_FAMILYBATTLECLANIDS	(1<<14)
 #define RLHFLAG_WEAPONBUYCOOLTIME	(1<<15)
 #define RLHFLAG_ZBREBALANCE			(1<<16)
+#define RLHFLAG_UNK17				(1<<17)
+#define RLHFLAG_CHANGESHOT			(1<<18)
+#define RLHFLAG_ZOMBIEREVIVEZHC		(1<<19)
+#define RLHFLAG_UNK20				(1<<20)
 #define RLHFLAG_ALL					(-1)
 
 // inventory related
+#define GROUP_COUNT 3
 #define LOADOUT_COUNT 12
 #define LOADOUT_SLOT_COUNT 4
 #define BUYMENU_COUNT 17
@@ -1628,7 +1679,6 @@ enum ItemBoxGrades
 #define LOGIN_USER_BANNED -4
 #define LOGIN_USER_INVALID_CLIENT_VERSION -5
 #define LOGIN_SERVER_IS_FULL -6
-#define LOGIN_SERVER_CANNOT_VALIDATE_CLIENT -7
 
 #define REGISTER_DB_ERROR 0 
 #define REGISTER_OK 1
@@ -1693,3 +1743,90 @@ struct RandomWeapon
 #define VOXELFLAG_SAVEGROUPID		(1<<22)
 #define VOXELFLAG_UNK22				(1<<23)
 #define VOXELFLAG_UNK23				(1<<24)
+#define VOXELFLAG_UNK24				(1<<25)
+
+#define ZIPMETADATA_CHUNK_SIZE 64000
+#define ZIPMETADATA_MAX_CHUNKS 4
+#define ZIPMETADATA_FULL_ZIP 5
+
+struct VoxelHTTP
+{
+	std::string ip;
+	std::vector<int> ports;
+};
+
+struct VoxelConfig
+{
+	int unk;
+	std::string vxlURL;
+	std::string vmgURL;
+	std::vector<VoxelHTTP> httpIPList;
+};
+
+struct ClassModConfig
+{
+	struct ClassMod_Item_Changes_t
+	{
+		unsigned short itemid;
+		int cost;
+	} changestatus;
+
+	struct ClassMod_Item_AddSlot_t
+	{
+		unsigned short itemid;
+		std::vector<int> costs;
+	} addslot;
+
+	struct ClassMod_Item_Protect_t
+	{
+		unsigned short itemid;
+		int cost;
+	} protect;
+
+	std::vector<int> categorymaxslots;
+};
+
+struct ClassModInfo_t
+{
+	int slotId;
+	struct ClassModStatus_t
+	{
+		unsigned char health;
+		unsigned char attack;
+		unsigned char speed;
+		unsigned char armor;
+		unsigned char ammo;
+	} status;
+
+	struct ClassModSlot_t
+	{
+		int itemId[5];
+	};
+
+	ClassModSlot_t sessionbonus;
+	ClassModSlot_t infodisplay;
+	ClassModSlot_t modbuff;
+	ClassModSlot_t activeskill;
+	ClassModSlot_t passiveskill;
+	ClassModSlot_t addon;
+	ClassModSlot_t pairingweapon;
+};
+
+// CLASSMOD STUFF
+enum ClassModPacketType
+{
+	EnableSlot = 0,
+	ApplyMod = 1,
+	RemoveMod = 2,
+	ClassModInterchange = 3,
+	ChangeStats = 4,
+	ClassModUnk5 = 5,
+	LoadOut = 6
+};
+enum ClassModPacketReply
+{
+	SendLoadOut = 99,
+	Unk100 = 100, // LoadOutUpdate
+	Unk101 = 101, // OpenSlotAnim
+	SendClassModInventory = 102
+};

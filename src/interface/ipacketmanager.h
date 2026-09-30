@@ -56,10 +56,8 @@ public:
 	virtual void SendMetadataMaplist(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataClientTable(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataWeaponParts(IExtendedSocket* socket) = 0;
-	virtual void SendMetadataModelist(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataMatchOption(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataItemBox(IExtendedSocket* socket, const std::vector<ItemBoxItem>& items) = 0;
-	virtual void SendMetadataEncyclopedia(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataGameModeList(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataReinforceMaxLvl(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataReinforceMaxEXP(IExtendedSocket* socket) = 0;
@@ -72,7 +70,6 @@ public:
 	virtual void SendMetadataUnk20(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataZombieWarWeaponList(IExtendedSocket* socket, std::vector<int>& zombieWarWeapons) = 0;
 	virtual void SendMetadataRandomWeaponList(IExtendedSocket* socket, std::vector<RandomWeapon>& randomWeapons) = 0;
-	virtual void SendMetadataHash(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataUnk31(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataHonorMoneyShop(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataScenarioTX_Common(IExtendedSocket* socket) = 0;
@@ -92,6 +89,14 @@ public:
 	virtual void SendMetadataFamilyTotalWar(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataUnk54(IExtendedSocket* socket) = 0;
 	virtual void SendMetadataUnk55(IExtendedSocket* socket) = 0;
+	virtual void SendMetadataWeaponAscend(IExtendedSocket* socket) = 0;
+	virtual void SendMetadataUnk57(IExtendedSocket* socket) = 0;
+	virtual void SendMetadataPerkParam(IExtendedSocket* socket) = 0;
+	virtual void SendMetadataSynthesis(IExtendedSocket* socket) = 0;
+	virtual void SendMetadataVoxelList(IExtendedSocket* socket) = 0;
+	virtual void SendMetadataVoxelItem(IExtendedSocket* socket) = 0;
+	virtual void SendMetadataUnk64(IExtendedSocket* socket) = 0;
+	virtual void SendMetadataVoxelConfigList(IExtendedSocket* socket, std::vector<VoxelConfig>& voxelConfigList) = 0;
 
 	virtual void SendGameMatchInfo(IExtendedSocket* socket) = 0;
 	virtual void SendGameMatchUnk(IExtendedSocket* socket) = 0;
@@ -179,10 +184,10 @@ public:
 	virtual void SendQuestUpdateRewardInfo(IExtendedSocket* socket, int flag, int questID, const QuestReward_s& reward) = 0;
 	virtual void SendQuestUpdateQuestStat(IExtendedSocket* socket, int flag, int honorPoints, const UserQuestStat& stat) = 0;
 
-	virtual void SendFavoriteLoadout(IExtendedSocket* socket, int characterItemID, int currentLoadout, const std::vector<CUserLoadout>& loadouts) = 0;
+	virtual void SendFavoriteLoadout(IExtendedSocket* socket, int characterItemID, int currentGroup, int currentLoadout, const std::vector<std::vector<CUserLoadout>>& loadouts) = 0;
 	virtual void SendFavoriteFastBuy(IExtendedSocket* socket, const std::vector<CUserFastBuy>& fastbuy) = 0;
 	virtual void SendFavoriteBuyMenu(IExtendedSocket* socket, const std::vector<CUserBuyMenu>& buyMenu) = 0;
-	virtual void SendFavoriteBookmark(IExtendedSocket* socket, const std::vector<int>& bookmark) = 0;
+	virtual void SendFavoriteBookmark(IExtendedSocket* socket, const std::vector<std::vector<int>>& bookmark) = 0;
 
 	virtual void SendAlarm(IExtendedSocket* socket, const std::vector<Notice_s>& notices) = 0;
 
@@ -252,9 +257,13 @@ public:
 	virtual void SendVoxelUnk8(IExtendedSocket* socket) = 0;
 	virtual void SendVoxelUnk9(IExtendedSocket* socket) = 0;
 	virtual void SendVoxelUnk10(IExtendedSocket* socket) = 0;
-	virtual void SendVoxelURLs(IExtendedSocket* socket, const std::string& voxelVxlURL, const std::string& voxelVmgURL) = 0;
 	virtual void SendVoxelUnk38(IExtendedSocket* socket) = 0;
 	virtual void SendVoxelUnk46(IExtendedSocket* socket) = 0;
 	virtual void SendVoxelUnk47(IExtendedSocket* socket) = 0;
 	virtual void SendVoxelUnk58(IExtendedSocket* socket) = 0;
+
+	virtual void SendClassModLoadOut(IExtendedSocket* socket, const std::vector<ClassModInfo_t>& infos) = 0;
+	virtual void SendUserClassModInventory(IExtendedSocket* socket, int userID, const std::vector<ClassModInfo_t>& infos) = 0;
+	virtual void SendClassModUnk100(IExtendedSocket* socket, ClassModInfo_t info) = 0;
+	virtual void SendClassModUpdate(IExtendedSocket* socket, int category, int slot, int itemslot) = 0;
 };

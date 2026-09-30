@@ -54,10 +54,14 @@ void CPacketHelper_FullUserInfo::Build(Buffer& buf, int userID, const CUserChara
 	if (character.lowFlag & UFLAG_LOW_GAMENAME)
 	{
 		buf.writeStr(character.gameName);
+		buf.writeStr(character.gameName);
+		buf.writeStr(character.gameName);
 	}
 
 	if (character.lowFlag & UFLAG_LOW_GAMENAME2)
 	{
+		buf.writeStr(character.gameName);
+		buf.writeStr(character.gameName);
 		buf.writeStr(character.gameName);
 
 		buf.writeUInt8(0);
@@ -173,7 +177,6 @@ void CPacketHelper_FullUserInfo::Build(Buffer& buf, int userID, const CUserChara
 	{
 		buf.writeUInt8(0);
 		buf.writeUInt8(0);
-		buf.writeUInt8(0);
 	}
 
 	if (character.lowFlag & UFLAG_LOW_PASSWORDBOXES)
@@ -236,6 +239,11 @@ void CPacketHelper_FullUserInfo::Build(Buffer& buf, int userID, const CUserChara
 		buf.writeUInt8(0);
 	}
 
+	if (character.lowFlag & UFLAG_LOW_UNK24)
+	{
+		buf.writeUInt8(0);
+	}
+
 	if (character.lowFlag & UFLAG_LOW_UNK25)
 	{
 		buf.writeUInt16_LE(0);
@@ -269,13 +277,13 @@ void CPacketHelper_FullUserInfo::Build(Buffer& buf, int userID, const CUserChara
 			buf.writeUInt16_LE(0);
 	}
 
-	if (character.lowFlag & UFLAG_LOW_UNK23)
+	if (character.lowFlag & UFLAG_LOW_UNK30)
 	{
 		buf.writeUInt8(0);
 		buf.writeUInt8(0);
 	}
 
-	if (character.lowFlag & UFLAG_LOW_UNK30)
+	if (character.lowFlag & UFLAG_LOW_UNK31)
 	{
 		buf.writeUInt32_LE(0);
 		buf.writeUInt32_LE(0);
@@ -291,5 +299,10 @@ void CPacketHelper_FullUserInfo::Build(Buffer& buf, int userID, const CUserChara
 	if (character.highFlag & UFLAG_HIGH_CHATCOLOR)
 	{
 		buf.writeInt16_LE(character.chatColorID);
+	}
+
+	if (character.highFlag & UFLAG_HIGH_UNK2)
+	{
+		buf.writeInt8(0);
 	}
 }

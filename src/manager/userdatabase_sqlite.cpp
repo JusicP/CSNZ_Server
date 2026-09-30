@@ -18,7 +18,7 @@
 
 using namespace std;
 
-#define LAST_DB_VERSION 4
+#define LAST_DB_VERSION 6
 
 //#define OBFUSCATE(data) (string)AY_OBFUSCATE_KEY(data, 'F')
 #undef OBFUSCATE
@@ -326,7 +326,7 @@ int CUserDatabaseSQLite::Login(const string& userName, const string& password, I
 		queryInsertUserSession.bind(1, userID);
 		queryInsertUserSession.bind(2, socket->GetIP());
 		queryInsertUserSession.bind(3, ""); // TODO: remove
-		queryInsertUserSession.bind(4, socket->GetHWID().data(), socket->GetHWID().size());
+		queryInsertUserSession.bind(4, socket->GetHWID().data(), (int)socket->GetHWID().size());
 		queryInsertUserSession.bind(5, UserStatus::STATUS_MENU);
 		queryInsertUserSession.bind(6, 0);
 		queryInsertUserSession.exec();
@@ -770,7 +770,7 @@ int CUserDatabaseSQLite::AddInventoryItems(int userID, std::vector<CUserInventor
 
 			for (int i = 0; i <= itemsInsertIndex; i++)
 			{
-				itemsInsertSize = itemsInsert[i].size();
+				itemsInsertSize = (int)itemsInsert[i].size();
 
 				queryInsertNewInvItemStr += OBFUSCATE("INSERT INTO UserInventory VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 				for (int j = 1; j < itemsInsertSize; j++)
@@ -819,7 +819,7 @@ int CUserDatabaseSQLite::AddInventoryItems(int userID, std::vector<CUserInventor
 
 			for (int i = 0; i <= itemsUpdateIndex; i++)
 			{
-				itemsUpdateSize = itemsUpdate[i].size();
+				itemsUpdateSize = (int)itemsUpdate[i].size();
 
 				queryUpdateItemStr += OBFUSCATE("UPDATE UserInventory SET itemID = CASE");
 				for (int j = 0; j < itemsUpdateSize; j++)
@@ -1136,7 +1136,7 @@ int CUserDatabaseSQLite::UpdateInventoryItems(int userID, std::vector<CUserInven
 		if (!flagBinds)
 			return 0;
 
-		int maxSize = floor((double)32765 / flagBinds); // (maxSize * flagBinds) + 1 (userID bind) must be <= SQLITE_MAX_VARIABLE_NUMBER (32766)
+		int maxSize = (int)floor((double)32765 / flagBinds); // (maxSize * flagBinds) + 1 (userID bind) must be <= SQLITE_MAX_VARIABLE_NUMBER (32766)
 		// Example:
 		// flagBinds = 2
 		// maxSize = floor((double)32765 / 2) = 16382
@@ -1161,7 +1161,7 @@ int CUserDatabaseSQLite::UpdateInventoryItems(int userID, std::vector<CUserInven
 
 		for (int i = 0; i <= itemsUpdateIndex; i++)
 		{
-			itemsUpdateSize = itemsUpdate[i].size();
+			itemsUpdateSize = (int)itemsUpdate[i].size();
 
 			queryUpdateItemStr += OBFUSCATE("UPDATE UserInventory SET");
 			if (flag & UITEM_FLAG_ITEMID)
@@ -1777,7 +1777,7 @@ int CUserDatabaseSQLite::UpdateUserData(int userID, CUserData data)
 		if (data.flag & UDATA_FLAG_LASTHWID)
 		{
 			void* hwid = data.lastHWID.data();
-			statement.bind(index++, hwid, data.lastHWID.size());
+			statement.bind(index++, hwid, (int)data.lastHWID.size());
 		}
 		statement.bind(index++, userID);
 		statement.exec();
@@ -1827,43 +1827,50 @@ int CUserDatabaseSQLite::CreateCharacter(int userID, const string& gameName)
 		insertCharacter.bind(24, 0); // chatColorID
 		insertCharacter.exec();
 
-		SQLite::Statement insertCharacterExtended(m_Database, OBFUSCATE("INSERT INTO UserCharacterExtended VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+		SQLite::Statement insertCharacterExtended(m_Database, OBFUSCATE("INSERT INTO UserCharacterExtended VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
 		insertCharacterExtended.bind(1, userID);
 		insertCharacterExtended.bind(2, defUser.gameMaster);
-		insertCharacterExtended.bind(3, 100); // gachapon kills
-		insertCharacterExtended.bind(4, 1);
-		insertCharacterExtended.bind(5, OBFUSCATE(""));
-		insertCharacterExtended.bind(6, 0);
-		insertCharacterExtended.bind(7, 0);
-		insertCharacterExtended.bind(8, 2); // ban settings
-		insertCharacterExtended.bind(9, ""); // 2nd password
-		insertCharacterExtended.bind(10, 0); // security question
-		insertCharacterExtended.bind(11, ""); // security answer
+		insertCharacterExtended.bind(3, 100); // killsToGetGachaponItem
+		insertCharacterExtended.bind(4, 1); // nextInventorySlot
+		insertCharacterExtended.bind(5, OBFUSCATE("")); // config
+		insertCharacterExtended.bind(6, 0); // curLoadout
+		insertCharacterExtended.bind(7, 0); // characterID
+		insertCharacterExtended.bind(8, 2); // banSettings
+		insertCharacterExtended.bind(9, ""); // _2ndPassword
+		insertCharacterExtended.bind(10, 0); // securityQuestion
+		insertCharacterExtended.bind(11, ""); // securityAnswer
 		insertCharacterExtended.bind(12, 0); // zbRespawnEffect
 		insertCharacterExtended.bind(13, 0); // killerMarkEffect
+		insertCharacterExtended.bind(14, 0); // curGroup
 		insertCharacterExtended.exec();
 
 		if ((int)defUser.loadouts.size())
 		{
 			std::string query;
-			query += OBFUSCATE("INSERT INTO UserLoadout VALUES (?, ?, ?, ?, ?, ?)");
+			query += OBFUSCATE("INSERT INTO UserLoadout VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 
-			for (int i = 1; i < (int)defUser.loadouts.size(); i++)
+			for (int i = 1; i < GROUP_COUNT * (int)defUser.loadouts.size(); i++)
 			{
-				query += OBFUSCATE(", (?, ?, ?, ?, ?, ?)");
+				query += OBFUSCATE(", (?, ?, ?, ?, ?, ?, ?, ?)");
 			}
 
 			SQLite::Statement statement(m_Database, query);
 
 			int bindIndex = 1;
 
-			for (int i = 0; i < (int)defUser.loadouts.size(); i++)
+			for (int groupID = 0; groupID < GROUP_COUNT; groupID++)
 			{
-				statement.bind(bindIndex++, userID);
-				statement.bind(bindIndex++, i);
-				for (auto item : defUser.loadouts[i].items)
+				for (int i = 0; i < (int)defUser.loadouts.size(); i++)
 				{
-					statement.bind(bindIndex++, item);
+					statement.bind(bindIndex++, userID);
+					statement.bind(bindIndex++, groupID);
+					statement.bind(bindIndex++, i);
+					statement.bind(bindIndex++, defUser.loadouts[i].name);
+
+					for (auto item : defUser.loadouts[i].items)
+					{
+						statement.bind(bindIndex++, item);
+					}
 				}
 			}
 
@@ -2308,6 +2315,8 @@ string GetCharacterExtendedString(int flag, bool update)
 		query << (update ? OBFUSCATE(" zbRespawnEffect = ?,") : OBFUSCATE(" zbRespawnEffect,"));
 	if (flag & EXT_UFLAG_KILLERMARKEFFECT)
 		query << (update ? OBFUSCATE(" killerMarkEffect = ?,") : OBFUSCATE(" killerMarkEffect,"));
+	if (flag & EXT_UFLAG_CURGROUP)
+		query << (update ? OBFUSCATE(" curGroup = ?,") : OBFUSCATE(" curGroup,"));
 
 	return query.str();
 }
@@ -2377,6 +2386,10 @@ int CUserDatabaseSQLite::GetCharacterExtended(int userID, CUserCharacterExtended
 			{
 				character.killerMarkEffect = statement.getColumn(index++);
 			}
+			if (character.flag & EXT_UFLAG_CURGROUP)
+			{
+				character.curGroup = statement.getColumn(index++);
+			}
 		}
 	}
 	catch (exception& e)
@@ -2417,7 +2430,7 @@ int CUserDatabaseSQLite::UpdateCharacterExtended(int userID, CUserCharacterExten
 		if (character.flag & EXT_UFLAG_CONFIG)
 		{
 			void* config = character.config.data();
-			statement.bind(index++, config, character.config.size());
+			statement.bind(index++, config, (int)character.config.size());
 		}
 		if (character.flag & EXT_UFLAG_CURLOADOUT)
 		{
@@ -2434,13 +2447,13 @@ int CUserDatabaseSQLite::UpdateCharacterExtended(int userID, CUserCharacterExten
 		if (character.flag & EXT_UFLAG_2NDPASSWORD)
 		{
 			void* _2ndPassword = character._2ndPassword.data();
-			statement.bind(index++, _2ndPassword, character._2ndPassword.size());
+			statement.bind(index++, _2ndPassword, (int)character._2ndPassword.size());
 		}
 		if (character.flag & EXT_UFLAG_SECURITYQNA)
 		{
 			statement.bind(index++, character.securityQuestion);
 			void* securityAnswer = character.securityAnswer.data();
-			statement.bind(index++, securityAnswer, character.securityAnswer.size());
+			statement.bind(index++, securityAnswer, (int)character.securityAnswer.size());
 		}
 		if (character.flag & EXT_UFLAG_ZBRESPAWNEFFECT)
 		{
@@ -2449,6 +2462,10 @@ int CUserDatabaseSQLite::UpdateCharacterExtended(int userID, CUserCharacterExten
 		if (character.flag & EXT_UFLAG_KILLERMARKEFFECT)
 		{
 			statement.bind(index++, character.killerMarkEffect);
+		}
+		if (character.flag & EXT_UFLAG_CURGROUP)
+		{
+			statement.bind(index++, character.curGroup);
 		}
 
 		statement.bind(index++, userID);
@@ -2535,23 +2552,31 @@ int CUserDatabaseSQLite::UpdateUserBan(int userID, UserBan ban)
 
 // gets user loadout
 // returns 0 == database error, 1 on success
-int CUserDatabaseSQLite::GetLoadouts(int userID, vector<CUserLoadout>& loadouts)
+int CUserDatabaseSQLite::GetLoadouts(int userID, vector<vector<CUserLoadout>>& loadouts)
 {
 	try
 	{
-		SQLite::Statement statement(m_Database, OBFUSCATE("SELECT slot0, slot1, slot2, slot3 FROM UserLoadout WHERE userID = ? LIMIT ?"));
-		statement.bind(1, userID);
-		statement.bind(2, LOADOUT_COUNT);
-
-		while (statement.executeStep())
+		for (int groupID = 0; groupID < GROUP_COUNT; groupID++)
 		{
-			vector<int> ld;
-			for (int i = 0; i < LOADOUT_SLOT_COUNT; i++)
+			SQLite::Statement statement(m_Database, OBFUSCATE("SELECT slot0, slot1, slot2, slot3, name FROM UserLoadout WHERE userID = ? AND groupID = ? LIMIT ?"));
+			statement.bind(1, userID);
+			statement.bind(2, groupID);
+			statement.bind(3, LOADOUT_COUNT);
+
+			vector<CUserLoadout> lds;
+
+			while (statement.executeStep())
 			{
-				ld.push_back(statement.getColumn(i));
+				vector<int> ld;
+				for (int i = 0; i < LOADOUT_SLOT_COUNT; i++)
+				{
+					ld.push_back(statement.getColumn(i));
+				}
+
+				lds.push_back(CUserLoadout(statement.getColumn(LOADOUT_SLOT_COUNT), ld));
 			}
 
-			loadouts.push_back(CUserLoadout(ld));
+			loadouts.push_back(lds);
 		}
 	}
 	catch (exception& e)
@@ -2565,34 +2590,78 @@ int CUserDatabaseSQLite::GetLoadouts(int userID, vector<CUserLoadout>& loadouts)
 
 // updates user loadout
 // returns 0 == database error, 1 on success
-int CUserDatabaseSQLite::UpdateLoadout(int userID, int loadoutID, int slot, int value)
+int CUserDatabaseSQLite::UpdateLoadout(int userID, int groupID, int loadoutID, int slot, int itemID)
 {
 	try
 	{
 		string query;
 		query = OBFUSCATE("UPDATE UserLoadout SET ");
 		query += OBFUSCATE("slot") + to_string(slot) + OBFUSCATE(" = ? ");
-		query += OBFUSCATE("WHERE userID = ? AND loadoutID = ?");
+		query += OBFUSCATE("WHERE userID = ? AND groupID = ? AND loadoutID = ?");
 
 		SQLite::Statement statement(m_Database, query);
-		statement.bind(1, value);
+		statement.bind(1, itemID);
 		statement.bind(2, userID);
-		statement.bind(3, loadoutID);
+		statement.bind(3, groupID);
+		statement.bind(4, loadoutID);
 		if (!statement.exec())
 		{
-			SQLite::Statement statement(m_Database, OBFUSCATE("INSERT INTO UserLoadout VALUES (?, ?, ?, ?, ?, ?)"));
+			SQLite::Statement statement(m_Database, OBFUSCATE("INSERT INTO UserLoadout VALUES (?, ?, ?, ?, ?, ?, ?, ?)"));
 			statement.bind(1, userID);
-			statement.bind(2, loadoutID);
-			statement.bind(3, slot == 0 ? value : 0);
-			statement.bind(4, slot == 1 ? value : 0);
-			statement.bind(5, slot == 2 ? value : 0);
-			statement.bind(6, slot == 3 ? value : 0);
+			statement.bind(2, groupID);
+			statement.bind(3, loadoutID);
+
+			char name[8];
+			sprintf(name, OBFUSCATE("Set #%d"), loadoutID + 1);
+			statement.bind(4, name);
+
+			statement.bind(5, slot == 0 ? itemID : 24);
+			statement.bind(6, slot == 1 ? itemID : 6);
+			statement.bind(7, slot == 2 ? itemID : 161);
+			statement.bind(8, slot == 3 ? itemID : 31);
 			statement.exec();
 		}
 	}
 	catch (exception& e)
 	{
 		Logger().Error(OBFUSCATE("CUserDatabaseSQLite::UpdateLoadout: database internal error: %s, %d\n"), e.what(), m_Database.getErrorCode());
+		return 0;
+	}
+
+	return 1;
+}
+
+// updates user loadout name
+// returns 0 == database error, 1 on success
+int CUserDatabaseSQLite::UpdateLoadoutName(int userID, int groupID, int loadoutID, string name)
+{
+	try
+	{
+		string query;
+		query = OBFUSCATE("UPDATE UserLoadout SET name = ? WHERE userID = ? AND groupID = ? AND loadoutID = ?");
+
+		SQLite::Statement statement(m_Database, query);
+		statement.bind(1, name);
+		statement.bind(2, userID);
+		statement.bind(3, groupID);
+		statement.bind(4, loadoutID);
+		if (!statement.exec())
+		{
+			SQLite::Statement statement(m_Database, OBFUSCATE("INSERT INTO UserLoadout VALUES (?, ?, ?, ?, ?, ?, ?, ?)"));
+			statement.bind(1, userID);
+			statement.bind(2, groupID);
+			statement.bind(3, loadoutID);
+			statement.bind(4, name);
+			statement.bind(5, 24);
+			statement.bind(6, 6);
+			statement.bind(7, 161);
+			statement.bind(8, 31);
+			statement.exec();
+		}
+	}
+	catch (exception& e)
+	{
+		Logger().Error(OBFUSCATE("CUserDatabaseSQLite::UpdateLoadoutName: database internal error: %s, %d\n"), e.what(), m_Database.getErrorCode());
 		return 0;
 	}
 
@@ -2713,17 +2782,26 @@ int CUserDatabaseSQLite::UpdateBuyMenu(int userID, int subMenuID, int subMenuSlo
 	return 1;
 }
 
-int CUserDatabaseSQLite::GetBookmark(int userID, vector<int>& bookmark)
+int CUserDatabaseSQLite::GetBookmark(int userID, vector<vector<int>>& bookmark)
 {
 	try
 	{
-		SQLite::Statement query(m_Database, OBFUSCATE("SELECT itemID FROM UserBookmark WHERE userID = ? LIMIT ?"));
-		query.bind(1, userID);
-		query.bind(2, BOOKMARK_COUNT);
-
-		while (query.executeStep())
+		for (int groupID = 0; groupID < GROUP_COUNT; groupID++)
 		{
-			bookmark.push_back(query.getColumn(0));
+			SQLite::Statement query(m_Database, OBFUSCATE("SELECT itemID FROM UserBookmark WHERE userID = ? AND groupID = ? LIMIT ?"));
+			query.bind(1, userID);
+			query.bind(2, groupID);
+			query.bind(3, BOOKMARK_COUNT);
+
+			vector<int> bk;
+
+			while (query.executeStep())
+			{
+				bk.push_back(query.getColumn(0));
+			}
+
+			bk.resize(BOOKMARK_COUNT);
+			bookmark.push_back(bk);
 		}
 	}
 	catch (exception& e)
@@ -2735,20 +2813,22 @@ int CUserDatabaseSQLite::GetBookmark(int userID, vector<int>& bookmark)
 	return 1;
 }
 
-int CUserDatabaseSQLite::UpdateBookmark(int userID, int bookmarkID, int itemID)
+int CUserDatabaseSQLite::UpdateBookmark(int userID, int groupID, int bookmarkID, int itemID)
 {
 	try
 	{
-		SQLite::Statement query(m_Database, "UPDATE UserBookmark SET itemID = ? WHERE userID = ? AND bookmarkID = ?");
+		SQLite::Statement query(m_Database, "UPDATE UserBookmark SET itemID = ? WHERE userID = ? AND groupID = ? AND bookmarkID = ?");
 		query.bind(1, itemID);
 		query.bind(2, userID);
-		query.bind(3, bookmarkID);
+		query.bind(3, groupID);
+		query.bind(4, bookmarkID);
 		if (!query.exec())
 		{
-			SQLite::Statement query(m_Database, "INSERT INTO UserBookmark VALUES (?, ?, ?)");
+			SQLite::Statement query(m_Database, "INSERT INTO UserBookmark VALUES (?, ?, ?, ?)");
 			query.bind(1, userID);
-			query.bind(2, bookmarkID);
-			query.bind(3, itemID);
+			query.bind(2, groupID);
+			query.bind(3, bookmarkID);
+			query.bind(4, itemID);
 			query.exec();
 		}
 	}
@@ -4059,7 +4139,7 @@ int CUserDatabaseSQLite::GetUsersAssociatedWithHWID(const vector<unsigned char>&
 			"AND UserSessionHistory.hwid = ? "
 			"GROUP BY User.userID "
 			"HAVING COUNT(DISTINCT User.userID) = 1");
-		query.bind(1, hwid.data(), hwid.size());
+		query.bind(1, hwid.data(), (int)hwid.size());
 		while (query.executeStep())
 		{
 			CUserData data;
@@ -5767,7 +5847,7 @@ int CUserDatabaseSQLite::SuspectAddAction(const vector<unsigned char>& hwid, int
 	try
 	{
 		SQLite::Statement query(m_Database, OBFUSCATE("INSERT INTO SuspectAction VALUES (?, ?, ?)"));
-		query.bind(1, hwid.data(), hwid.size());
+		query.bind(1, hwid.data(), (int)hwid.size());
 		query.bind(2, actionID);
 		query.bind(3, g_pServerInstance->GetCurrentTime());
 		query.exec();
@@ -6222,13 +6302,13 @@ int CUserDatabaseSQLite::UpdateHWIDBanList(const vector<unsigned char>& hwid, bo
 		if (remove)
 		{
 			SQLite::Statement query(m_Database, OBFUSCATE("DELETE FROM HWIDBanList WHERE hwid = ?"));
-			query.bind(1, hwid.data(), hwid.size());
+			query.bind(1, hwid.data(), (int)hwid.size());
 			query.exec();
 		}
 		else
 		{
 			SQLite::Statement query(m_Database, OBFUSCATE("INSERT or IGNORE INTO HWIDBanList VALUES (?)"));
-			query.bind(1, hwid.data(), hwid.size());
+			query.bind(1, hwid.data(), (int)hwid.size());
 			query.exec();
 		}
 	}
@@ -6269,7 +6349,7 @@ bool CUserDatabaseSQLite::IsHWIDBanned(vector<unsigned char>& hwid)
 	try
 	{
 		SQLite::Statement statement(m_Database, OBFUSCATE("SELECT NOT EXISTS(SELECT 1 FROM HWIDBanList WHERE hwid = ? LIMIT 1)"));
-		statement.bind(1, hwid.data(), hwid.size());
+		statement.bind(1, hwid.data(), (int)hwid.size());
 		if (statement.executeStep())
 		{
 			if ((int)statement.getColumn(0))
@@ -6283,6 +6363,177 @@ bool CUserDatabaseSQLite::IsHWIDBanned(vector<unsigned char>& hwid)
 	}
 
 	return true;
+}
+
+bool CUserDatabaseSQLite::IsClassModExist(int userID, int slot)
+{
+	try
+	{
+		SQLite::Statement query(m_Database, OBFUSCATE("SELECT EXISTS(SELECT 1 FROM UserClassMod WHERE userID = ? AND slot = ? LIMIT 1)"));
+		query.bind(1, userID);
+		query.bind(2, slot);
+		if (query.executeStep())
+		{
+			if ((int)query.getColumn(0))
+				return true;
+		}
+	}
+	catch (exception& e)
+	{
+		Logger().Error(OBFUSCATE("CUserDatabaseSQLite::IsClassModExist: database internal error: %s, %d\n"), e.what(), m_Database.getErrorCode());
+		return false;
+	}
+
+	return false;
+}
+
+int CUserDatabaseSQLite::AddUserClassModLoadOut(int userID, int itemslot, const ClassModInfo_t& info)
+{
+	try
+	{
+		SQLite::Statement query(m_Database, OBFUSCATE("INSERT INTO UserClassMod VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+		query.bind(1, userID);
+		query.bind(2, itemslot);
+
+		auto lambda = [](const ClassModInfo_t::ClassModSlot_t& slot) -> string
+			{
+				string value;
+				for (int i = 0; i < 4; ++i)
+				{
+					if (slot.itemId[i] != -1)
+						value = value.append(to_string(slot.itemId[i])).append(",");
+					else
+						value = value.append("-1,");
+				}
+				if (slot.itemId[4] != -1)
+					value = value.append(to_string(slot.itemId[4]));
+				else
+					value = value.append("-1");
+				return value;
+			};
+
+		string status, sessionbonus(lambda(info.sessionbonus)), displayinfo(lambda(info.infodisplay)), modbuff(lambda(info.modbuff)), activeskill(lambda(info.activeskill)), passiveskill(lambda(info.passiveskill)), addon(lambda(info.addon)), pairingweapon(lambda(info.pairingweapon));
+		status = status.append(to_string(info.status.health)).append(",").append(to_string(info.status.attack)).append(",").append(to_string(info.status.speed)).append(",").append(to_string(info.status.armor)).append(",").append(to_string(info.status.ammo));
+
+		query.bind(3, status);
+		query.bind(4, sessionbonus);
+		query.bind(5, displayinfo);
+		query.bind(6, modbuff);
+		query.bind(7, activeskill);
+		query.bind(8, passiveskill);
+		query.bind(9, addon);
+		query.bind(10, pairingweapon);
+		query.exec();
+	}
+	catch (exception& e)
+	{
+		Logger().Error(OBFUSCATE("CUserDatabaseSQLite::AddUserClassModLoadOut: database internal error: %s, %d\n"), e.what(), m_Database.getErrorCode());
+		return 0;
+	}
+	return 1;
+}
+
+int CUserDatabaseSQLite::GetUserClassModLoadOut(int userID, int slot, ClassModInfo_t& info)
+{
+	try
+	{
+		auto lambda = [](string& column) -> std::vector<int>
+			{
+				std::vector<int> data;
+				std::stringstream ss(column);
+				std::string item;
+
+				while (std::getline(ss, item, ','))
+				{
+					data.push_back(stoi(item));
+				}
+				return data;
+			};
+
+		SQLite::Statement query(m_Database, OBFUSCATE("SELECT * FROM UserClassMod WHERE userID = ? AND slot = ? LIMIT 1"));
+		query.bind(1, userID);
+		query.bind(2, slot);
+
+		if (query.executeStep())
+		{
+			info.slotId = (int)query.getColumn(1) + (int)g_pServerConfig->defUser.defaultItems.size();
+
+			std::vector<unsigned char> data;
+			std::stringstream ss(query.getColumn(2).getString());
+			std::string item;
+			while (std::getline(ss, item, ','))
+			{
+				data.push_back(stoi(item));
+			}
+			info.status.health = data.at(0);
+			info.status.attack = data.at(1);
+			info.status.speed = data.at(2);
+			info.status.armor = data.at(3);
+			info.status.ammo = data.at(4);
+
+			info.sessionbonus = *(ClassModInfo_t::ClassModSlot_t*)lambda(query.getColumn(3).getString()).data();
+			info.infodisplay = *(ClassModInfo_t::ClassModSlot_t*)lambda(query.getColumn(4).getString()).data();
+			info.modbuff = *(ClassModInfo_t::ClassModSlot_t*)lambda(query.getColumn(5).getString()).data();
+			info.activeskill = *(ClassModInfo_t::ClassModSlot_t*)lambda(query.getColumn(6).getString()).data();
+			info.passiveskill = *(ClassModInfo_t::ClassModSlot_t*)lambda(query.getColumn(7).getString()).data();
+			info.addon = *(ClassModInfo_t::ClassModSlot_t*)lambda(query.getColumn(8).getString()).data();
+			info.pairingweapon = *(ClassModInfo_t::ClassModSlot_t*)lambda(query.getColumn(9).getString()).data();
+		}
+
+	}
+	catch (exception& e)
+	{
+		Logger().Error(OBFUSCATE("CUserDatabaseSQLite::GetUserClassModLoadOut: database internal error: %s, %d\n"), e.what(), m_Database.getErrorCode());
+		return 0;
+	}
+	return 1;
+}
+
+int CUserDatabaseSQLite::UpdateUserClassModLoadOut(int userID, int itemslot, const ClassModInfo_t& info)
+{
+	try
+	{
+		SQLite::Statement query(m_Database, OBFUSCATE("UPDATE UserClassMod SET status = ?, sessionbonus = ?, displayinfo = ?, modbuff = ?, activeskill = ?, passiveskill = ?, addon = ?, pairingweapon = ? WHERE userID = ? AND slot = ?"));
+
+		auto lambda = [](const ClassModInfo_t::ClassModSlot_t& slot) -> string
+			{
+				string value;
+				for (int i = 0; i < 4; ++i)
+				{
+					if (slot.itemId[i] != -1)
+						value = value.append(to_string(slot.itemId[i])).append(",");
+					else
+						value = value.append("-1,");
+				}
+				if (slot.itemId[4] != -1)
+					value = value.append(to_string(slot.itemId[4]));
+				else
+					value = value.append("-1");
+				return value;
+			};
+
+		string status, sessionbonus(lambda(info.sessionbonus)), displayinfo(lambda(info.infodisplay)), modbuff(lambda(info.modbuff)), activeskill(lambda(info.activeskill)), passiveskill(lambda(info.passiveskill)), addon(lambda(info.addon)), pairingweapon(lambda(info.pairingweapon));
+		status = status.append(to_string(info.status.health)).append(",").append(to_string(info.status.attack)).append(",").append(to_string(info.status.speed)).append(",").append(to_string(info.status.armor)).append(",").append(to_string(info.status.ammo));
+
+		query.bind(1, status);
+		query.bind(2, sessionbonus);
+		query.bind(3, displayinfo);
+		query.bind(4, modbuff);
+		query.bind(5, activeskill);
+		query.bind(6, passiveskill);
+		query.bind(7, addon);
+		query.bind(8, pairingweapon);
+		query.bind(9, userID);
+		query.bind(10, itemslot);
+		query.exec();
+	}
+	catch (exception& e)
+	{
+		Logger().Error(OBFUSCATE("CUserDatabaseSQLite::UpdateUserClassModLoadOut: database internal error: %s, %d\n"), e.what(), m_Database.getErrorCode());
+		return 0;
+	}
+
+	return 1;
 }
 
 void CUserDatabaseSQLite::CreateTransaction()

@@ -398,9 +398,6 @@ bool CChannelManager::OnCommandHandler(IExtendedSocket* socket, IUser* user, con
 				case LOGIN_USER_BANNED:
 					g_pServerInstance->DisconnectClient(socket);
 					break;
-				case LOGIN_SERVER_CANNOT_VALIDATE_CLIENT:
-					g_PacketManager.SendUMsgNoticeMsgBoxToUuid(socket, OBFUSCATE("Failed to validate client. Contact administrator and try to reinstall the game."));
-					break;
 				}
 			}
 			else
@@ -811,7 +808,7 @@ bool CChannelManager::OnCommandHandler(IExtendedSocket* socket, IUser* user, con
 				UserBan ban;
 				ban.banType = banType;
 				ban.reason = reason;
-				ban.term = term * CSO_24_HOURS_IN_MINUTES + g_pServerInstance->GetCurrentTime();
+				ban.term = term * CSO_24_HOURS_IN_MINUTES + (int)g_pServerInstance->GetCurrentTime();
 
 				IUser* user = g_UserManager.GetUserById(userID);
 				if (user)
@@ -1635,7 +1632,7 @@ bool CChannelManager::OnGameStartRequest(IUser* user)
 	{
 		if (g_pServerConfig->room.connectingMethod == 1 && !g_DedicatedServerManager.IsPoolAvailable() && currentRoom->GetServer() == NULL)
 		{
-			g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("Cannot start game due to no available dedicated server"));
+			g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("ROOM_START_NOT_ENOUGH_DEDICATE"));
 			return false;
 		}
 

@@ -44,14 +44,15 @@ public:
 	virtual int UpdateCharacterExtended(int userID, CUserCharacterExtended& character) = 0;
 	virtual int GetUserBan(int userID, UserBan& ban) = 0;
 	virtual int UpdateUserBan(int userID, UserBan ban) = 0;
-	virtual int GetLoadouts(int userID, std::vector<CUserLoadout>& loadouts) = 0;
-	virtual int UpdateLoadout(int userID, int loadoutID, int slot, int itemID) = 0;
+	virtual int GetLoadouts(int userID, std::vector<std::vector<CUserLoadout>>& loadouts) = 0;
+	virtual int UpdateLoadout(int userID, int groupID, int loadoutID, int slot, int itemID) = 0;
+	virtual int UpdateLoadoutName(int userID, int groupID, int loadoutID, std::string name) = 0;
 	virtual int GetFastBuy(int userID, std::vector<CUserFastBuy>& fastBuy) = 0;
 	virtual int UpdateFastBuy(int userID, int slot, const std::string& name, const std::vector<int>& items) = 0;
 	virtual int GetBuyMenu(int userID, std::vector<CUserBuyMenu>& buyMenu) = 0;
 	virtual int UpdateBuyMenu(int userID, int subMenuID, int subMenuSlot, int itemID) = 0;
-	virtual int GetBookmark(int userID, std::vector<int>& bookmark) = 0;
-	virtual int UpdateBookmark(int userID, int bookmarkID, int itemID) = 0;
+	virtual int GetBookmark(int userID, std::vector<std::vector<int>>& bookmark) = 0;
+	virtual int UpdateBookmark(int userID, int groupID, int bookmarkID, int itemID) = 0;
 	virtual int GetCostumeLoadout(int userID, CUserCostumeLoadout& loadout) = 0;
 	virtual int UpdateCostumeLoadout(int userID, CUserCostumeLoadout& loadout, int zbSlot) = 0;
 	virtual int GetRewardNotices(int userID, std::vector<int>& notices) = 0;
@@ -158,6 +159,11 @@ public:
 	virtual int UpdateHWIDBanList(const std::vector<unsigned char>& hwid, bool remove = false) = 0;
 	virtual std::vector<std::vector<unsigned char>> GetHWIDBanList() = 0;
 	virtual bool IsHWIDBanned(std::vector<unsigned char>& hwid) = 0;
+
+	virtual bool IsClassModExist(int userID, int slot) = 0;
+	virtual int AddUserClassModLoadOut(int userID, int itemslot, const ClassModInfo_t& info) = 0;
+	virtual int GetUserClassModLoadOut(int userID, int slot, ClassModInfo_t& info) = 0;
+	virtual int UpdateUserClassModLoadOut(int userID, int itemslot, const ClassModInfo_t& info) = 0;
 
 	virtual void ResetQuestEvent(int questID) = 0;
 

@@ -242,7 +242,7 @@ int CUserDatabaseProxy::UpdateUserBan(int userID, UserBan ban)
 	return result;
 }
 
-int CUserDatabaseProxy::GetLoadouts(int userID, vector<CUserLoadout>& loadouts)
+int CUserDatabaseProxy::GetLoadouts(int userID, vector<vector<CUserLoadout>>& loadouts)
 {
 	ExecCalcStart();
 	int result = m_pDatabase->GetLoadouts(userID, loadout);
@@ -250,10 +250,18 @@ int CUserDatabaseProxy::GetLoadouts(int userID, vector<CUserLoadout>& loadouts)
 	return result;
 }
 
-int CUserDatabaseProxy::UpdateLoadout(int userID, int loadoutID, int slot, int itemID)
+int CUserDatabaseProxy::UpdateLoadout(int userID, int groupID, int loadoutID, int slot, int itemID)
 {
 	ExecCalcStart();
-	int result = m_pDatabase->UpdateLoadout(userID, loadoutID, slot, itemID);
+	int result = m_pDatabase->UpdateLoadout(userID, groupID, loadoutID, slot, itemID);
+	ExecCalcEnd(__FUNCTION__);
+	return result;
+}
+
+int CUserDatabaseProxy::UpdateLoadoutName(int userID, int groupID, int loadoutID, string name)
+{
+	ExecCalcStart();
+	int result = m_pDatabase->UpdateLoadoutName(userID, groupID, loadoutID, name);
 	ExecCalcEnd(__FUNCTION__);
 	return result;
 }
@@ -290,7 +298,7 @@ int CUserDatabaseProxy::UpdateBuyMenu(int userID, int subMenuID, int subMenuSlot
 	return result;
 }
 
-int CUserDatabaseProxy::GetBookmark(int userID, vector<int>& bookmark)
+int CUserDatabaseProxy::GetBookmark(int userID, vector<vector<int>>& bookmark)
 {
 	ExecCalcStart();
 	int result = m_pDatabase->GetBookmark(userID, bookmark);
@@ -298,10 +306,10 @@ int CUserDatabaseProxy::GetBookmark(int userID, vector<int>& bookmark)
 	return result;
 }
 
-int CUserDatabaseProxy::UpdateBookmark(int userID, int bookmarkID, int itemID)
+int CUserDatabaseProxy::UpdateBookmark(int userID, int groupID, int bookmarkID, int itemID)
 {
 	ExecCalcStart();
-	int result = m_pDatabase->UpdateBookmark(userID, bookmarkID, itemID);
+	int result = m_pDatabase->UpdateBookmark(userID, groupID, bookmarkID, itemID);
 	ExecCalcEnd(__FUNCTION__);
 	return result;
 }

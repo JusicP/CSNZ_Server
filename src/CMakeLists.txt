@@ -74,6 +74,7 @@ target_sources(PROJECTNAME PRIVATE "manager/minigamemanager.cpp")
 target_sources(PROJECTNAME PRIVATE "manager/clanmanager.cpp")
 target_sources(PROJECTNAME PRIVATE "manager/rankmanager.cpp")
 target_sources(PROJECTNAME PRIVATE "manager/voxelmanager.cpp")
+target_sources(PROJECTNAME PRIVATE "manager/classmodmanager.cpp")
 
 target_sources(PROJECTNAME PRIVATE "packet/packethelper_fulluserinfo.cpp")
 if (WIN32)

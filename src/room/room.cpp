@@ -58,7 +58,7 @@ void CRoom::Shutdown()
 int CRoom::GetNumOfPlayers()
 {
 	// TODO: should we count bot players???
-	int realPlayers = m_Users.size();
+	int realPlayers = (int)m_Users.size();
 	//int botPlayers = m_pSettings->unk39 + m_pSettings->unk40;
 
 	return realPlayers /*+ botPlayers*/;
@@ -254,12 +254,6 @@ void CRoom::UpdateSettings(CRoomSettings& newSettings)
 	if (newSettings.lowFlag & ROOM_LOW_UNK) {
 		m_pSettings->unk00 = newSettings.unk00;
 	}
-	if (newSettings.lowFlag & ROOM_LOW_CLANBATTLE) {
-		m_pSettings->unk01 = newSettings.unk01;
-		m_pSettings->unk02 = newSettings.unk02;
-		m_pSettings->unk03 = newSettings.unk03;
-		m_pSettings->unk04 = newSettings.unk04;
-	}
 	if (newSettings.lowFlag & ROOM_LOW_PASSWORD) {
 		m_pSettings->password = newSettings.password;
 	}
@@ -346,18 +340,7 @@ void CRoom::UpdateSettings(CRoomSettings& newSettings)
 	if (newSettings.lowFlag & ROOM_LOW_STATUS) {
 		m_pSettings->status = newSettings.status;
 	}
-	if (newSettings.lowFlag & ROOM_LOW_UNK33) {
-		m_pSettings->unk33 = newSettings.unk33;
-		m_pSettings->unk33_vec = newSettings.unk33_vec;
-	}
 
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK34) {
-		m_pSettings->unk34 = newSettings.unk34;
-		m_pSettings->unk35 = newSettings.unk35;
-		m_pSettings->unk36 = newSettings.unk36;
-		m_pSettings->unk37 = newSettings.unk37;
-		m_pSettings->unk38 = newSettings.unk38;
-	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_C4TIMER) {
 		m_pSettings->c4Timer = newSettings.c4Timer;
 	}
@@ -489,6 +472,9 @@ void CRoom::UpdateSettings(CRoomSettings& newSettings)
 		if (m_pSettings->voxelFlag & VOXELFLAG_UNK23) {
 			m_pSettings->voxel_unk23 = newSettings.voxel_unk23;
 		}
+		if (m_pSettings->voxelFlag & VOXELFLAG_UNK24) {
+			m_pSettings->voxel_unk23 = newSettings.voxel_unk24;
+		}
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK63) {
 		m_pSettings->unk63 = newSettings.unk63;
@@ -560,6 +546,19 @@ void CRoom::UpdateSettings(CRoomSettings& newSettings)
 		m_pSettings->unk79_2 = newSettings.unk79_2;
 		m_pSettings->unk79_3 = newSettings.unk79_3;
 		m_pSettings->unk79_4 = newSettings.unk79_4;
+	}
+	if (newSettings.highMidFlag & ROOM_HIGHMID_UNK80) {
+		m_pSettings->unk80 = newSettings.unk80;
+	}
+	if (newSettings.highMidFlag & ROOM_HIGHMID_CHANGESHOT) {
+		m_pSettings->changeShot = newSettings.changeShot;
+	}
+	if (newSettings.highMidFlag & ROOM_HIGHMID_ZOMBIEREVIVEZHC) {
+		m_pSettings->zombieReviveZHC = newSettings.zombieReviveZHC;
+	}
+	if (newSettings.highMidFlag & ROOM_HIGHMID_UNK83) {
+		m_pSettings->unk83_1 = newSettings.unk83_1;
+		m_pSettings->unk83_2 = newSettings.unk83_2;
 	}
 
 	if (newSettings.highFlag & ROOM_HIGH_UNK77) {
@@ -833,17 +832,10 @@ void CRoom::SendUserReadyStatus(IUser* user, IUser* player)
 
 void CRoom::SendConnectHost(IUser* user, IUser* host)
 {
-	if (g_pServerConfig->room.connectingMethod)
-	{
-		if (m_pServer)
-			g_PacketManager.SendHostServerJoin(user->GetExtendedSocket(), m_pServer->GetIP(), m_pServer->GetPort(), user->GetID());
-		else
-			g_PacketManager.SendHostJoin(user->GetExtendedSocket(), host);
-	}
+	if (m_pServer)
+		g_PacketManager.SendHostServerJoin(user->GetExtendedSocket(), m_pServer->GetIP(), m_pServer->GetPort(), user->GetID());
 	else
-	{
 		g_PacketManager.SendHostJoin(user->GetExtendedSocket(), host);
-	}
 }
 
 void CRoom::SendStartMatch(IUser* host)
@@ -1228,6 +1220,11 @@ void CRoom::ChangeMap(int mapId)
 	for (auto u : m_Users)
 	{
 		g_PacketManager.SendRoomUpdateSettings(u->GetExtendedSocket(), m_pSettings, ROOM_LOW_MAPID, ROOM_LOWMID_MAPID2);
+
+		if (m_pServer)
+			g_PacketManager.SendHostServerJoin(u->GetExtendedSocket(), m_pServer->GetIP(), m_pServer->GetPort(), u->GetID());
+		else
+			g_PacketManager.SendHostJoin(u->GetExtendedSocket(), m_pHostUser);
 	}
 }
 

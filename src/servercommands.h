@@ -131,7 +131,7 @@ void CommandBan(CCommand* cmd, const std::vector<std::string>& args)
 	UserBan ban;
 	ban.banType = banType;
 	ban.reason = reason;
-	ban.term = term * CSO_24_HOURS_IN_MINUTES + g_pServerInstance->GetCurrentTime(); // convert days to minutes
+	ban.term = term * CSO_24_HOURS_IN_MINUTES + (int)g_pServerInstance->GetCurrentTime(); // convert days to minutes
 
 	IUser* user = g_UserManager.GetUserById(userID);
 	if (g_UserDatabase.UpdateUserBan(userID, ban) > 0)
@@ -298,32 +298,28 @@ void CommandDbReload(CCommand* cmd, const std::vector<std::string>& args)
 
 	auto usersSize = g_UserManager.GetUsers().size();
 
-	// send userinfo, shop, metadata and voxel urls update to users
+	// send userinfo, shop and metadata update to users
 	for (auto u : g_UserManager.GetUsers())
 	{
 		CUserCharacter character = u->GetCharacter(UFLAG_LOW_ALL, UFLAG_HIGH_ALL);
 		g_PacketManager.SendUserUpdateInfo(u->GetExtendedSocket(), u, character);
 		g_PacketManager.SendShopUpdate(u->GetExtendedSocket(), g_ShopManager.GetProducts());
 		g_UserManager.SendMetadata(u->GetExtendedSocket());
-		g_PacketManager.SendVoxelURLs(u->GetExtendedSocket(), g_pServerConfig->voxelVxlURL, g_pServerConfig->voxelVmgURL);
 	}
 
 	Logger().Info("Sent user update info to %d users\n", usersSize);
 	Logger().Info("Sent shop update to %d users\n", usersSize);
 	Logger().Info("Sent metadata update to %d users\n", usersSize);
-	Logger().Info("Sent voxel urls update to %d users\n", usersSize);
 
 	auto dedisSize = g_DedicatedServerManager.GetServers().size();
 
-	// send metadata and voxel urls update to dedicated servers
+	// send metadata update to dedicated servers
 	for (auto d : g_DedicatedServerManager.GetServers())
 	{
 		g_UserManager.SendMetadata(d->GetSocket());
-		g_PacketManager.SendVoxelURLs(d->GetSocket(), g_pServerConfig->voxelVxlURL, g_pServerConfig->voxelVmgURL);
 	}
 
 	Logger().Info("Sent metadata update to %d dedicated servers\n", dedisSize);
-	Logger().Info("Sent voxel urls update to %d dedicated servers\n", dedisSize);
 
 	Logger().Info("Managers reload successful.\n");
 }
@@ -457,6 +453,66 @@ void CommandGiveItem(CCommand* cmd, const std::vector<std::string>& args)
 	};
 }
 
+void CommandGiveAllItems(CCommand* cmd, const std::vector<std::string>& args)
+{
+	if (args.size() < 2)
+	{
+		Logger().Info("%s\n", cmd->GetUsage().c_str());
+		return;
+	}
+
+	int userID;
+	if (isNumber(args[1]))
+	{
+		userID = stoi(args[1]);
+		if (!g_UserDatabase.IsUserExists(userID))
+			userID = 0;
+	}
+	else
+	{
+		userID = g_UserDatabase.IsUserExists(args[1], false);
+	}
+
+	if (!userID)
+	{
+		Logger().Info(OBFUSCATE("[GiveAllItems] User not found\n"));
+		return;
+	}
+
+	std::vector<std::string> items = g_pItemTable->GetRowNames();
+	std::vector<RewardItem> rewardItems;
+	CUserInventoryItem userItem;
+	int itemID = 0;
+	for (auto item : items)
+	{
+		itemID = stoi(item);
+		if (userItem.IsItemDefaultOrPseudo(itemID))
+			continue;
+
+		RewardItem rewardItem;
+		rewardItem.itemID = itemID;
+		rewardItem.count = 1;
+		rewardItem.duration = 0;
+		rewardItem.lockStatus = 0;
+		rewardItems.push_back(rewardItem);
+	}
+
+	IUser* user = g_UserManager.GetUserById(userID);
+	int status = g_ItemManager.AddItems(userID, user, rewardItems);
+	switch (status)
+	{
+	case ITEM_ADD_SUCCESS:
+		Logger().Info(OBFUSCATE("[GiveAllItems] Added all items to user(%d)\n"), userID);
+		break;
+	case ITEM_ADD_INVENTORY_FULL:
+		Logger().Info(OBFUSCATE("[GiveAllItems] User's inventory is full\n"));
+		break;
+	case ITEM_ADD_DB_ERROR:
+		Logger().Info(OBFUSCATE("[GiveAllItems] Database error\n"));
+		break;
+	}
+}
+
 void CommandStatus(CCommand* cmd, const std::vector<std::string>& args)
 {
 	Logger().Info("%s\n", g_pServerInstance->GetMainInfo());
@@ -571,6 +627,7 @@ CCommand shopreload("shopreload", "Reload shop config", "", CommandShopReload);
 CCommand dbreload("dbreload", "Reload server (dangerous command)", "", CommandDbReload);
 CCommand bans("bans", "Print ban list", "", CommandBans);
 CCommand giveitem("giveitem", "Give item to user", "giveitem <gameName/userID> <itemID> <count> <duration>", CommandGiveItem);
+CCommand giveallitems("giveallitems", "Give all items to user", "giveallitems <gameName/userID>", CommandGiveAllItems);
 CCommand status("status", "Print server status", "", CommandStatus);
 CCommand sendevent("sendevent", "Send event packet", "sendevent <userID> <event>", CommandSendEvent);
 CCommand sendevent2("sendevent2", "Send weapon release event update", "sendevent2 <userID>", CommandSendEvent2);

@@ -32,12 +32,6 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 	if (lowFlag & ROOM_LOW_UNK) {
 		unk00 = inPacket.readUInt8();
 	}
-	if (lowFlag & ROOM_LOW_CLANBATTLE) {
-		unk01 = inPacket.readUInt8();
-		unk02 = inPacket.readUInt8();
-		unk03 = inPacket.readUInt8();
-		unk04 = inPacket.readUInt32_LE();
-	}
 	if (lowFlag & ROOM_LOW_PASSWORD) {
 		password = inPacket.readStr().c_str();
 	}
@@ -71,7 +65,7 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 	if (lowFlag & ROOM_LOW_WEAPONLIMIT) {
 		weaponLimit = inPacket.readUInt8();
 		if (weaponLimit == 18)
-			weaponLimitCustom = inPacket.readArr(64);
+			weaponLimitCustom = inPacket.readArr(128);
 	}
 	if (lowFlag & ROOM_LOW_HOSTAGEKILLLIMIT) {
 		hostageKillLimit = inPacket.readUInt8();
@@ -124,32 +118,7 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 	if (lowFlag & ROOM_LOW_STATUS) {
 		status = inPacket.readUInt8();
 	}
-	if (lowFlag & ROOM_LOW_UNK33) {
-		unk33 = inPacket.readUInt8();
-		for (int i = 0; i < 2; i++)
-		{
-			unk33_data dat;
-			dat.unk1 = inPacket.readUInt32_LE();
-			dat.unk2 = inPacket.readUInt32_LE();
-			dat.unk3 = inPacket.readUInt8();
-			dat.unk4 = inPacket.readUInt16_LE();
-			dat.unk5 = inPacket.readUInt8();
-			dat.unk6 = inPacket.readUInt8();
-			dat.unk7 = inPacket.readUInt16_LE();
-			dat.unk8 = inPacket.readUInt8();
-			dat.unk9 = inPacket.readUInt8();
 
-			unk33_vec.push_back(dat);
-		}
-	}
-
-	if (lowMidFlag & ROOM_LOWMID_UNK34) {
-		unk34 = inPacket.readUInt32_LE();
-		unk35 = inPacket.readStr();
-		unk36 = inPacket.readUInt8();
-		unk37 = inPacket.readUInt8();
-		unk38 = inPacket.readUInt8();
-	}
 	if (lowMidFlag & ROOM_LOWMID_C4TIMER) {
 		c4Timer = inPacket.readUInt8();
 	}
@@ -199,7 +168,7 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 		sd = inPacket.readUInt8();
 	}
 	if (lowMidFlag & ROOM_LOWMID_ZSDIFFICULTY) {
-		zsDifficulty = inPacket.readUInt8();
+		zsDifficulty = inPacket.readUInt16_LE();
 		unk56 = inPacket.readUInt32_LE();
 		unk57 = inPacket.readUInt32_LE();
 	}
@@ -298,6 +267,9 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 		if (voxelFlag & VOXELFLAG_UNK23) {
 			voxel_unk23 = inPacket.readUInt8();
 		}
+		if (voxelFlag & VOXELFLAG_UNK24) {
+			voxel_unk24 = inPacket.readUInt8();
+		}
 	}
 	if (lowMidFlag & ROOM_LOWMID_UNK63) {
 		unk63 = inPacket.readUInt8();
@@ -374,6 +346,19 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 		unk79_3 = inPacket.readStr();
 		unk79_4 = inPacket.readInt32_LE();
 	}
+	if (highMidFlag & ROOM_HIGHMID_UNK80) {
+		unk80 = inPacket.readUInt8();
+	}
+	if (highMidFlag & ROOM_HIGHMID_CHANGESHOT) {
+		changeShot = inPacket.readUInt8();
+	}
+	if (highMidFlag & ROOM_HIGHMID_ZOMBIEREVIVEZHC) {
+		zombieReviveZHC = inPacket.readUInt8();
+	}
+	if (highMidFlag & ROOM_HIGHMID_UNK83) {
+		unk83_1 = inPacket.readUInt8();
+		unk83_2 = inPacket.readUInt8();
+	}
 
 	if (highFlag & ROOM_HIGH_UNK77) {
 		unk77 = inPacket.readUInt8();
@@ -421,8 +406,6 @@ void CRoomSettings::Init()
 	viewFlag = 0;
 	voiceChat = 0;
 	status = 0;
-	unk33 = 0;
-	unk34 = 0;
 	unk35 = "";
 	unk36 = 0;
 	unk37 = 0;
@@ -474,6 +457,7 @@ void CRoomSettings::Init()
 	voxel_savegroup_id = "";
 	voxel_unk22 = 0;
 	voxel_unk23 = 0;
+	voxel_unk24 = 0;
 	unk63 = 0;
 	unk64 = 0;
 	teamSwitch = 0;
@@ -501,6 +485,11 @@ void CRoomSettings::Init()
 	unk79_2 = "";
 	unk79_3 = "";
 	unk79_4 = 0;
+	unk80 = 0;
+	changeShot = 0;
+	zombieReviveZHC = 0;
+	unk83_1 = 0;
+	unk83_2 = 0;
 }
 
 vector<int> split(const string& s, char delimiter)
@@ -538,9 +527,14 @@ bool CRoomSettings::IsSettingValid(int gameModeId, const string& setting, int va
 
 bool CRoomSettings::IsLeagueRuleWinLimitValid(int winLimit)
 {
-	for (int i = 6; i <= 16; i += 2)
+	switch (winLimit)
 	{
-		if (winLimit == i)
+		case 6:
+		case 8:
+		case 10:
+		case 12:
+		case 14:
+		case 16:
 			return true;
 	}
 
@@ -553,9 +547,26 @@ bool CRoomSettings::IsBuyTimeValid(int gameModeId, int buyTime)
 		return (buyTime == 17 || buyTime == 20);
 	else
 	{
-		for (int i = 10; i <= 180; i += 10)
+		switch (buyTime)
 		{
-			if (buyTime == i)
+			case 10:
+			case 20:
+			case 30:
+			case 40:
+			case 50:
+			case 60:
+			case 70:
+			case 80:
+			case 90:
+			case 100:
+			case 110:
+			case 120:
+			case 130:
+			case 140:
+			case 150:
+			case 160:
+			case 170:
+			case 180:
 				return true;
 		}
 	}
@@ -570,8 +581,17 @@ bool CRoomSettings::IsStartingCashValid(int gameModeId, int startingCash)
 		if (startingCash == 800 || startingCash == 7500)
 			return true;
 	}
-	else if (startingCash == 800 || startingCash == 2400 || startingCash == 5000 || startingCash == 7500)
-		return true;
+	else
+	{
+		switch (startingCash)
+		{
+			case 800:
+			case 2400:
+			case 5000:
+			case 7500:
+				return true;
+		}
+	}
 
 	return false;
 }
@@ -596,6 +616,7 @@ bool CRoomSettings::IsZombieItem(int itemId)
 		case 8115:
 		case 8138:
 		case 8222:
+		case 9569:
 			return true;
 	}
 
@@ -637,7 +658,7 @@ bool CRoomSettings::IsMutationRestrictValid(const vector<int>& mutationRestrictL
 			int current = mutationRestrictList[i];
 			if (current != 255)
 			{
-				if (current > 79)
+				if (current > 96)
 					return false;
 
 				for (int j = i + 1; j < 4; j++)
@@ -669,20 +690,77 @@ bool CRoomSettings::IsMapPlaylistValid(const vector<mapPlaylist_data>& mapPlayli
 
 bool CRoomSettings::IsMutationLimitValid(int mutationLimit)
 {
-	if (mutationLimit == 20 || mutationLimit == 25 || mutationLimit == 30 || mutationLimit == 35 || mutationLimit == 40)
-		return true;
+	switch (mutationLimit)
+	{
+		case 20:
+		case 25:
+		case 30:
+		case 35:
+		case 40:
+			return true;
+	}
+
+	return false;
+}
+
+bool CRoomSettings::IsZombieReviveZHCValid(int zombieReviveZHC)
+{
+	switch (mutationLimit)
+	{
+		case 0:
+		case 30:
+		case 45:
+		case 60:
+		case 75:
+		case 90:
+		case 105:
+		case 120:
+			return true;
+	}
 
 	return false;
 }
 
 bool CRoomSettings::CanChangeTeamBalance(int gameModeId)
 {
-	return (gameModeId == 0 || gameModeId == 3 || gameModeId == 23 || gameModeId == 32 || gameModeId == 57);
+	switch (gameModeId)
+	{
+		case 0:
+		case 3:
+		case 23:
+		case 32:
+		case 57:
+			return true;
+	}
+
+	return false;
 }
 
 bool CRoomSettings::CanChangeFriendlyFire(int gameModeId)
 {
-	return (gameModeId == 0 || gameModeId == 3 || gameModeId == 8 || gameModeId == 9 || gameModeId == 14 || gameModeId == 19 || gameModeId == 30 || gameModeId == 32 || gameModeId == 37 || gameModeId == 40 || gameModeId == 45 || gameModeId == 49 || gameModeId == 51 || gameModeId == 53 || gameModeId == 54 || gameModeId == 57);
+	switch (gameModeId)
+	{
+		case 0:
+		case 3:
+		case 8:
+		case 9:
+		case 14:
+		case 19:
+		case 30:
+		case 32:
+		case 37:
+		case 40:
+		case 45:
+		case 49:
+		case 51:
+		case 53:
+		case 54:
+		case 57:
+		case 58:
+			return true;
+	}
+
+	return false;
 }
 
 int CRoomSettings::GetGameModeDefaultSetting(int gameModeId, const string& setting)
@@ -818,6 +896,7 @@ int CRoomSettings::GetDefaultFriendlyBots(int gameModeId)
 		case 14:
 		case 45:
 		case 54:
+		case 58:
 			friendlyBots = 8;
 			break;
 	}
@@ -844,6 +923,7 @@ int CRoomSettings::GetDefaultEnemyBots(int gameModeId)
 		case 22:
 		case 45:
 		case 54:
+		case 58:
 			enemyBots = 8;
 			break;
 	}
@@ -866,6 +946,7 @@ int CRoomSettings::GetDefaultBotAdd(int gameModeId)
 		case 45:
 		case 54:
 		case 57:
+		case 58:
 			botAdd = 1;
 			break;
 	}
@@ -947,17 +1028,51 @@ int CRoomSettings::GetDefaultZbBalance(int gameModeId)
 
 bool CRoomSettings::IsFunGameMode(int gameModeId)
 {
-	return (gameModeId == 10 || gameModeId == 12 || gameModeId == 16 || gameModeId == 18 || gameModeId == 19 || gameModeId == 21 || gameModeId == 25 || gameModeId == 27 || gameModeId == 31 || gameModeId == 34 || gameModeId == 37);
+	switch (gameModeId)
+	{
+		case 10:
+		case 12:
+		case 16:
+		case 18:
+		case 19:
+		case 21:
+		case 25:
+		case 27:
+		case 31:
+		case 34:
+		case 37:
+			return true;
+	}
+	
+	return false;
 }
 
 bool CRoomSettings::IsPlayroomGameMode(int gameModeId)
 {
-	return (gameModeId == 41 || gameModeId == 48 || gameModeId == 55);
+	switch (gameModeId)
+	{
+		case 41:
+		case 48:
+		case 55:
+			return true;
+	}
+
+	return false;
 }
 
 bool CRoomSettings::IsVoxelGameMode(int gameModeId)
 {
-	return (gameModeId == 38 || gameModeId == 39 || gameModeId == 49 || gameModeId == 52 || gameModeId == 53);
+	switch (gameModeId)
+	{
+		case 38:
+		case 39:
+		case 49:
+		case 52:
+		case 53:
+			return true;
+	}
+
+	return false;
 }
 
 string CRoomSettings::GetGameModeNameByID(int gameModeId)
@@ -1012,6 +1127,8 @@ string CRoomSettings::GetGameModeNameByID(int gameModeId)
 		case 54: return "zombi_5";
 		case 56: return "zb_teamcontrol";
 		case 57: return "map_tdm_supersoldier";
+		case 58: return "map_zb3classic";
+		case 59: return "ZS_Rift";
 		default: return "";
 	}
 }
@@ -1042,22 +1159,71 @@ bool CRoomSettings::IsMapValid(int gameModeId, int mapId)
 
 bool CRoomSettings::IsMapPlaylistAllowed(int gameModeId)
 {
-	return !(IsFunGameMode(gameModeId) || IsPlayroomGameMode(gameModeId) || IsVoxelGameMode(gameModeId) || gameModeId == 26 || gameModeId == 28 || gameModeId == 33);
+	if (IsFunGameMode(gameModeId) || IsPlayroomGameMode(gameModeId) || IsVoxelGameMode(gameModeId))
+		return false;
+
+	switch (gameModeId)
+	{
+		case 26:
+		case 28:
+		case 33:
+			return false;
+	}
+
+	return true;
 }
 
 bool CRoomSettings::IsRandomMapAllowed(int gameModeId)
 {
-	return !(IsPlayroomGameMode(gameModeId) || IsVoxelGameMode(gameModeId) || gameModeId == 15 || gameModeId == 17 || gameModeId == 30 || gameModeId == 33 || gameModeId == 50 || gameModeId == 51);
+	if (IsPlayroomGameMode(gameModeId) || IsVoxelGameMode(gameModeId))
+		return false;
+
+	switch (gameModeId)
+	{
+		case 15:
+		case 17:
+		case 30:
+		case 33:
+		case 50:
+		case 51:
+			return false;
+	}
+
+	return true;
 }
 
 bool CRoomSettings::IsFamilyBattleAllowed(int gameModeId)
 {
-	return (gameModeId == 0 || gameModeId == 2 || gameModeId == 22 || gameModeId == 32 || gameModeId == 40 || gameModeId == 56 || gameModeId == 57);
+	switch (gameModeId)
+	{
+		case 0:
+		case 2:
+		case 22:
+		case 32:
+		case 40:
+		case 56:
+		case 57:
+			return true;
+	}
+
+	return false;
 }
 
 bool CRoomSettings::IsWeaponBuyCoolTimeAllowed(int gameModeId)
 {
-	return (gameModeId == 8 || gameModeId == 9 || gameModeId == 14 || gameModeId == 24 || gameModeId == 29 || gameModeId == 45 || gameModeId == 54);
+	switch (gameModeId)
+	{
+		case 8:
+		case 9:
+		case 14:
+		case 24:
+		case 29:
+		case 45:
+		case 54:
+			return true;
+	}
+
+	return false;
 }
 
 void CRoomSettings::LoadFamilyBattleSettings(int gameModeId)
@@ -1242,9 +1408,6 @@ void CRoomSettings::LoadDefaultSettings(int gameModeId, int mapId)
 	viewFlag = GetDefaultViewFlag(gameModeId);
 	voiceChat = 1;
 	status = 0;
-	unk33 = 0;
-	unk33_vec.clear();
-	unk34 = 0;
 	unk35 = "";
 	unk36 = 0;
 	unk37 = 0;
@@ -1315,6 +1478,11 @@ void CRoomSettings::LoadDefaultSettings(int gameModeId, int mapId)
 	unk79_2 = "";
 	unk79_3 = "";
 	unk79_4 = 0;
+	unk80 = 0;
+	changeShot = gameModeId == 58 ? 1 : 0;
+	zombieReviveZHC = gameModeId == 58 ? 60 : 0;
+	unk83_1 = 0;
+	unk83_2 = 0;
 
 	if (mapId != 254) // Not studio mode
 		lowMidFlag &= ~ROOM_LOWMID_VOXEL;
@@ -1466,6 +1634,9 @@ bool CRoomSettings::ParseSlotDetails(std::string voxel_id)
 				voxelFlag |= VOXELFLAG_UNK23;
 				voxel_unk23 = 0;
 
+				voxelFlag |= VOXELFLAG_UNK24;
+				voxel_unk24 = 0;
+
 				return true;
 			}
 		}
@@ -1480,9 +1651,6 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 	{
 		if (lowFlag & ROOM_LOW_UNK)
 			lowFlag &= ~ROOM_LOW_UNK;
-
-		if (lowFlag & ROOM_LOW_CLANBATTLE)
-			lowFlag &= ~ROOM_LOW_CLANBATTLE;
 
 		if (lowFlag & ROOM_LOW_LEVELLIMIT)
 			lowFlag &= ~ROOM_LOW_LEVELLIMIT;
@@ -1537,12 +1705,6 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 		if (lowFlag & ROOM_LOW_STATUS)
 			lowFlag &= ~ROOM_LOW_STATUS;
-
-		if (lowFlag & ROOM_LOW_UNK33)
-			lowFlag &= ~ROOM_LOW_UNK33;
-
-		if (lowMidFlag & ROOM_LOWMID_UNK34)
-			lowMidFlag &= ~ROOM_LOWMID_UNK34;
 
 		if (lowMidFlag & ROOM_LOWMID_KDRULE)
 			kdRule = kdRule ? 1 : 0;
@@ -1730,6 +1892,15 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 			familyBattleClanID1 = 0;
 			familyBattleClanID2 = 0;
 		}
+
+		highMidFlag |= ROOM_HIGHMID_ZBREBALANCE;
+		zbRebalance = gameModeId == 14 ? 1 : 0;
+
+		highMidFlag |= ROOM_HIGHMID_CHANGESHOT;
+		changeShot = gameModeId == 58 ? 1 : 0;
+
+		highMidFlag |= ROOM_HIGHMID_ZOMBIEREVIVEZHC;
+		zombieReviveZHC = gameModeId == 58 ? 60 : 0;
 	}
 	else
 	{
@@ -1896,7 +2067,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 			if (lowMidFlag & ROOM_LOWMID_STARTINGCASH)
 			{
-				if (!(gameModeId == 0 || gameModeId == 3 || gameModeId == 17 || gameModeId == 50))
+				if (gameModeId != 0 && gameModeId != 3 && gameModeId != 17 && gameModeId != 50)
 				{
 					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't use startingCash, gameModeId: %d\n", user->GetLogName(), gameModeId);
 					lowMidFlag &= ~ROOM_LOWMID_STARTINGCASH;
@@ -1910,7 +2081,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 			if (lowMidFlag & ROOM_LOWMID_ENHANCERESTRICT)
 			{
-				if (!(gameModeId == 0 || gameModeId == 22 || gameModeId == 32) && enhanceRestrict != 0)
+				if (gameModeId != 0 && gameModeId != 22 && gameModeId != 32 && enhanceRestrict != 0)
 				{
 					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't use enhanceRestrict, gameModeId: %d\n", user->GetLogName(), gameModeId);
 					lowMidFlag &= ~ROOM_LOWMID_ENHANCERESTRICT;
@@ -1926,7 +2097,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 			if (lowMidFlag & ROOM_LOWMID_ZSDIFFICULTY)
 			{
-				if ((gameModeId != 15 && gameModeId != 53) && zsDifficulty != 1)
+				if (gameModeId != 15 && gameModeId != 53 && zsDifficulty != 1)
 				{
 					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't use zsDifficulty, gameModeId: %d, zsDifficulty: %d\n", user->GetLogName(), gameModeId, zsDifficulty);
 					lowMidFlag &= ~ROOM_LOWMID_ZSDIFFICULTY;
@@ -1944,7 +2115,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 			if (lowMidFlag & ROOM_LOWMID_LEAGUERULE)
 			{
-				if (!(gameModeId == 0 || gameModeId == 32) && leagueRule != 0)
+				if (gameModeId != 0 && gameModeId != 32 && leagueRule != 0)
 				{
 					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't use leagueRule, gameModeId: %d\n", user->GetLogName(), gameModeId);
 					lowMidFlag &= ~ROOM_LOWMID_LEAGUERULE;
@@ -1955,7 +2126,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 			if (lowMidFlag & ROOM_LOWMID_ZBLIMIT)
 			{
-				if (!(gameModeId == 9 || gameModeId == 14 || gameModeId == 20 || gameModeId == 45 || gameModeId == 54) && (zbLimitFlag != 0 || !zbLimit.empty()))
+				if (gameModeId != 9 && gameModeId != 14 && gameModeId != 20 && gameModeId != 45 && gameModeId != 54 && gameModeId != 58 && (zbLimitFlag != 0 || !zbLimit.empty()))
 				{
 					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't use zbLimit, gameModeId: %d\n", user->GetLogName(), gameModeId);
 					lowMidFlag &= ~ROOM_LOWMID_ZBLIMIT;
@@ -1971,7 +2142,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 			if (lowMidFlag & ROOM_LOWMID_TEAMSWITCH)
 			{
-				if (!(gameModeId == 0 || gameModeId == 3) && teamSwitch != 0)
+				if (gameModeId != 0 && gameModeId != 3 && teamSwitch != 0)
 				{
 					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't use teamSwitch, gameModeId: %d\n", user->GetLogName(), gameModeId);
 					lowMidFlag &= ~ROOM_LOWMID_TEAMSWITCH;
@@ -2020,7 +2191,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 			if (lowMidFlag & ROOM_LOWMID_ZBAUTOHUNTING)
 			{
-				if (!(gameModeId == 14 || gameModeId == 45) && zbAutoHunting != 0)
+				if (gameModeId != 14 && gameModeId != 45 && zbAutoHunting != 0)
 				{
 					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't use zbAutoHunting, gameModeId: %d\n", user->GetLogName(), gameModeId);
 					lowMidFlag &= ~ROOM_LOWMID_ZBAUTOHUNTING;
@@ -2031,7 +2202,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 			if (lowMidFlag & ROOM_LOWMID_INTEGRATEDTEAM)
 			{
-				if (!(gameModeId == 2 || gameModeId == 5 || gameModeId == 56 || gameModeId == 57) && integratedTeam != 0)
+				if (gameModeId != 2 && gameModeId != 5 && gameModeId != 56 && gameModeId != 57 && integratedTeam != 0)
 				{
 					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't use integratedTeam, gameModeId: %d\n", user->GetLogName(), gameModeId);
 					lowMidFlag &= ~ROOM_LOWMID_INTEGRATEDTEAM;
@@ -2042,7 +2213,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 			if (highMidFlag & ROOM_HIGHMID_FIREBOMB)
 			{
-				if (!(gameModeId == 14 || gameModeId == 45 || gameModeId == 55) && fireBomb != 1)
+				if (gameModeId != 14 && gameModeId != 45 && gameModeId != 55 && fireBomb != 1)
 				{
 					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't use fireBomb, gameModeId: %d\n", user->GetLogName(), gameModeId);
 					highMidFlag &= ~ROOM_HIGHMID_FIREBOMB;
@@ -2085,7 +2256,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 			if (highMidFlag & ROOM_HIGHMID_FLOATINGDAMAGESKIN)
 			{
-				if (!(gameModeId == 0 || gameModeId == 2 || gameModeId == 3 || gameModeId == 5) && floatingDamageSkin != 1)
+				if (gameModeId != 0 && gameModeId != 2 && gameModeId != 3 && gameModeId != 5 && floatingDamageSkin != 1)
 				{
 					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't allow floatingDamageSkin to be changed, gameModeId: %d\n", user->GetLogName(), gameModeId);
 					highMidFlag &= ~ROOM_HIGHMID_FLOATINGDAMAGESKIN;
@@ -2096,7 +2267,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 			if (highMidFlag & ROOM_HIGHMID_PLAYERONETEAM)
 			{
-				if (!(gameModeId == 3 || gameModeId == 5) && playerOneTeam != 0)
+				if (gameModeId != 3 && gameModeId != 5 && playerOneTeam != 0)
 				{
 					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't use playerOneTeam, gameModeId: %d\n", user->GetLogName(), gameModeId);
 					highMidFlag &= ~ROOM_HIGHMID_PLAYERONETEAM;
@@ -2142,6 +2313,28 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 				}
 				else if (zbRebalance > 1)
 					zbRebalance = 1;
+			}
+
+			if (highMidFlag & ROOM_HIGHMID_CHANGESHOT)
+			{
+				if (gameModeId != 58 && changeShot != 0)
+				{
+					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't use changeShot, gameModeId: %d\n", user->GetLogName(), gameModeId);
+					highMidFlag &= ~ROOM_HIGHMID_CHANGESHOT;
+				}
+				else if (changeShot > 1)
+					changeShot = 1;
+			}
+
+			if (highMidFlag & ROOM_HIGHMID_ZOMBIEREVIVEZHC)
+			{
+				if (gameModeId != 58 && zombieReviveZHC != 0)
+				{
+					Logger().Warn("User '%s' tried to update a room\'s settings with gameModeId that doesn't use zombieReviveZHC, gameModeId: %d\n", user->GetLogName(), gameModeId);
+					highMidFlag &= ~ROOM_HIGHMID_ZOMBIEREVIVEZHC;
+				}
+				else if (zombieReviveZHC > 1)
+					zombieReviveZHC = 1;
 			}
 		}
 

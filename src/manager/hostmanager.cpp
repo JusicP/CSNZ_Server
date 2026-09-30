@@ -4,6 +4,7 @@
 #include "usermanager.h"
 #include "userdatabase.h"
 #include "itemmanager.h"
+#include "classmodmanager.h"
 #include "serverconfig.h"
 
 #include "common/utils.h"
@@ -203,6 +204,38 @@ bool CHostManager::OnSetUserInventory(CReceivePacket* msg, IExtendedSocket* sock
 
 	g_PacketManager.SendHostUserInventory(socket, userID, inGameItems);
 
+
+	// retain only classes
+	inGameItems.erase(
+		remove_if(
+			inGameItems.begin(),
+			inGameItems.end(),
+			[](const CUserInventoryItem& item) -> bool {
+				int category = g_pItemTable->GetCell<int>("Category", to_string(item.m_nItemID));
+				return category != 7;
+			}
+		),
+		inGameItems.end()
+	);
+
+	std::vector<ClassModInfo_t> infos;
+	infos.reserve(inGameItems.size());
+
+	for (auto& item : inGameItems)
+	{
+		if (g_ClassModManager.HasClassMod(destUser, item.m_nSlot))
+		{
+			ClassModInfo_t info = g_ClassModManager.GetClassModBySlot(destUser, item.m_nSlot);
+			info.slotId = item.m_nItemID;
+			infos.push_back(info);
+			continue;
+		}
+		ClassModInfo_t info = g_ClassModManager.GetClassModPresetById(item.m_nItemID);
+		info.slotId = item.m_nItemID;
+		infos.push_back(info);
+	}
+	g_PacketManager.SendUserClassModInventory(socket, userID, infos);
+
 	return true;
 }
 
@@ -269,20 +302,18 @@ bool CHostManager::OnUpdateUserStatus(CReceivePacket* msg, IExtendedSocket* sock
 			{
 				g_PacketManager.SendHostZBAddon(socket, userID, addons);
 
-				bool updated = 0;
-				int i = 0;
+				vector<int> newAddons;
 				for (auto itemID : addons)
 				{
 					vector<CUserInventoryItem> items;
-					if (!g_UserDatabase.GetInventoryItemsByID(userID, itemID, items))
+					if (g_UserDatabase.GetInventoryItemsByID(userID, itemID, items))
 					{
-						updated = 1;
-						addons.erase(addons.begin() + i);
+						newAddons.push_back(itemID);
 					}
 				}
 
-				if (updated)
-					g_UserDatabase.SetAddons(userID, addons);
+				if (newAddons.size() != addons.size())
+					g_UserDatabase.SetAddons(userID, newAddons);
 			}
 		}
 	}
@@ -554,8 +585,8 @@ bool CHostManager::OnRoundStart(CReceivePacket* msg, IExtendedSocket* socket)
 
 bool CHostManager::OnChangeMap(CReceivePacket* msg, IRoom* room)
 {
-	int unk1 = msg->ReadUInt64();
-	int unk2 = msg->ReadUInt64();
+	auto unk1 = msg->ReadUInt64();
+	auto unk2 = msg->ReadUInt64();
 	int mapId = msg->ReadUInt16();
 
 	room->ChangeMap(mapId);

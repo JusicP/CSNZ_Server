@@ -56,14 +56,15 @@ public:
 	int UpdateCharacterExtended(int userID, CUserCharacterExtended& character);
 	int GetUserBan(int userID, UserBan& ban);
 	int UpdateUserBan(int userID, UserBan ban);
-	int GetLoadouts(int userID, std::vector<CUserLoadout>& loadouts);
-	int UpdateLoadout(int userID, int loadoutID, int slot, int itemID);
+	int GetLoadouts(int userID, std::vector<std::vector<CUserLoadout>>& loadouts);
+	int UpdateLoadout(int userID, int groupID, int loadoutID, int slot, int itemID);
+	int UpdateLoadoutName(int userID, int groupID, int loadoutID, std::string name);
 	int GetFastBuy(int userID, std::vector<CUserFastBuy>& fastBuy);
 	int UpdateFastBuy(int userID, int slot, const std::string& name, const std::vector<int>& items);
 	int GetBuyMenu(int userID, std::vector<CUserBuyMenu>& buyMenu);
 	int UpdateBuyMenu(int userID, int subMenuID, int subMenuSlot, int itemID);
-	int GetBookmark(int userID, std::vector<int>& bookmark);
-	int UpdateBookmark(int userID, int bookmarkID, int itemID);
+	int GetBookmark(int userID, std::vector<std::vector<int>>& bookmark);
+	int UpdateBookmark(int userID, int groupID, int bookmarkID, int itemID);
 	int GetCostumeLoadout(int userID, CUserCostumeLoadout& loadout);
 	int UpdateCostumeLoadout(int userID, CUserCostumeLoadout& loadout, int zbSlot);
 	int GetRewardNotices(int userID, std::vector<int>& notices);
@@ -170,6 +171,11 @@ public:
 	int UpdateHWIDBanList(const std::vector<unsigned char>& hwid, bool remove = false);
 	std::vector<std::vector<unsigned char>> GetHWIDBanList();
 	bool IsHWIDBanned(std::vector<unsigned char>& hwid);
+
+	bool IsClassModExist(int userID, int slot);
+	int AddUserClassModLoadOut(int userID, int itemslot, const ClassModInfo_t& info);
+	int GetUserClassModLoadOut(int userID, int slot, ClassModInfo_t& info);
+	int UpdateUserClassModLoadOut(int userID, int itemslot, const ClassModInfo_t& info);
 
 	void PrintUserList();
 

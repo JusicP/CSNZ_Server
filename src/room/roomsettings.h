@@ -4,19 +4,6 @@
 
 class IUser;
 
-struct unk33_data
-{
-	int unk1;
-	int unk2;
-	int unk3;
-	int unk4;
-	int unk5;
-	int unk6;
-	int unk7;
-	int unk8;
-	int unk9;
-};
-
 struct mapPlaylist_data
 {
 	int unk1;
@@ -73,6 +60,7 @@ public:
 	bool IsMutationRestrictValid(const std::vector<int>& mutationRestrictList);
 	bool IsMapPlaylistValid(const std::vector<mapPlaylist_data>& mapPlaylist);
 	bool IsMutationLimitValid(int mutationLimit);
+	bool IsZombieReviveZHCValid(int zombieReviveZHC);
 	bool CanChangeTeamBalance(int gameModeId);
 	bool CanChangeFriendlyFire(int gameModeId);
 	bool CheckSettings(IUser* user);
@@ -118,9 +106,6 @@ public:
 	int viewFlag;
 	int voiceChat;
 	int status; // isIngame
-	int unk33;
-	std::vector<unk33_data> unk33_vec;
-	int unk34;
 	std::string unk35;
 	int unk36;
 	int unk37;
@@ -175,6 +160,7 @@ public:
 	std::string voxel_savegroup_id;
 	int voxel_unk22;
 	int voxel_unk23;
+	int voxel_unk24;
 	int unk63;
 	std::vector<int> unk63_vec;
 	int unk64;
@@ -204,4 +190,9 @@ public:
 	std::string unk79_2;
 	std::string unk79_3;
 	int unk79_4;
+	int unk80;
+	int changeShot;
+	int zombieReviveZHC;
+	int unk83_1;
+	int unk83_2;
 };

@@ -1,4 +1,4 @@
-PRAGMA user_version = 4;
+PRAGMA user_version = 6;
 CREATE TABLE IF NOT EXISTS "UserDist" (
 	"userIDNext" INT,
 	"clanIDNext" INT
@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS "UserCharacterExtended" (
 	"securityAnswer"			BLOB DEFAULT '',
 	"zbRespawnEffect"			INT DEFAULT 0,
 	"killerMarkEffect"			INT DEFAULT 0,
+	"curGroup"				INT DEFAULT 0,
 	FOREIGN KEY("userID") REFERENCES "UserCharacter"("userID") ON DELETE CASCADE,
 	PRIMARY KEY("userID")
 );
@@ -110,7 +111,9 @@ CREATE TABLE IF NOT EXISTS "UserBan" (
 );
 CREATE TABLE IF NOT EXISTS "UserLoadout" (
 	"userID"	INT NOT NULL,
+	"groupID"	INT,
 	"loadoutID"	INT,
+	"name"		VARCHAR(12),
 	"slot0"		INT DEFAULT 0,
 	"slot1"		INT DEFAULT 0,
 	"slot2"		INT DEFAULT 0,
@@ -140,6 +143,7 @@ CREATE TABLE IF NOT EXISTS "UserFastBuy" (
 );
 CREATE TABLE IF NOT EXISTS "UserBookmark" (
 	"userID"		INT NOT NULL,
+	"groupID"	INT,
 	"bookmarkID"	INT,
 	"itemID"		INT NOT NULL,
 	FOREIGN KEY("userID") REFERENCES "UserCharacter"("userID") ON DELETE CASCADE
@@ -389,5 +393,18 @@ CREATE TABLE IF NOT EXISTS "HWIDBanList" (
 CREATE TABLE IF NOT EXISTS "UserAddon" (
 	"userID"	INT NOT NULL,
 	"itemID"	INT NOT NULL,
+	FOREIGN KEY("userID") REFERENCES "UserCharacter"("userID") ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "UserClassMod" (
+	"userID"		INT NOT NULL,
+	"slot"			INT NOT NULL,
+	"status"		VARCHAR(32),
+	"sessionbonus"		VARCHAR(32),
+	"displayinfo"		VARCHAR(32),
+	"modbuff"		VARCHAR(32),
+	"activeskill"		VARCHAR(32),
+	"passiveskill"		VARCHAR(32),
+	"addon"			VARCHAR(32),
+	"pairingweapon"		VARCHAR(32),
 	FOREIGN KEY("userID") REFERENCES "UserCharacter"("userID") ON DELETE CASCADE
 );

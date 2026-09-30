@@ -169,7 +169,7 @@ int CExtendedSocket::Read(char* buf, int len)
 {
 	int recvResult = 0;
 
-	if (m_pSSL)
+	if (m_pSSL && !m_bCryptInput)
 		recvResult = wolfSSL_recv(m_pSSL, buf, len, 0);
 	else
 		recvResult = recv(m_Socket, buf, len, 0);
@@ -316,6 +316,9 @@ CReceivePacket* CExtendedSocket::Read()
 	m_pMsg->GetData().setReadOffset(0);
 	m_pMsg->ParseHeader();
 
+	if (m_pMsg->GetID() == 12 && !m_bCryptInput)
+		SetCryptInput(true);
+
 	return m_pMsg;
 }
 
@@ -365,7 +368,7 @@ int CExtendedSocket::Send(vector<unsigned char>& buffer, bool serverHelloMsg)
 
 	do
 	{
-		if (m_pSSL)
+		if (m_pSSL && !m_bCryptOutput)
 		{
 			int err;
 			do

@@ -416,7 +416,7 @@ void CMiniGameManager::OnWeaponReleaseSetCharacterRequest(CReceivePacket* msg, I
 		}
 	}
 
-	int len = rowCfg.rowName.size();
+	int len = (int)rowCfg.rowName.size();
 	int charPos = len - (slot + 1);
 	int progress = 1 << charPos;
 	if (progress & row.progress)

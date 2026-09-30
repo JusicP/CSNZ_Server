@@ -55,7 +55,7 @@ const char* defaultServerConfig = R"(
 	"MaxPlayers": 100,
 	"WelcomeMessage": "https://discord.gg/EvUAY6D",
 	"RestartOnCrash": false,
-	"InventorySlotMax": 3000,
+	"InventorySlotMax": 4000,
 	"CheckClientBuild": false,
 	"AllowedClientTimestamp": 0,
 	"AllowedLauncherVersion": 67,
@@ -74,7 +74,6 @@ const char* defaultServerConfig = R"(
 		"ZombieWarWeaponList": true,
 		"WeaponParts": true,
 		"Unk20": true,
-		"Encyclopedia": false,
 		"GameModeList": true,
 		"ProgressUnlock": true,
 		"WeaponPaints": true,
@@ -92,9 +91,8 @@ const char* defaultServerConfig = R"(
 		"Unk49": true,
 		"PPSystem": true,
 		"CodisData": true,
-		"Item": false,
+		"Item": true,
 		"WeaponProp": true,
-		"Hash": false,
 		"RandomWeaponList": true,
 		"ModeEvent": true,
 		"MileageShop": false,
@@ -102,7 +100,15 @@ const char* defaultServerConfig = R"(
 		"FamilyTotalWarMap": true,
 		"FamilyTotalWar": true,
 		"Unk54": true,
-		"Unk55": true
+		"Unk55": true,
+		"WeaponAscend": true,
+		"Unk57": true,
+		"PerkParam": true,
+		"Synthesis": true,
+		"VoxelList": true,
+		"VoxelItem": true,
+		"Unk64": true,
+		"VoxelConfigList": true
 	},
 	"DefaultUser": {
 		"GameMaster": true,
@@ -167,7 +173,8 @@ const char* defaultServerConfig = R"(
 			8137,
 			8138,
 			8222,
-			8415
+			8415,
+			9569
 		],
 		"PseudoDefaultItems": [
 			1,
@@ -201,74 +208,74 @@ const char* defaultServerConfig = R"(
 		],
 		"Loadouts": {
 			"0": {
-				"1": 12,
-				"2": 2,
+				"1": 24,
+				"2": 6,
 				"3": 161,
 				"4": 31
 			},
 			"1": {
-				"1": 12,
-				"2": 2,
+				"1": 24,
+				"2": 6,
 				"3": 161,
 				"4": 31
 			},
 			"2": {
-				"1": 12,
-				"2": 2,
+				"1": 24,
+				"2": 6,
 				"3": 161,
 				"4": 31
 			},
 			"3": {
-				"1": 12,
-				"2": 2,
+				"1": 24,
+				"2": 6,
 				"3": 161,
 				"4": 31
 			},
 			"4": {
-				"1": 12,
-				"2": 2,
+				"1": 24,
+				"2": 6,
 				"3": 161,
 				"4": 31
 			},
 			"5": {
-				"1": 12,
-				"2": 2,
+				"1": 24,
+				"2": 6,
 				"3": 161,
 				"4": 31
 			},
 			"6": {
-				"1": 12,
-				"2": 2,
+				"1": 24,
+				"2": 6,
 				"3": 161,
 				"4": 31
 			},
 			"7": {
-				"1": 12,
-				"2": 2,
+				"1": 24,
+				"2": 6,
 				"3": 161,
 				"4": 31
 			},
 			"8": {
-				"1": 12,
-				"2": 2,
+				"1": 24,
+				"2": 6,
 				"3": 161,
 				"4": 31
 			},
 			"9": {
-				"1": 12,
-				"2": 2,
+				"1": 24,
+				"2": 6,
 				"3": 161,
 				"4": 31
 			},
 			"10": {
-				"1": 12,
-				"2": 2,
+				"1": 24,
+				"2": 6,
 				"3": 161,
 				"4": 31
 			},
 			"11": {
-				"1": 12,
-				"2": 2,
+				"1": 24,
+				"2": 6,
 				"3": 161,
 				"4": 31
 			}
@@ -937,7 +944,7 @@ const char* defaultServerConfig = R"(
 			"Title": "User survey",
 			"Questions": {
 				"1": {
-					"Question": "Do you like CSN:S?",
+					"Question": "Do you like CSN?",
 					"AnswerType": 0, // 0 - check box, 1 - text entry (16-bit unk field added), 2 - unknown
 					"AnswerCheckBoxType": 1, // 0 - can't choose answer, 1 - choose only one, 2 - multiple choose
 					"Answers": {
@@ -954,11 +961,11 @@ const char* defaultServerConfig = R"(
 	},
 	"Voxel": {
 		"VoxelHTTPIP": "52.28.231.59",
-		"VoxelHTTPPort": "3000",
-		"VoxelVxlURL": "http://d1u9da8nyooy18.cloudfront.net/resources_prod/%s.vxl",
-		"VoxelVmgURL": "https://d1u9da8nyooy18.cloudfront.net/images_prod/%s.vmg"
+		"VoxelHTTPPort": "3000"
 	},
-	"DedicatedServerWhitelist": [ "127.0.0.1" ]
+	"DedicatedServerWhitelist": [
+		"127.0.0.1"
+	]
 }
 )";
 
@@ -987,7 +994,7 @@ bool CServerConfig::Load()
 		maxPlayers = cfg.value("MaxPlayers", 100);
 		welcomeMessage = cfg.value("WelcomeMessage", "");
 		restartOnCrash = cfg.value("RestartOnCrash", false);
-		inventorySlotMax = cfg.value("InventorySlotMax", 3000);
+		inventorySlotMax = cfg.value("InventorySlotMax", 4000);
 		checkClientBuild = cfg.value("CheckClientBuild", false);
 		allowedClientTimestamp = cfg.value("AllowedClientTimestamp", 0);
 		allowedLauncherVersion = cfg.value("AllowedLauncherVersion", 67);
@@ -1017,8 +1024,6 @@ bool CServerConfig::Load()
 				metadataToSend |= kMetadataFlag_WeaponParts;
 			if (jMetadata.value("Unk20", false))
 				metadataToSend |= kMetadataFlag_Unk20;
-			if (jMetadata.value("Encyclopedia", false))
-				metadataToSend |= kMetadataFlag_Encyclopedia;
 			if (jMetadata.value("GameModeList", false))
 				metadataToSend |= kMetadataFlag_GameModeList;
 			if (jMetadata.value("ProgressUnlock", false))
@@ -1057,8 +1062,6 @@ bool CServerConfig::Load()
 				metadataToSend |= kMetadataFlag_Item;
 			if (jMetadata.value("WeaponProp", false))
 				metadataToSend |= kMetadataFlag_WeaponProp;
-			if (jMetadata.value("Hash", false))
-				metadataToSend |= kMetadataFlag_Hash;
 			if (jMetadata.value("RandomWeaponList", false))
 				metadataToSend |= kMetadataFlag_RandomWeaponList;
 			if (jMetadata.value("ModeEvent", false))
@@ -1075,6 +1078,22 @@ bool CServerConfig::Load()
 				metadataToSend |= kMetadataFlag_Unk54;
 			if (jMetadata.value("Unk55", false))
 				metadataToSend |= kMetadataFlag_Unk55;
+			if (jMetadata.value("WeaponAscend", false))
+				metadataToSend |= kMetadataFlag_WeaponAscend;
+			if (jMetadata.value("Unk57", false))
+				metadataToSend |= kMetadataFlag_Unk57;
+			if (jMetadata.value("PerkParam", false))
+				metadataToSend |= kMetadataFlag_PerkParam;
+			if (jMetadata.value("Synthesis", false))
+				metadataToSend |= kMetadataFlag_Synthesis;
+			if (jMetadata.value("VoxelList", false))
+				metadataToSend |= kMetadataFlag_VoxelList;
+			if (jMetadata.value("VoxelItem", false))
+				metadataToSend |= kMetadataFlag_VoxelItem;
+			if (jMetadata.value("Unk64", false))
+				metadataToSend |= kMetadataFlag_Unk64;
+			if (jMetadata.value("VoxelConfigList", false))
+				metadataToSend |= kMetadataFlag_VoxelConfigList;
 		}
 		if (cfg.contains("DefaultUser"))
 		{
@@ -1096,29 +1115,36 @@ bool CServerConfig::Load()
 
 			if (jDefUser.contains("Loadouts"))
 			{
+				int loadoutIdx = 1;
 				ordered_json jLoadouts = jDefUser["Loadouts"];
 				for (auto& jItem : jLoadouts)
 				{
+					char name[8];
+					sprintf(name, OBFUSCATE("Set #%d"), loadoutIdx++);
+
 					vector<int> items;
 					for (int i = 1; i <= LOADOUT_SLOT_COUNT; i++)
 					{
 						items.push_back(jItem.value(to_string(i), 0));
 					}
-					defUser.loadouts.push_back(CUserLoadout(items));
+					defUser.loadouts.push_back(CUserLoadout(name, items));
 				}
 
-				int loadoutCount = defUser.loadouts.size();
+				int loadoutCount = (int)defUser.loadouts.size();
 				if (loadoutCount < LOADOUT_COUNT)
 				{
 					for (int i = 0; i < (LOADOUT_COUNT - loadoutCount); i++)
 					{
+						char name[8];
+						sprintf(name, OBFUSCATE("Set #%d"), loadoutIdx++);
+
 						vector<int> items;
-						items.push_back(12);
-						items.push_back(2);
+						items.push_back(24);
+						items.push_back(6);
 						items.push_back(161);
 						items.push_back(31);
 
-						defUser.loadouts.push_back(CUserLoadout(items));
+						defUser.loadouts.push_back(CUserLoadout(name, items));
 					}
 				}
 			}
@@ -1140,7 +1166,7 @@ bool CServerConfig::Load()
 					defUser.buyMenu.push_back(CUserBuyMenu(items));
 				}
 
-				int buyMenuCount = defUser.buyMenu.size();
+				int buyMenuCount = (int)defUser.buyMenu.size();
 				if (buyMenuCount < BUYMENU_COUNT)
 				{
 					for (int i = 0; i < (BUYMENU_COUNT - buyMenuCount); i++)
@@ -1372,8 +1398,6 @@ bool CServerConfig::Load()
 
 			voxelHTTPIP = jVoxel.value("VoxelHTTPIP", "52.28.231.59");
 			voxelHTTPPort = jVoxel.value("VoxelHTTPPort", "3000");
-			voxelVxlURL = jVoxel.value("VoxelVxlURL", "http://d1u9da8nyooy18.cloudfront.net/resources_prod/%s.vxl");
-			voxelVmgURL = jVoxel.value("VoxelVmgURL", "https://d1u9da8nyooy18.cloudfront.net/images_prod/%s.vmg");
 		}
 
 		if (cfg.contains("DedicatedServerWhitelist"))

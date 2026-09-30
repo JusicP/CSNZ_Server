@@ -13,8 +13,16 @@ public:
 	CVoxelManager();
 	~CVoxelManager();
 
+	virtual bool Init();
+	virtual void Shutdown();
+
+	bool LoadVoxelConfigList();
+	std::vector<VoxelConfig> GetVoxelConfigList();
 	bool OnPacket(CReceivePacket* msg, IExtendedSocket* socket);
 	std::string GetSlotDetails(const std::string& slotId);
+
+private:
+	std::vector<VoxelConfig> m_VoxelConfigList;
 };
 
 extern CVoxelManager g_VoxelManager;

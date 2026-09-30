@@ -189,7 +189,7 @@ bool CItemManager::LoadWeaponPaints()
 {
 	try
 	{
-		ifstream f("WeaponPaints.json");
+		ifstream f("Data/WeaponPaints.json");
 		ordered_json cfg = ordered_json::parse(f, nullptr, false, true);
 
 		if (cfg.is_discarded())
@@ -711,7 +711,7 @@ int CItemManager::AddItem(int userID, IUser* user, int itemID, int count, int du
 	if (g_UserDatabase.GetFirstItemByItemID(userID, itemID, itemWithSameID) < 0)
 		return ITEM_ADD_DB_ERROR;
 
-	int currentTimestamp = g_pServerInstance->GetCurrentTime();
+	int currentTimestamp = (int)g_pServerInstance->GetCurrentTime();
 
 	if (itemWithSameID.m_nItemID)
 	{
@@ -871,47 +871,74 @@ int CItemManager::AddItem(int userID, IUser* user, int itemID, int count, int du
 
 	if (className == "LobbyBG")
 	{
-		CUserCharacter character = user->GetCharacter(UFLAG_LOW_NAMEPLATE);
-		if (character.lowFlag == 0)
+		CUserCharacter character = {};
+		character.lowFlag = UFLAG_LOW_NAMEPLATE;
+		if (g_UserDatabase.GetCharacter(userID, character) <= 0)
 			return ITEM_ADD_DB_ERROR;
 
 		if (character.nameplateID)
 			itemInUse = 0;
-		else
+		else if (user)
 			user->UpdateNameplate(itemID);
+		else
+		{
+			character.nameplateID = itemID;
+			g_UserDatabase.UpdateCharacter(userID, character);
+		}
 	}
 	else if (className == "zbRespawnEffect")
 	{
-		CUserCharacterExtended character = user->GetCharacterExtended(EXT_UFLAG_ZBRESPAWNEFFECT);
-		if (character.flag == 0)
+		CUserCharacterExtended character = {};
+		character.flag = EXT_UFLAG_ZBRESPAWNEFFECT;
+		if (g_UserDatabase.GetCharacterExtended(userID, character) <= 0)
 			return ITEM_ADD_DB_ERROR;
 
 		if (character.zbRespawnEffect)
 			itemInUse = 0;
-		else
+		else if (user)
 			user->UpdateZbRespawnEffect(itemID);
+		else
+		{
+			character.zbRespawnEffect = itemID;
+			g_UserDatabase.UpdateCharacterExtended(userID, character);
+		}
 	}
 	else if (className == "CombatInfoItem")
 	{
-		CUserCharacterExtended character = user->GetCharacterExtended(EXT_UFLAG_KILLERMARKEFFECT);
-		if (character.flag == 0)
+		CUserCharacterExtended character = {};
+		character.flag = EXT_UFLAG_KILLERMARKEFFECT;
+		if (g_UserDatabase.GetCharacterExtended(userID, character) <= 0)
 			return ITEM_ADD_DB_ERROR;
 
 		if (character.killerMarkEffect)
 			itemInUse = 0;
-		else
+		else if (user)
 			user->UpdateKillerMarkEffect(itemID);
+		else
+		{
+			character.killerMarkEffect = itemID;
+			g_UserDatabase.UpdateCharacterExtended(userID, character);
+		}
 	}
 
 	string resourceName = g_pItemTable->GetCell<string>("recourcename", to_string(itemID));
 	if (resourceName.find("chatcolor_") != std::string::npos)
 	{
-		CUserCharacter character = user->GetCharacter(NULL, UFLAG_HIGH_CHATCOLOR);
-		if (character.highFlag == 0)
+		CUserCharacter character = {};
+		character.highFlag = UFLAG_HIGH_CHATCOLOR;
+		if (g_UserDatabase.GetCharacter(userID, character) <= 0)
 			return ITEM_ADD_DB_ERROR;
 
 		if (!character.chatColorID)
-			user->UpdateChatColor(itemID);
+		{
+			if (user)
+				user->UpdateChatColor(itemID);
+			else
+			{
+				character.chatColorID = itemID;
+				g_UserDatabase.UpdateCharacter(userID, character);
+			}
+		}
 	}
 
 	CUserInventoryItem item;
@@ -930,43 +957,46 @@ int CItemManager::AddItem(int userID, IUser* user, int itemID, int count, int du
 	if (user)
 		g_PacketManager.SendInventoryAdd(user->GetExtendedSocket(), items);
 
-	if (itemID == 8357) // superRoom
+	if (user)
 	{
-		IRoom* currentRoom = user->GetCurrentRoom();
-		if (currentRoom != NULL)
+		if (itemID == 8357) // superRoom
 		{
-			if (user == currentRoom->GetHostUser()) // it's the room host, so add the superRoom flag
+			IRoom* currentRoom = user->GetCurrentRoom();
+			if (currentRoom != NULL)
 			{
-				CRoomSettings* roomSettings = currentRoom->GetSettings();
-
-				if (!roomSettings->superRoom)
+				if (user == currentRoom->GetHostUser()) // it's the room host, so add the superRoom flag
 				{
-					roomSettings->superRoom = 1;
+					CRoomSettings* roomSettings = currentRoom->GetSettings();
 
-					for (auto u : currentRoom->GetUsers())
+					if (!roomSettings->superRoom)
 					{
-						g_PacketManager.SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SUPERROOM);
+						roomSettings->superRoom = 1;
+
+						for (auto u : currentRoom->GetUsers())
+						{
+							g_PacketManager.SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SUPERROOM);
+						}
 					}
 				}
 			}
 		}
-	}
-	else if (itemID == 439) // BigHeadEvent
-	{
-		IRoom* currentRoom = user->GetCurrentRoom();
-		if (currentRoom != NULL)
+		else if (itemID == 439) // BigHeadEvent
 		{
-			if (user == currentRoom->GetHostUser()) // it's the room host, so add the sd flag
+			IRoom* currentRoom = user->GetCurrentRoom();
+			if (currentRoom != NULL)
 			{
-				CRoomSettings* roomSettings = currentRoom->GetSettings();
-
-				if ((roomSettings->gameModeId == 3 || roomSettings->gameModeId == 4 || roomSettings->gameModeId == 5 || roomSettings->gameModeId == 15 || roomSettings->gameModeId == 24) && !roomSettings->sd)
+				if (user == currentRoom->GetHostUser()) // it's the room host, so add the sd flag
 				{
-					roomSettings->sd = 1;
+					CRoomSettings* roomSettings = currentRoom->GetSettings();
 
-					for (auto u : currentRoom->GetUsers())
+					if ((roomSettings->gameModeId == 3 || roomSettings->gameModeId == 4 || roomSettings->gameModeId == 5 || roomSettings->gameModeId == 15 || roomSettings->gameModeId == 24) && !roomSettings->sd)
 					{
-						g_PacketManager.SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SD);
+						roomSettings->sd = 1;
+
+						for (auto u : currentRoom->GetUsers())
+						{
+							g_PacketManager.SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SD);
+						}
 					}
 				}
 			}
@@ -1054,7 +1084,7 @@ int CItemManager::AddItems(int userID, IUser* user, vector<RewardItem>& items)
 			break;
 		}
 
-		int currentTimestamp = g_pServerInstance->GetCurrentTime();
+		int currentTimestamp = (int)g_pServerInstance->GetCurrentTime();
 
 		if (itemWithSameID.m_nItemID)
 		{
@@ -1205,8 +1235,9 @@ int CItemManager::AddItems(int userID, IUser* user, vector<RewardItem>& items)
 
 		if (className == "LobbyBG")
 		{
-			CUserCharacter character = user->GetCharacter(UFLAG_LOW_NAMEPLATE);
-			if (character.lowFlag == 0)
+			CUserCharacter character = {};
+			character.lowFlag = UFLAG_LOW_NAMEPLATE;
+			if (g_UserDatabase.GetCharacter(userID, character) <= 0)
 			{
 				result = ITEM_ADD_DB_ERROR;
 				break;
@@ -1214,13 +1245,19 @@ int CItemManager::AddItems(int userID, IUser* user, vector<RewardItem>& items)
 
 			if (character.nameplateID)
 				itemInUse = 0;
-			else
+			else if (user)
 				user->UpdateNameplate(itemID);
+			else
+			{
+				character.nameplateID = itemID;
+				g_UserDatabase.UpdateCharacter(userID, character);
+			}
 		}
 		else if (className == "zbRespawnEffect")
 		{
-			CUserCharacterExtended character = user->GetCharacterExtended(EXT_UFLAG_ZBRESPAWNEFFECT);
-			if (character.flag == 0)
+			CUserCharacterExtended character = {};
+			character.flag = EXT_UFLAG_ZBRESPAWNEFFECT;
+			if (g_UserDatabase.GetCharacterExtended(userID, character) <= 0)
 			{
 				result = ITEM_ADD_DB_ERROR;
 				break;
@@ -1228,13 +1265,19 @@ int CItemManager::AddItems(int userID, IUser* user, vector<RewardItem>& items)
 
 			if (character.zbRespawnEffect)
 				itemInUse = 0;
-			else
+			else if (user)
 				user->UpdateZbRespawnEffect(itemID);
+			else
+			{
+				character.zbRespawnEffect = itemID;
+				g_UserDatabase.UpdateCharacterExtended(userID, character);
+			}
 		}
 		else if (className == "CombatInfoItem")
 		{
-			CUserCharacterExtended character = user->GetCharacterExtended(EXT_UFLAG_KILLERMARKEFFECT);
-			if (character.flag == 0)
+			CUserCharacterExtended character = {};
+			character.flag = EXT_UFLAG_KILLERMARKEFFECT;
+			if (g_UserDatabase.GetCharacterExtended(userID, character) <= 0)
 			{
 				result = ITEM_ADD_DB_ERROR;
 				break;
@@ -1242,61 +1285,79 @@ int CItemManager::AddItems(int userID, IUser* user, vector<RewardItem>& items)
 
 			if (character.killerMarkEffect)
 				itemInUse = 0;
-			else
+			else if (user)
 				user->UpdateKillerMarkEffect(itemID);
+			else
+			{
+				character.killerMarkEffect = itemID;
+
+				g_UserDatabase.UpdateCharacterExtended(userID, character);
+			}
 		}
 
 		string resourceName = g_pItemTable->GetCell<string>("recourcename", to_string(itemID));
 		if (resourceName.find("chatcolor_") != std::string::npos)
 		{
-			CUserCharacter character = user->GetCharacter(NULL, UFLAG_HIGH_CHATCOLOR);
-			if (character.highFlag == 0)
+			CUserCharacter character = {};
+			character.highFlag = UFLAG_HIGH_CHATCOLOR;
+			if (g_UserDatabase.GetCharacter(userID, character) <= 0)
 			{
 				result = ITEM_ADD_DB_ERROR;
 				break;
 			}
 
 			if (!character.chatColorID)
-				user->UpdateChatColor(itemID);
+			{
+				if (user)
+					user->UpdateChatColor(itemID);
+				else
+				{
+					character.chatColorID = itemID;
+					g_UserDatabase.UpdateCharacter(userID, character);
+				}
+			}
 		}
 
-		if (itemID == 8357) // superRoom
+		if (user)
 		{
-			IRoom* currentRoom = user->GetCurrentRoom();
-			if (currentRoom != NULL)
+			if (itemID == 8357) // superRoom
 			{
-				if (user == currentRoom->GetHostUser()) // it's the room host, so add the superRoom flag
+				IRoom* currentRoom = user->GetCurrentRoom();
+				if (currentRoom != NULL)
 				{
-					CRoomSettings* roomSettings = currentRoom->GetSettings();
-
-					if (!roomSettings->superRoom)
+					if (user == currentRoom->GetHostUser()) // it's the room host, so add the superRoom flag
 					{
-						roomSettings->superRoom = 1;
+						CRoomSettings* roomSettings = currentRoom->GetSettings();
 
-						for (auto u : currentRoom->GetUsers())
+						if (!roomSettings->superRoom)
 						{
-							g_PacketManager.SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SUPERROOM);
+							roomSettings->superRoom = 1;
+
+							for (auto u : currentRoom->GetUsers())
+							{
+								g_PacketManager.SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SUPERROOM);
+							}
 						}
 					}
 				}
 			}
-		}
-		else if (itemID == 439) // BigHeadEvent
-		{
-			IRoom* currentRoom = user->GetCurrentRoom();
-			if (currentRoom != NULL)
+			else if (itemID == 439) // BigHeadEvent
 			{
-				if (user == currentRoom->GetHostUser()) // it's the room host, so add the sd flag
+				IRoom* currentRoom = user->GetCurrentRoom();
+				if (currentRoom != NULL)
 				{
-					CRoomSettings* roomSettings = currentRoom->GetSettings();
-
-					if ((roomSettings->gameModeId == 3 || roomSettings->gameModeId == 4 || roomSettings->gameModeId == 5 || roomSettings->gameModeId == 15 || roomSettings->gameModeId == 24) && !roomSettings->sd)
+					if (user == currentRoom->GetHostUser()) // it's the room host, so add the sd flag
 					{
-						roomSettings->sd = 1;
+						CRoomSettings* roomSettings = currentRoom->GetSettings();
 
-						for (auto u : currentRoom->GetUsers())
+						if ((roomSettings->gameModeId == 3 || roomSettings->gameModeId == 4 || roomSettings->gameModeId == 5 || roomSettings->gameModeId == 15 || roomSettings->gameModeId == 24) && !roomSettings->sd)
 						{
-							g_PacketManager.SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SD);
+							roomSettings->sd = 1;
+
+							for (auto u : currentRoom->GetUsers())
+							{
+								g_PacketManager.SendRoomUpdateSettings(u->GetExtendedSocket(), roomSettings, 0, ROOM_LOWMID_SD);
+							}
 						}
 					}
 				}
@@ -1610,8 +1671,9 @@ bool CItemManager::RemoveItem(int userID, IUser* user, CUserInventoryItem& item)
 	string className = g_pItemTable->GetCell<string>("ClassName", to_string(item.m_nItemID));
 	if (className == "LobbyBG")
 	{
-		CUserCharacter character = user->GetCharacter(UFLAG_LOW_NAMEPLATE);
-		if (character.lowFlag == 0)
+		CUserCharacter character = {};
+		character.lowFlag = UFLAG_LOW_NAMEPLATE;
+		if (g_UserDatabase.GetCharacter(userID, character) <= 0)
 		{
 			Logger().Warn("CItemManager::RemoveItem: cannot remove item, database error\n");
 			return false;
@@ -1632,8 +1694,9 @@ bool CItemManager::RemoveItem(int userID, IUser* user, CUserInventoryItem& item)
 	}
 	else if (className == "zbRespawnEffect")
 	{
-		CUserCharacterExtended characterExt = user->GetCharacterExtended(EXT_UFLAG_ZBRESPAWNEFFECT);
-		if (characterExt.flag == 0)
+		CUserCharacterExtended characterExt = {};
+		characterExt.flag = EXT_UFLAG_ZBRESPAWNEFFECT;
+		if (g_UserDatabase.GetCharacterExtended(userID, characterExt) <= 0)
 		{
 			Logger().Warn("CItemManager::RemoveItem: cannot remove item, database error\n");
 			return false;
@@ -1654,8 +1717,9 @@ bool CItemManager::RemoveItem(int userID, IUser* user, CUserInventoryItem& item)
 	}
 	else if (className == "CombatInfoItem")
 	{
-		CUserCharacterExtended characterExt = user->GetCharacterExtended(EXT_UFLAG_KILLERMARKEFFECT);
-		if (characterExt.flag == 0)
+		CUserCharacterExtended characterExt = {};
+		characterExt.flag = EXT_UFLAG_KILLERMARKEFFECT;
+		if (g_UserDatabase.GetCharacterExtended(userID, characterExt) <= 0)
 		{
 			Logger().Warn("CItemManager::RemoveItem: cannot remove item, database error\n");
 			return false;
@@ -1678,8 +1742,9 @@ bool CItemManager::RemoveItem(int userID, IUser* user, CUserInventoryItem& item)
 	string resourceName = g_pItemTable->GetCell<string>("recourcename", to_string(item.m_nItemID));
 	if (resourceName.find("chatcolor_") != std::string::npos)
 	{
-		CUserCharacter character = user->GetCharacter(NULL, UFLAG_HIGH_CHATCOLOR);
-		if (character.highFlag == 0)
+		CUserCharacter character = {};
+		character.highFlag = UFLAG_HIGH_CHATCOLOR;
+		if (g_UserDatabase.GetCharacter(userID, character) <= 0)
 		{
 			Logger().Warn("CItemManager::RemoveItem: cannot remove item, database error\n");
 			return false;
@@ -1730,7 +1795,7 @@ int CItemManager::ExtendItem(int userID, IUser* user, CUserInventoryItem& item, 
 
 	if (!duration)
 	{
-		int addontialTime = newExpiryDate - g_pServerInstance->GetCurrentTime();
+		int addontialTime = newExpiryDate - (int)g_pServerInstance->GetCurrentTime();
 		item.m_nExpiryDate += addontialTime;
 	}
 	else if (duration && item.m_nInUse == 0)
@@ -2029,7 +2094,7 @@ void CItemManager::InsertExp(IUser* user, CUserInventoryItem& targetItem, vector
 				}
 			}
 
-			totalExp += i.m_nEnhancementLevel ? itemsExp[grade] * i.m_nEnhancementLevel * 1.4 : itemsExp[grade];
+			totalExp += (int)(i.m_nEnhancementLevel ? itemsExp[grade] * i.m_nEnhancementLevel * 1.4 : itemsExp[grade]);
 			if (targetItem.m_nItemID == i.m_nItemID)
 				totalExp *= 2; // multiply by 2 exp if target item and material item are the same
 
@@ -2210,7 +2275,7 @@ bool CItemManager::OnEnhancementRequest(IUser* user, CReceivePacket* msg)
 		{
 			if (enhAttributeIndex == -1)
 			{
-				enhAttributeIndex = randomItemEnhAttribute();
+				enhAttributeIndex = (int)randomItemEnhAttribute();
 			}
 
 			int enhAttributeMax = itemEnhanceInfo[enhAttributeIndex];
@@ -2336,7 +2401,7 @@ bool CItemManager::OnEnhancementRequest(IUser* user, CReceivePacket* msg)
 					}
 				}
 
-				totalExp += i.m_nEnhancementLevel ? itemsExp[grade] * i.m_nEnhancementLevel * 1.4 : itemsExp[grade];
+				totalExp += (int)(i.m_nEnhancementLevel ? itemsExp[grade] * i.m_nEnhancementLevel * 1.4 : itemsExp[grade]);
 				if (targetItem.m_nItemID == i.m_nItemID)
 					totalExp *= 2; // multiply by 2 exp if target item and material item are the same
 
@@ -2472,7 +2537,7 @@ bool CItemManager::OnEnhancementRequest(IUser* user, CReceivePacket* msg)
 			bool gotEnh = false;
 			while (!gotEnh)
 			{
-				antiEnhAttribute = randomAttribute();
+				antiEnhAttribute = (int)randomAttribute();
 				if (itemEnhanceAttributes[antiEnhAttribute])
 				{
 					itemEnhanceAttributes[antiEnhAttribute] = 0;

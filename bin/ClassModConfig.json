@@ -1,0 +1,38 @@
+{
+  "ClassMod_Item_Changes": {
+    "id": 9868,
+    "cost": 1
+  },
+  "ClassMod_Item_AddSlot": {
+    "id": 9869,
+    "costs": [
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "comment": "costs 인덱스가 오픈되는 N번째 슬롯이고 값이 소모 개수이다. 2604 최초 출시 기준 좀시 능력치 포함 최대 20개 슬롯"
+  },
+
+  "ClassMod_Item_Protect": {
+    "id": 9870,
+    "cost": 1
+  },
+  "CategoryMaxSlots": [ 0, 0, 1, 1, 2, 1, 5, 5, 5 ]
+}

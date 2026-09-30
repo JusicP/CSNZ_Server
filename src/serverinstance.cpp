@@ -168,7 +168,7 @@ void CServerInstance::OnTCPConnectionClosed(IExtendedSocket* socket)
 {
 	int bytesSent = socket->GetBytesSent();
 	int bytesReceived = socket->GetBytesReceived();
-	int sock = socket->GetSocket();
+	int sock = (int)socket->GetSocket();
 
 	// clean up user/dedicated server
 	IUser* user = g_UserManager.GetUserBySocket(socket);
@@ -449,6 +449,9 @@ void CServerInstance::OnPackets(IExtendedSocket* s, CReceivePacket* msg)
 		break;
 	case PacketId::Voxel:
 		g_VoxelManager.OnPacket(msg, s);
+		break;
+	case PacketId::ClassMod:
+		g_UserManager.OnClassModPacket(msg, s);
 		break;
 	default:
 		Logger().Warn("Unimplemented packet: %d\n", msg->GetID());

@@ -34,6 +34,7 @@ public:
 	bool OnLeaguePacket(CReceivePacket* msg, IExtendedSocket* socket);
 	bool OnCryptPacket(CReceivePacket* msg, IExtendedSocket* socket);
 	bool OnKickPacket(CReceivePacket* msg, IExtendedSocket* socket);
+	bool OnClassModPacket(CReceivePacket* msg, IExtendedSocket* socket);
 
 	void SendNoticeMessageToAll(const std::string& msg);
 	void SendNoticeMsgBoxToAll(const std::string& msg);
@@ -73,12 +74,22 @@ private:
 	bool OnFavoriteSetBuyMenu(CReceivePacket* msg, IUser* user);
 	bool OnFavoriteSetFastBuy(CReceivePacket* msg, IUser* user);
 	bool OnFavoriteSetBookmark(CReceivePacket* msg, IUser* user);
+	bool OnFavoriteSetCurGroupLoadoutCharacter(CReceivePacket* msg, IUser* user);
+	bool OnFavoriteSetLoadoutName(CReceivePacket* msg, IUser* user);
 
 	void OnUserSurveyAnswerRequest(CReceivePacket* msg, IUser* user);
 
 	void OnBanAddNicknameRequest(CReceivePacket* msg, IUser* user);
 	void OnBanRemoveNicknameRequest(CReceivePacket* msg, IUser* user);
 	void OnBanSettingsRequest(CReceivePacket* msg, IUser* user);
+
+	void OnEnableSlot(CReceivePacket* msg, IUser* user);
+	void OnApplyMod(CReceivePacket* msg, IUser* user);
+	void OnRemoveMod(CReceivePacket* msg, IUser* user);
+	void OnClassModInterchange(CReceivePacket* msg, IUser* user);
+	void OnChangeStats(CReceivePacket* msg, IUser* user);
+	void OnClassModUnk5(CReceivePacket* msg, IUser* user);
+	void OnClassModLoadOut(CReceivePacket* msg, IUser* user);
 
 	std::vector<IUser*> m_Users;
 	std::vector<CUserInventoryItem> m_DefaultItems;

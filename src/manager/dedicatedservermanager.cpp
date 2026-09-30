@@ -14,7 +14,6 @@ CDedicatedServer::CDedicatedServer(IExtendedSocket* socket, int ip, int port)
 
 	g_UserManager.SendCrypt(socket);
 	g_UserManager.SendMetadata(socket);
-	g_PacketManager.SendVoxelURLs(socket, g_pServerConfig->voxelVxlURL, g_pServerConfig->voxelVmgURL);
 }
 
 void CDedicatedServer::SetRoom(IRoom* room)
@@ -90,6 +89,7 @@ bool CDedicatedServerManager::OnPacket(CReceivePacket* msg, IExtendedSocket* soc
 
 		int port = msg->ReadUInt16(); // -port, default is 27015
 		int ip = msg->ReadUInt32(true); // ip from -hostip dedi argument
+		std::string domain = msg->ReadString(); // domain from -hostdomain dedi argument
 
 		// if IP is not specified by dedi server, use IP from socket
 		if (ip == 0)
