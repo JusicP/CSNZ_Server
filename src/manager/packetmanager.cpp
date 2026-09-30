@@ -1879,13 +1879,15 @@ void CPacketManager::SendItemOpenDecoderResult(IExtendedSocket* socket, const It
 		msg->WriteInt16(item.duration);
 		msg->WriteUInt16(1); // units 1
 		msg->WriteUInt8(item.grade);
+		msg->WriteUInt8(0); // unk
+		msg->WriteUInt16(0); // unk
 		msg->WriteUInt8(0); // parts count
 		if (0)
 		{
 			msg->WriteUInt16(0); // part item ID
 		}
 		msg->WriteUInt16(0);
-		msg->WriteUInt16(0);
+		msg->WriteUInt32(0);
 	}
 
 	socket->Send(msg);

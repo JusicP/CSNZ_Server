@@ -5,7 +5,7 @@
 			"0.45": {
 				"Grade": 1,
 				"Duration": [
-					-1
+					0
 				],
 				"Items": [
 					8753
@@ -27,7 +27,7 @@
 			"3.25": {
 				"Grade": 1,
 				"Duration": [
-					-1
+					0
 				],
 				"Items": [
 					8047, // Dual Sword Phantom Slayer
@@ -48,7 +48,7 @@
 			"4.05": {
 				"Grade": 1,
 				"Duration": [
-					-1
+					0
 				],
 				"Items": [
 					8886, // ignite-10
@@ -71,7 +71,7 @@
 			"6": {
 				"Grade": 1,
 				"Duration": [
-					-1
+					0
 				],
 				"Items": [
 					720, // plasma grenades

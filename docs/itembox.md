@@ -8,7 +8,7 @@
 		"Rate": { // array of rates
 			"<double>": { // probability (from 0 to 100)
 				"Grade": <int>, // item grade 1 - default, 2 - normal, 3 - advanced, 4 - premium (def. 0)
-				"Duration": [<int>], // array of durations (in days) (def. empty)
+				"Duration": [<int>], // array of durations (in days) (0 - permanent) (def. empty)
 				"Items": [<int>], // array of items (itemID) (def. empty)
 			}
 		}
