@@ -1635,7 +1635,7 @@ void CPacketManager::SendMetadataVoxelConfigList(IExtendedSocket* socket, std::v
 	msg->WriteUInt8((unsigned char)voxelConfigList.size());
 	for (auto& voxelConfig : voxelConfigList)
 	{
-		msg->WriteUInt8(voxelConfig.unk);
+		msg->WriteUInt8(voxelConfig.id);
 		msg->WriteString(voxelConfig.vxlURL);
 		msg->WriteString(voxelConfig.vmgURL);
 		msg->WriteUInt8((unsigned char)voxelConfig.httpIPList.size());
@@ -2225,8 +2225,8 @@ void BuildRoomInfo(CSendPacket* msg, IRoom* room, int lFlag, int hFlag)
 		if (roomSettings->voxelFlag & VOXELFLAG_IMAGEID) {
 			msg->WriteString(roomSettings->voxel_image_id);
 		}
-		if (roomSettings->voxelFlag & VOXELFLAG_UNK24) {
-			msg->WriteUInt8(roomSettings->voxel_unk24);
+		if (roomSettings->voxelFlag & VOXELFLAG_SERVERID) {
+			msg->WriteUInt8(roomSettings->voxel_server_id);
 		}
 	}
 }
@@ -2807,8 +2807,8 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 		if (newSettings->voxelFlag & VOXELFLAG_UNK23) {
 			msg->WriteUInt8(newSettings->voxel_unk23);
 		}
-		if (newSettings->voxelFlag & VOXELFLAG_UNK24) {
-			msg->WriteUInt8(newSettings->voxel_unk24);
+		if (newSettings->voxelFlag & VOXELFLAG_SERVERID) {
+			msg->WriteUInt8(newSettings->voxel_server_id);
 		}
 	}
 	if (lowMidFlag & ROOM_LOWMID_UNK63) {
@@ -7494,7 +7494,7 @@ void CPacketManager::SendVoxelUnk9(IExtendedSocket* socket)
 		if (0 & VOXELFLAG_UNK23) {
 			msg->WriteUInt8(0);
 		}
-		if (0 & VOXELFLAG_UNK24) {
+		if (0 & VOXELFLAG_SERVERID) {
 			msg->WriteUInt8(0);
 		}
 	}

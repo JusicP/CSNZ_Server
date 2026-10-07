@@ -472,8 +472,8 @@ void CRoom::UpdateSettings(CRoomSettings& newSettings)
 		if (m_pSettings->voxelFlag & VOXELFLAG_UNK23) {
 			m_pSettings->voxel_unk23 = newSettings.voxel_unk23;
 		}
-		if (m_pSettings->voxelFlag & VOXELFLAG_UNK24) {
-			m_pSettings->voxel_unk23 = newSettings.voxel_unk24;
+		if (m_pSettings->voxelFlag & VOXELFLAG_SERVERID) {
+			m_pSettings->voxel_server_id = newSettings.voxel_server_id;
 		}
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK63) {

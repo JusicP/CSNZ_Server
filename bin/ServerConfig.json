@@ -910,10 +910,6 @@
 			}
 		}
 	},
-	"Voxel": {
-		"VoxelHTTPIP": "52.28.231.59",
-		"VoxelHTTPPort": "3000"
-	},
 	"DedicatedServerWhitelist": [
 		"127.0.0.1"
 	]

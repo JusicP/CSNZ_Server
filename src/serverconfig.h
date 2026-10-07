@@ -43,8 +43,6 @@ public:
 	bool crypt;
 	int mainMenuSkinEvent;
 	int banListMaxSize;
-	std::string voxelHTTPIP;
-	std::string voxelHTTPPort;
 	std::vector<std::string> dedicatedServerWhitelist;
 };
 

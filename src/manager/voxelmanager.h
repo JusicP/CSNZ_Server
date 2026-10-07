@@ -19,7 +19,7 @@ public:
 	bool LoadVoxelConfigList();
 	std::vector<VoxelConfig> GetVoxelConfigList();
 	bool OnPacket(CReceivePacket* msg, IExtendedSocket* socket);
-	std::string GetSlotDetails(const std::string& slotId);
+	std::string GetSlotDetails(const std::string& slotId, int serverId);
 
 private:
 	std::vector<VoxelConfig> m_VoxelConfigList;

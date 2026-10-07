@@ -959,10 +959,6 @@ const char* defaultServerConfig = R"(
 			}
 		}
 	},
-	"Voxel": {
-		"VoxelHTTPIP": "52.28.231.59",
-		"VoxelHTTPPort": "3000"
-	},
 	"DedicatedServerWhitelist": [
 		"127.0.0.1"
 	]
@@ -1390,14 +1386,6 @@ bool CServerConfig::Load()
 				}	
 				surveys.push_back(survey);
 			}
-		}
-
-		if (cfg.contains("Voxel"))
-		{
-			json jVoxel = cfg["Voxel"];
-
-			voxelHTTPIP = jVoxel.value("VoxelHTTPIP", "52.28.231.59");
-			voxelHTTPPort = jVoxel.value("VoxelHTTPPort", "3000");
 		}
 
 		if (cfg.contains("DedicatedServerWhitelist"))

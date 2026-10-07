@@ -55,7 +55,7 @@ bool CVoxelManager::LoadVoxelConfigList()
 		for (auto& voxelConfig : voxelConfigList)
 		{
 			VoxelConfig voxelCfg;
-			voxelCfg.unk = voxelConfig.value("Unk", 0);
+			voxelCfg.id = voxelConfig.value("ID", 0);
 			voxelCfg.vxlURL = voxelConfig.value("VxlURL", "");
 			voxelCfg.vmgURL = voxelConfig.value("VmgURL", "");
 
@@ -133,62 +133,76 @@ bool CVoxelManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
 
 static const int TIMEOUT = 3000;
 
-std::string CVoxelManager::GetSlotDetails(const std::string& slotId)
+std::string CVoxelManager::GetSlotDetails(const std::string& slotId, int serverId)
 {
-	sockaddr_in servaddr;
-	memset(&servaddr, 0, sizeof(servaddr));
-	servaddr.sin_family = AF_INET;
-	if (inet_pton(AF_INET, g_pServerConfig->voxelHTTPIP.c_str(), &servaddr.sin_addr) == 0)
+	if (serverId >= m_VoxelConfigList.size())
 	{
-		Logger().Warn("CVoxelManager::GetSlotDetails: Error parsing host address.\n");
-		return "";
-	}
-	servaddr.sin_port = htons(stoi(g_pServerConfig->voxelHTTPPort));
-
-	SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-
-	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&TIMEOUT), sizeof(TIMEOUT));
-
-	if (sock < 0)
-	{
-		Logger().Warn("CVoxelManager::GetSlotDetails: Error creating socket.\n");
+		Logger().Warn("CVoxelManager::GetSlotDetails: ServerID is out of range.\n");
 		return "";
 	}
 
-	if (connect(sock, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0)
+	for (int i = 0; i < m_VoxelConfigList[serverId].httpIPList.size(); i++)
 	{
-		closesocket(sock);
-		Logger().Warn("CVoxelManager::GetSlotDetails: Could not connect.\n");
-		return "";
+		for (int j = 0; j < m_VoxelConfigList[serverId].httpIPList[i].ports.size(); j++)
+		{
+			sockaddr_in servaddr;
+			memset(&servaddr, 0, sizeof(servaddr));
+			servaddr.sin_family = AF_INET;
+			if (inet_pton(AF_INET, m_VoxelConfigList[serverId].httpIPList[i].ip.substr(7).c_str(), &servaddr.sin_addr) == 0)
+			{
+				Logger().Warn("CVoxelManager::GetSlotDetails: Error parsing host address.\n");
+				continue;
+			}
+			servaddr.sin_port = htons(m_VoxelConfigList[serverId].httpIPList[i].ports[j]);
+
+			SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+
+			setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&TIMEOUT), sizeof(TIMEOUT));
+
+			if (sock < 0)
+			{
+				Logger().Warn("CVoxelManager::GetSlotDetails: Error creating socket.\n");
+				continue;
+			}
+
+			if (connect(sock, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0)
+			{
+				closesocket(sock);
+				Logger().Warn("CVoxelManager::GetSlotDetails: Could not connect.\n");
+				continue;
+			}
+
+			std::stringstream ss;
+			ss << "GET /v6/slots/detail/" << slotId.c_str() << " HTTP/1.1\r\n"
+				<< "Connection: Keep-Alive\r\n"
+				<< "User-Agent: cpprestsdk/2.10.2\r\n"
+				<< "Host: " << m_VoxelConfigList[serverId].httpIPList[i].ip.substr(7).c_str() << ":" << m_VoxelConfigList[serverId].httpIPList[i].ports[j] << "\r\n"
+				<< "\r\n\r\n";
+			std::string request = ss.str();
+
+			if (send(sock, request.c_str(), (int)request.length(), 0) != (int)request.length())
+			{
+				closesocket(sock);
+				Logger().Warn("CVoxelManager::GetSlotDetails: Error sending request.\n");
+				continue;
+			}
+
+			std::string response;
+			char cur;
+			bool found = false;
+			while (recv(sock, &cur, 1, 0) > 0)
+			{
+				if (!found && cur == '{')
+					found = true;
+
+				if (found)
+					response += cur;
+			}
+
+			closesocket(sock);
+			return response;
+		}
 	}
 
-	std::stringstream ss;
-	ss << "GET /v6/slots/detail/" << slotId.c_str() << " HTTP/1.1\r\n"
-		<< "Connection: Keep-Alive\r\n"
-		<< "User-Agent: cpprestsdk/2.10.2\r\n"
-		<< "Host: " << g_pServerConfig->voxelHTTPIP << ":" << g_pServerConfig->voxelHTTPPort << "\r\n"
-		<< "\r\n\r\n";
-	std::string request = ss.str();
-
-	if (send(sock, request.c_str(), (int)request.length(), 0) != (int)request.length())
-	{
-		closesocket(sock);
-		Logger().Warn("CVoxelManager::GetSlotDetails: Error sending request.\n");
-		return "";
-	}
-
-	std::string response;
-	char cur;
-	bool found = false;
-	while (recv(sock, &cur, 1, 0) > 0)
-	{
-		if (!found && cur == '{')
-			found = true;
-		
-		if (found)
-			response += cur;
-	}
-
-	closesocket(sock);
-	return response;
+	return "";
 }

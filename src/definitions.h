@@ -1743,7 +1743,7 @@ struct RandomWeapon
 #define VOXELFLAG_SAVEGROUPID		(1<<22)
 #define VOXELFLAG_UNK22				(1<<23)
 #define VOXELFLAG_UNK23				(1<<24)
-#define VOXELFLAG_UNK24				(1<<25)
+#define VOXELFLAG_SERVERID			(1<<25)
 
 #define ZIPMETADATA_CHUNK_SIZE 64000
 #define ZIPMETADATA_MAX_CHUNKS 4
@@ -1757,7 +1757,7 @@ struct VoxelHTTP
 
 struct VoxelConfig
 {
-	int unk;
+	int id;
 	std::string vxlURL;
 	std::string vmgURL;
 	std::vector<VoxelHTTP> httpIPList;

@@ -182,11 +182,6 @@
 		}
 	},
 
-	"Voxel": { // studio configuration
-		"VoxelHTTPIP": <string>, // studio http ip, used by server to get studio map info (def. "52.28.231.59")
-		"VoxelHTTPPort": <string> // studio http port, used by server to get studio map info (def. "3000")
-	},
-
 	"DedicatedServerWhitelist": [ // dedicated server IP whitelist (array) (def. [ "127.0.0.1" ])
 		<string>
 	]

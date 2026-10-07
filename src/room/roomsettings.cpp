@@ -267,8 +267,8 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 		if (voxelFlag & VOXELFLAG_UNK23) {
 			voxel_unk23 = inPacket.readUInt8();
 		}
-		if (voxelFlag & VOXELFLAG_UNK24) {
-			voxel_unk24 = inPacket.readUInt8();
+		if (voxelFlag & VOXELFLAG_SERVERID) {
+			voxel_server_id = inPacket.readUInt8();
 		}
 	}
 	if (lowMidFlag & ROOM_LOWMID_UNK63) {
@@ -457,7 +457,7 @@ void CRoomSettings::Init()
 	voxel_savegroup_id = "";
 	voxel_unk22 = 0;
 	voxel_unk23 = 0;
-	voxel_unk24 = 0;
+	voxel_server_id = 0;
 	unk63 = 0;
 	unk64 = 0;
 	teamSwitch = 0;
@@ -1566,9 +1566,9 @@ void CRoomSettings::LoadZbCompetitiveSettings(int gameModeId)
 	mutationLimit = gameModeId == 45 ? 40 : 0;
 }
 
-bool CRoomSettings::ParseSlotDetails(std::string voxel_id)
+bool CRoomSettings::ParseSlotDetails(std::string voxel_id, int server_id)
 {
-	std::string response = g_VoxelManager.GetSlotDetails(voxel_id);
+	std::string response = g_VoxelManager.GetSlotDetails(voxel_id, server_id);
 	if (!response.empty())
 	{
 		ordered_json responseJson = ordered_json::parse(response, nullptr, true, true);
@@ -1582,7 +1582,7 @@ bool CRoomSettings::ParseSlotDetails(std::string voxel_id)
 				ordered_json jSlotDetails = responseJson["result"];
 
 				voxelFlag = VOXELFLAG_ID;
-				voxel_id = jSlotDetails.value("id", "");
+				voxelFlag |= VOXELFLAG_SERVERID;
 
 				voxelFlag |= VOXELFLAG_RESOURCEID;
 				voxel_resource_id = jSlotDetails.value("resource_id", "");
@@ -1633,9 +1633,6 @@ bool CRoomSettings::ParseSlotDetails(std::string voxel_id)
 
 				voxelFlag |= VOXELFLAG_UNK23;
 				voxel_unk23 = 0;
-
-				voxelFlag |= VOXELFLAG_UNK24;
-				voxel_unk24 = 0;
 
 				return true;
 			}
@@ -2517,7 +2514,7 @@ bool CRoomSettings::CheckSettings(IUser* user)
 {
 	if (mapId == 254)
 	{
-		if (!ParseSlotDetails(voxel_id))
+		if (!ParseSlotDetails(voxel_id, voxel_server_id))
 			return false;
 
 		// Manually settings this, because client doesn't set them...
@@ -2708,7 +2705,7 @@ bool CRoomSettings::CheckNewSettings(IUser* user, CRoomSettings* roomSettings)
 {
 	if (mapId == 254 && voxel_id != roomSettings->voxel_id)
 	{
-		if (!ParseSlotDetails(voxel_id))
+		if (!ParseSlotDetails(voxel_id, voxel_server_id))
 			return false;
 	}
 

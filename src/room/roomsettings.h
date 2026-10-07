@@ -49,7 +49,7 @@ public:
 	void LoadFamilyBattleSettings(int gameModeId);
 	void LoadDefaultSettings(int gameModeId, int mapId);
 	void LoadZbCompetitiveSettings(int gameModeId);
-	bool ParseSlotDetails(std::string voxelId);
+	bool ParseSlotDetails(std::string voxelId, int serverId);
 	void LoadNewSettings(int gameModeId, int mapId, IUser* user);
 	bool IsSettingValid(int gameModeId, const std::string& setting, int value);
 	bool IsLeagueRuleWinLimitValid(int winLimit);
@@ -160,7 +160,7 @@ public:
 	std::string voxel_savegroup_id;
 	int voxel_unk22;
 	int voxel_unk23;
-	int voxel_unk24;
+	int voxel_server_id;
 	int unk63;
 	std::vector<int> unk63_vec;
 	int unk64;

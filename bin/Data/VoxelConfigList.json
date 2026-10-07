@@ -2,7 +2,7 @@
 	"Version": 1,
 	"VoxelConfigList": [
 		{
-			"Unk": 0,
+			"ID": 0,
 			"VxlURL": "http://d1u9da8nyooy18.cloudfront.net/resources_prod/%s.vxl",
 			"VmgURL": "https://d1u9da8nyooy18.cloudfront.net/images_prod/%s.vmg",
 			"HTTPIPList": [
