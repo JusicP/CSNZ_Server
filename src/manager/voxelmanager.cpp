@@ -2,6 +2,7 @@
 #include "packetmanager.h"
 #include "serverconfig.h"
 #include "common/utils.h"
+#include <regex>
 
 using namespace std;
 
@@ -131,6 +132,21 @@ bool CVoxelManager::OnPacket(CReceivePacket* msg, IExtendedSocket* socket)
 	return true;
 }
 
+bool isIP(std::string host)
+{
+	auto pos = host.find("://");
+	if (pos != std::string::npos)
+		host = host.substr(pos + 3);
+
+	host = host.substr(0, host.find_first_of("/:?#"));
+
+	in_addr ipv4;
+	in6_addr ipv6;
+
+	return inet_pton(AF_INET, host.c_str(), &ipv4) == 1 ||
+		inet_pton(AF_INET6, host.c_str(), &ipv6) == 1;
+}
+
 static const int TIMEOUT = 3000;
 
 std::string CVoxelManager::GetSlotDetails(const std::string& slotId, int serverId)
@@ -145,10 +161,29 @@ std::string CVoxelManager::GetSlotDetails(const std::string& slotId, int serverI
 	{
 		for (int j = 0; j < m_VoxelConfigList[serverId].httpIPList[i].ports.size(); j++)
 		{
+			bool isIp = isIP(m_VoxelConfigList[serverId].httpIPList[i].ip);
+			struct hostent* he;
+
+			if (!isIp)
+			{
+				std::string voxelHttpDomain;
+				std::regex r("https?:\\/\\/(?:www\\.)?([-a-zA-Z0-9@:%._\\+~#=]{1,256})");
+				std::smatch sm;
+				regex_search(m_VoxelConfigList[serverId].httpIPList[i].ip, sm, r);
+				voxelHttpDomain = sm[1];
+
+				he = gethostbyname(voxelHttpDomain.c_str());
+				if (he == NULL)
+				{
+					Logger().Warn("CVoxelManager::GetSlotDetails: Error getting IP address by hostname.\n");
+					continue;
+				}
+			}
+
 			sockaddr_in servaddr;
 			memset(&servaddr, 0, sizeof(servaddr));
 			servaddr.sin_family = AF_INET;
-			if (inet_pton(AF_INET, m_VoxelConfigList[serverId].httpIPList[i].ip.substr(7).c_str(), &servaddr.sin_addr) == 0)
+			if (inet_pton(AF_INET, isIp ? m_VoxelConfigList[serverId].httpIPList[i].ip.substr(7).c_str() : inet_ntoa(*((struct in_addr*)he->h_addr_list[0])), &servaddr.sin_addr) == 0)
 			{
 				Logger().Warn("CVoxelManager::GetSlotDetails: Error parsing host address.\n");
 				continue;
@@ -188,19 +223,40 @@ std::string CVoxelManager::GetSlotDetails(const std::string& slotId, int serverI
 			}
 
 			std::string response;
-			char cur;
-			bool found = false;
-			while (recv(sock, &cur, 1, 0) > 0)
-			{
-				if (!found && cur == '{')
-					found = true;
+			char buffer[8192];
+			ssize_t n;
 
-				if (found)
-					response += cur;
+			while (response.find("\r\n\r\n") == std::string::npos)
+			{
+				n = recv(sock, buffer, sizeof(buffer), 0);
+				if (n <= 0)
+					break;
+
+				response.append(buffer, n);
 			}
 
+			size_t bodyStart = response.find("\r\n\r\n") + 4;
+
+			size_t pos = response.find("Content-Length: ");
+			if (pos == std::string::npos)
+				continue;
+
+			size_t contentLength = stoul(response.substr(pos + 16));
+
+			while (response.size() - bodyStart < contentLength)
+			{
+				n = recv(sock, buffer, sizeof(buffer), 0);
+				if (n <= 0)
+					break;
+
+				response.append(buffer, n);
+			}
+
+			std::string body = response.substr(bodyStart, contentLength);
+
 			closesocket(sock);
-			return response;
+
+			return body;
 		}
 	}
 
