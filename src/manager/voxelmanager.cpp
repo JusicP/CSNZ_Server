@@ -40,14 +40,14 @@ bool CVoxelManager::LoadVoxelConfigList()
 
 		if (cfg.is_discarded())
 		{
-			Logger().Fatal("CUserManager::VoxelConfigList: couldn't load Data/VoxelConfigList.json.\n");
+			Logger().Fatal("CVoxelManager::LoadVoxelConfigList: couldn't load Data/VoxelConfigList.json.\n");
 			return false;
 		}
 
 		int version = cfg.value("Version", 0);
 		if (version != VOXELCONFIG_LIST_VERSION)
 		{
-			Logger().Fatal("CUserManager::VoxelConfigList: %d != VOXELCONFIG_LIST_VERSION(%d)\n", version, VOXELCONFIG_LIST_VERSION);
+			Logger().Fatal("CVoxelManager::LoadVoxelConfigList: %d != VOXELCONFIG_LIST_VERSION(%d)\n", version, VOXELCONFIG_LIST_VERSION);
 			return false;
 		}
 
@@ -81,7 +81,7 @@ bool CVoxelManager::LoadVoxelConfigList()
 	}
 	catch (exception& ex)
 	{
-		Logger().Fatal("CUserManager::LoadVoxelConfigList: an error occured while parsing Data/VoxelConfigList.json: %s\n", ex.what());
+		Logger().Fatal("CVoxelManager::LoadVoxelConfigList: an error occured while parsing Data/VoxelConfigList.json: %s\n", ex.what());
 		return false;
 	}
 
