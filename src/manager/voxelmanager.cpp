@@ -237,7 +237,11 @@ std::string CVoxelManager::GetSlotDetails(const std::string& slotId, int serverI
 
 			size_t bodyStart = response.find("\r\n\r\n") + 4;
 
-			size_t pos = response.find("Content-Length: ");
+			string responseLower = response;
+			transform(responseLower.begin(), responseLower.end(), responseLower.begin(),
+				[](unsigned char c) { return tolower(c); });
+
+			size_t pos = responseLower.find("content-length: ");
 			if (pos == std::string::npos)
 				continue;
 
