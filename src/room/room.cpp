@@ -1223,7 +1223,7 @@ void CRoom::ChangeMap(int mapId)
 
 		if (m_pServer)
 			g_PacketManager.SendHostServerJoin(u->GetExtendedSocket(), m_pServer->GetIP(), m_pServer->GetPort(), u->GetID());
-		else
+		else if (u != m_pHostUser)
 			g_PacketManager.SendHostJoin(u->GetExtendedSocket(), m_pHostUser);
 	}
 }
