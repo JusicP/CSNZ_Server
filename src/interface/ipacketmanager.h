@@ -134,7 +134,7 @@ public:
 	
 	virtual void SendSearchRoomNotice(IExtendedSocket* socket, IRoom* room, const std::string& invitersGameName, const std::string& inviteMsg) = 0;
 
-	virtual void SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomInfo) = 0;
+	virtual void SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomInfo, bool enableHolepunch = true) = 0;
 	virtual void SendRoomPlayerJoin(IExtendedSocket* socket, IUser* user, RoomTeamNum num) = 0;
 	virtual void SendRoomUpdateSettings(IExtendedSocket* socket, CRoomSettings* newSettings, int low = 0, int lowMid = 0, int highMid = 0, int high = 0) = 0;
 	virtual void SendRoomSetUserTeam(IExtendedSocket* socket, IUser* user, int teamNum) = 0;

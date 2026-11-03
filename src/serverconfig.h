@@ -19,6 +19,7 @@ public:
 	std::string description;
 	std::string tcpPort;
 	std::string udpPort;
+	std::string udpRelayIP;
 	int tcpSendBufferSize;
 	int maxPlayers;
 	std::string welcomeMessage;

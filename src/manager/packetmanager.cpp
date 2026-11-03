@@ -2535,7 +2535,7 @@ void CPacketManager::SendUserSurveyReply(IExtendedSocket* socket, int result)
 	socket->Send(msg);
 }
 
-void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lowMid, int highMid, int high)
+void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lowMid, int highMid, int high, bool enableHolepunch = false)
 {
 	int lowFlag = 0;
 	int lowMidFlag = 0;
@@ -2556,6 +2556,9 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 		highMidFlag = newSettings->highMidFlag;
 		highFlag = newSettings->highFlag;
 	}
+
+	if (enableHolepunch)
+		lowMidFlag |= ROOM_LOWMID_UNK64;
 
 	msg->WriteUInt32(lowFlag);
 	msg->WriteUInt32(lowMidFlag);
@@ -2819,7 +2822,7 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 		}
 	}
 	if (lowMidFlag & ROOM_LOWMID_UNK64) {
-		msg->WriteUInt8(newSettings->unk64);
+		msg->WriteUInt8(enableHolepunch ? 1 : newSettings->unk64);
 	}
 	if (lowMidFlag & ROOM_LOWMID_TEAMSWITCH) {
 		msg->WriteUInt8(newSettings->teamSwitch);
@@ -2915,7 +2918,7 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 	}
 }
 
-void CPacketManager::SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomInfo)
+void CPacketManager::SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomInfo, bool enableHolepunch)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Room);
 	msg->BuildHeader();
@@ -2929,7 +2932,7 @@ void CPacketManager::SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomI
 	msg->WriteUInt8(0xFF);
 
 	CRoomSettings* roomSettings = roomInfo->GetSettings();
-	WriteSettings(msg, roomInfo->GetSettings(), roomSettings->lowFlag, roomSettings->lowMidFlag, roomSettings->highMidFlag, roomSettings->highFlag);
+	WriteSettings(msg, roomInfo->GetSettings(), roomSettings->lowFlag, roomSettings->lowMidFlag, roomSettings->highMidFlag, roomSettings->highFlag, enableHolepunch);
 
 	msg->WriteUInt8((unsigned int)roomInfo->GetUsers().size());
 	for (auto user : roomInfo->GetUsers())

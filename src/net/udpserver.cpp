@@ -79,6 +79,12 @@ bool CUDPServer::Start(const string& port)
 		return false;
 	}
 
+#ifdef WIN32
+	BOOL connReset = FALSE;
+	DWORD bytesReturned = 0;
+	WSAIoctl(m_Socket, _WSAIOW(IOC_VENDOR, 12) /* SIO_UDP_CONNRESET */, &connReset, sizeof(connReset), NULL, 0, &bytesReturned, NULL, NULL);
+#endif
+
 	u_long iMode = 1;
 	m_nResult = ioctlsocket(m_Socket, FIONBIO, &iMode);
 	if (m_nResult == SOCKET_ERROR)
@@ -159,12 +165,15 @@ void CUDPServer::Listen()
 		if (FD_ISSET(i, &m_FdsRead))
 		{
 			// got message
+			m_nLastAddrLen = sizeof(m_LastAddr);
 			int datalen = recvfrom(m_Socket, m_Buffer, 5000, 0, (sockaddr*)&m_LastAddr, &m_nLastAddrLen);
+			if (datalen <= 0) // error (nothing to read, ...) or empty datagram
+				continue;
 
 			Buffer buf(vector<unsigned char>(m_Buffer, m_Buffer + datalen));
 
 			if (m_pListener)
-				m_pListener->OnUDPMessage(buf, ntohs(m_LastAddr.sin_port));
+				m_pListener->OnUDPMessage(buf, m_LastAddr);
 		}
 	}
 
@@ -180,6 +189,31 @@ void CUDPServer::SendTo(const Buffer& buf)
 {
 	const vector<unsigned char>& buffer = buf.getBuffer();
 	sendto(m_Socket, reinterpret_cast<const char*>(&buffer[0]), buffer.size(), 0, (sockaddr*)&m_LastAddr, m_nLastAddrLen);
+}
+
+/**
+ * Sends message to a given address
+ * @param buf Send buffer
+ * @param to Destination
+ */
+void CUDPServer::SendTo(const Buffer& buf, const sockaddr_in& to)
+{
+	const vector<unsigned char>& buffer = buf.getBuffer();
+	if (buffer.empty())
+		return;
+
+	SendTo(&buffer[0], static_cast<int>(buffer.size()), to);
+}
+
+/**
+ * Sends raw data to a given address
+ */
+void CUDPServer::SendTo(const unsigned char* data, int len, const sockaddr_in& to)
+{
+	if (len <= 0)
+		return;
+
+	sendto(m_Socket, reinterpret_cast<const char*>(data), len, 0, (const sockaddr*)&to, sizeof(to));
 }
 
 /**

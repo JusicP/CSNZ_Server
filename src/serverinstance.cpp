@@ -23,6 +23,9 @@
 #include "csvtable.h"
 #include "serverconfig.h"
 #include "servercommands.h"
+
+#include <unordered_map>
+#include <vector>
 #ifdef USE_GUI
 #include "gui/igui.h"
 #endif
@@ -200,7 +203,83 @@ void CServerInstance::OnTCPError(int errorCode)
 	//SetServerActive(false);
 }
 
-void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
+namespace
+{
+	enum
+	{
+		UDP_RELAY_SOCK_SERVER = 0,
+		UDP_RELAY_SOCK_CLIENT = 1,
+		UDP_RELAY_SOCK_COUNT
+	};
+
+	struct UdpRelayEndpoints_s
+	{
+		sockaddr_in addr[UDP_RELAY_SOCK_COUNT] = {};
+		bool valid[UDP_RELAY_SOCK_COUNT] = {};
+	};
+
+	unordered_map<int, UdpRelayEndpoints_s> g_UdpRelayEndpoints;
+
+	int ReadInt32LE(const unsigned char* p)
+	{
+		return static_cast<int>(p[0] | (p[1] << 8) | (p[2] << 16) | (static_cast<unsigned int>(p[3]) << 24));
+	}
+
+	bool UpdateRelayEndpoint(int userID, int sock, const sockaddr_in& from)
+	{
+		if (sock < 0 || sock >= UDP_RELAY_SOCK_COUNT)
+			return false;
+
+		IUser* user = g_UserManager.GetUserById(userID);
+		if (!user || !user->GetExtendedSocket())
+		{
+			g_UdpRelayEndpoints.erase(userID);
+			return false;
+		}
+
+		if (ip_string_to_int(user->GetExtendedSocket()->GetIP()) != ntohl(from.sin_addr.s_addr))
+			return false;
+
+		UdpRelayEndpoints_s& endpoints = g_UdpRelayEndpoints[userID];
+		endpoints.addr[sock] = from;
+		endpoints.valid[sock] = true;
+		return true;
+	}
+
+	bool GetRelayEndpoint(int userID, int sock, sockaddr_in& out)
+	{
+		if (sock < 0 || sock >= UDP_RELAY_SOCK_COUNT)
+			return false;
+
+		auto it = g_UdpRelayEndpoints.find(userID);
+		if (it == g_UdpRelayEndpoints.end() || !it->second.valid[sock])
+			return false;
+
+		out = it->second.addr[sock];
+		return true;
+	}
+}
+
+void CServerInstance::OnUDPMessage(Buffer& buf, const sockaddr_in& from)
+{
+	const vector<unsigned char>& data = buf.getBuffer();
+	if (data.empty())
+		return;
+
+	switch (data[0])
+	{
+	case UDP_HOLEPUNCH_PACKET_SIGNATURE_1:
+		OnUDPHolepunchMessage(buf, from);
+		break;
+	case UDP_RELAY_PACKET_SIGNATURE:
+		OnUDPRelayMessage(buf, from);
+		break;
+	default:
+		break;
+	}
+}
+
+void CServerInstance::OnUDPHolepunchMessage(Buffer& buf, const sockaddr_in& from)
 {
 	// 7, 14 is well known
 	// 14 = type 0 (Punch)
@@ -211,12 +290,7 @@ void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
 		return;
 	}
 
-	char signature = buf.readUInt8();
-	if (signature != UDP_HOLEPUNCH_PACKET_SIGNATURE_1)
-	{
-		Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] signature error\n"));
-		return;
-	}
+	buf.readUInt8(); // signature
 
 	int userID = buf.readUInt32_LE();
 	int type = buf.readUInt8();
@@ -230,24 +304,37 @@ void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
 
 	if (type == 0)
 	{
+		if (buf.getBuffer().size() < 14)
+		{
+			Logger().Debug("[CServerInstance::OnUDPMessage] invalid holepunch packet\n");
+			return;
+		}
+
+		// 0 = NS_CLIENT socket (m_nExternalServerPort), 1 = NS_SERVER socket (m_nExternalClientPort)
 		int portID = buf.readUInt8();
-		int localAddr = ~buf.readUInt32_BE(); // TODO: Fix this...
+		int localAddr = ~buf.readUInt32_BE(); // the client sends its LAN address bitwise-inverted
 		string localIpAddress = ip_to_string(localAddr);
 		int localPort = buf.readUInt16_LE();
 		int tries = buf.readUInt8();
 
+		const int externalPort = ntohs(from.sin_port);
+
 		Logger().Info("OnUDPMessage(0) - userID: %d, portID: %d, localAddr: %d (%s), localPort: %d, tries: %d\n", userID, portID, localAddr, localIpAddress.c_str(), localPort, tries);
 
-		if (user->UpdateHolepunch(portID, localIpAddress, localPort, port) == -1)
+		if (user->UpdateHolepunch(portID, localIpAddress, localPort, externalPort) == -1)
 		{
-			Logger().Warn("UpdateHolepunch Failed: %d, %d, %d\n", portID, localPort, port);
+			Logger().Warn("UpdateHolepunch Failed: %d, %d, %d\n", portID, localPort, externalPort);
+		}
+		else
+		{
+			UpdateRelayEndpoint(userID, portID == 0 ? UDP_RELAY_SOCK_CLIENT : UDP_RELAY_SOCK_SERVER, from);
 		}
 
 		Buffer replyBuffer;
 		replyBuffer.writeUInt8('W');
 		replyBuffer.writeUInt8(0);
 		replyBuffer.writeUInt8(1);
-		m_UDPServer.SendTo(replyBuffer);
+		m_UDPServer.SendTo(replyBuffer, from);
 	}
 	else if (type == 1)
 	{
@@ -257,6 +344,38 @@ void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
 		Logger().Debug("OnUDPMessage(1) - userID: %d, tries: %d\n", userID, tries);
 #endif
 	}
+}
+
+void CServerInstance::OnUDPRelayMessage(Buffer& buf, const sockaddr_in& from)
+{
+	const vector<unsigned char>& data = buf.getBuffer();
+	if (data.size() < UDP_RELAY_HEADER_SIZE)
+		return;
+
+	const int userID = ReadInt32LE(&data[1]);
+	const int sock = data[5];
+	const int destUserID = ReadInt32LE(&data[6]);
+
+	if (!UpdateRelayEndpoint(userID, sock, from))
+		return;
+
+	if (destUserID == 0)
+		return; // keepalive
+
+	const unsigned char* payload = &data[UDP_RELAY_HEADER_SIZE];
+	const int payloadLen = static_cast<int>(data.size()) - UDP_RELAY_HEADER_SIZE;
+
+	if (payloadLen >= 5 && (payload[0] == UDP_HOLEPUNCH_PACKET_SIGNATURE_2 || payload[0] == UDP_GAME_PACKET_SIGNATURE) &&
+		ReadInt32LE(&payload[1]) != userID)
+	{
+		return;
+	}
+
+	sockaddr_in to;
+	if (!GetRelayEndpoint(destUserID, UDP_RELAY_SOCK_COUNT - 1 - sock, to))
+		return;
+
+	m_UDPServer.SendTo(payload, payloadLen, to);
 }
 
 void CServerInstance::OnUDPError(int errorCode)

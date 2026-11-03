@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/buffer.h"
+#include "net/socketshared.h"
 
 class CReceivePacket;
 class IExtendedSocket;
@@ -17,7 +18,7 @@ public:
 class IServerListenerUDP
 {
 public:
-	virtual void OnUDPMessage(Buffer& buf, unsigned short port) = 0;
+	virtual void OnUDPMessage(Buffer& buf, const sockaddr_in& from) = 0;
 	virtual void OnUDPError(int errorCode) = 0;
 };
 

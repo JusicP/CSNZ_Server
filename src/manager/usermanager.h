@@ -19,6 +19,7 @@ public:
 	bool LoadRandomWeaponList();
 	bool OnLoginPacket(CReceivePacket* msg, IExtendedSocket* socket);
 	bool OnUdpPacket(CReceivePacket* msg, IExtendedSocket* socket);
+	void StartUdpRelay(IUser* user, int peerUserID);
 	bool OnOptionPacket(CReceivePacket* msg, IExtendedSocket* socket);
 	bool OnVersionPacket(CReceivePacket* msg, IExtendedSocket* socket);
 	bool OnFavoritePacket(CReceivePacket* msg, IExtendedSocket* socket);

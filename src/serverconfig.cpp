@@ -51,6 +51,7 @@ const char* defaultServerConfig = R"(
 	"HostName": "CSO Server",
 	"Description": "",
 	"Port": "30002",
+	"UDPRelayIP": "",
 	"TCPSendBufferSize": 131072,
 	"MaxPlayers": 100,
 	"WelcomeMessage": "https://discord.gg/EvUAY6D",
@@ -986,6 +987,7 @@ bool CServerConfig::Load()
 		hostName = cfg.value("HostName", "CSO Server");
 		description = cfg.value("Description", "");
 		tcpPort = udpPort = cfg.value("Port", DEFAULT_PORT);
+		udpRelayIP = cfg.value("UDPRelayIP", "");
 		tcpSendBufferSize = cfg.value("TCPSendBufferSize", 131072);
 		maxPlayers = cfg.value("MaxPlayers", 100);
 		welcomeMessage = cfg.value("WelcomeMessage", "");

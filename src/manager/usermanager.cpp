@@ -187,65 +187,69 @@ bool CUserManager::OnUdpPacket(CReceivePacket* msg, IExtendedSocket* socket)
 		break;
 	case 1:
 	{
-		int unk = msg->ReadUInt32();
+		// 51 direct 'X' probes (~10 s) from our client socket to the peer's server socket got no answer:
+		// switch that pair of sockets to the 'Y' relay
+		int peerUserID = msg->ReadUInt32();
 
-		Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 1: %d\n"), unk);
+		Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: direct holepunch to user %d failed, switching to relay\n"), user->GetLogName(), peerUserID);
+
+		StartUdpRelay(user, peerUserID);
 		break;
 	}
 	case 2:
 	{
-		int subType = msg->ReadUInt32();
+		int subType = msg->ReadUInt8();
 		switch (subType)
 		{
 		case 0:
 		{
-			int unk = msg->ReadInt32();
-			int unk2 = msg->ReadUInt16();
-			int unk3 = msg->ReadUInt16();
+			// registered both sockets with our UDP server
+			int localIP = msg->ReadInt32();
+			int retryNumClient = msg->ReadUInt16();
+			int retryNumServer = msg->ReadUInt16();
 
-			Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-0: unk: %d, unk2: %d, unk3: %d\n"), unk, unk2, unk3);
+			Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: UDP registration done (localIP: %s, tries: %d/%d)\n"), user->GetLogName(), ip_to_string(ntohl(localIP)).c_str(), retryNumClient, retryNumServer);
 			break;
 		}
 		case 1:
 		{
-			int unk = msg->ReadInt32();
-			int unk2 = msg->ReadUInt16();
-			int unk3 = msg->ReadUInt16();
+			// 301 registration attempts (~60 s) got no 'W' reply on one of the sockets
+			int localIP = msg->ReadInt32();
+			int localPortClient = msg->ReadUInt16();
+			int localPortServer = msg->ReadUInt16();
 
-			Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-1: unk: %d, unk2: %d, unk3: %d\n"), unk, unk2, unk3);
+			Logger().Warn(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: UDP registration failed (localIP: %s, local ports: %d/%d)\n"), user->GetLogName(), ip_to_string(ntohl(localIP)).c_str(), localPortClient, localPortServer);
 			break;
 		}
 		case 2:
 		{
-			int unk = msg->ReadInt32();
-			int unk2 = msg->ReadUInt16();
+			// direct holepunch succeeded
+			int peerUserID = msg->ReadInt32();
+			int tries = msg->ReadUInt16();
 
-			Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-2: unk: %d, unk2: %d\n"), unk, unk2);
+			Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: direct holepunch to user %d succeeded (tries: %d)\n"), user->GetLogName(), peerUserID, tries);
 			break;
 		}
 		case 3:
 		{
-			int unk = msg->ReadInt32();
-			int unk2 = msg->ReadUInt16();
+			// holepunch through the 'Y' relay succeeded
+			int peerUserID = msg->ReadInt32();
+			int tries = msg->ReadUInt16();
 
-			Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-3: unk: %d, unk2: %d\n"), unk, unk2);
+			Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: relay holepunch to user %d succeeded (tries: %d)\n"), user->GetLogName(), peerUserID, tries);
 			break;
 		}
 		case 4:
 		{
-			int unk = msg->ReadInt32();
+			// 301 relayed 'X' probes (~60 s) got no answer either
+			int peerUserID = msg->ReadInt32();
 
-			Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-4: unk: %d\n"), unk);
+			Logger().Warn(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: relay holepunch to user %d failed\n"), user->GetLogName(), peerUserID);
 			break;
 		}
-		case 5:
-		{
-			int unk = msg->ReadInt32();
-			int unk2 = msg->ReadUInt16();
-
-			Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-5: unk: %d, unk2: %d\n"), unk, unk2);
+		default:
+			Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: unknown type 2 subtype %d\n"), user->GetLogName(), subType);
 			break;
-		}
 		}
 		break;
 	}
@@ -255,6 +259,50 @@ bool CUserManager::OnUdpPacket(CReceivePacket* msg, IExtendedSocket* socket)
 	}
 
 	return true;
+}
+
+std::string GetUdpRelayIP(IExtendedSocket* socket)
+{
+	if (!g_pServerConfig->udpRelayIP.empty())
+		return g_pServerConfig->udpRelayIP;
+
+	sockaddr_in local{};
+	socklen_t localLen = sizeof(local);
+	if (!socket || getsockname(socket->GetSocket(), (sockaddr*)&local, &localLen) != 0 || local.sin_family != AF_INET)
+		return "";
+
+	return ip_to_string(ntohl(local.sin_addr.s_addr));
+}
+
+void CUserManager::StartUdpRelay(IUser* user, int peerUserID)
+{
+	IUser* peer = GetUserById(peerUserID);
+	if (!peer)
+	{
+		Logger().Warn(OBFUSCATE("[User '%s'] CUserManager::StartUdpRelay: user %d is not online\n"), user->GetLogName(), peerUserID);
+		return;
+	}
+
+	IRoom* room = user->GetCurrentRoom();
+	if (!room || room != peer->GetCurrentRoom())
+	{
+		Logger().Warn(OBFUSCATE("[User '%s'] CUserManager::StartUdpRelay: user %d is not in the same room\n"), user->GetLogName(), peerUserID);
+		return;
+	}
+
+	const int relayPort = atoi(g_pServerConfig->udpPort.c_str());
+	const std::string userRelayIP = GetUdpRelayIP(user->GetExtendedSocket());
+	const std::string peerRelayIP = GetUdpRelayIP(peer->GetExtendedSocket());
+	if (userRelayIP.empty() || peerRelayIP.empty())
+	{
+		Logger().Warn(OBFUSCATE("[User '%s'] CUserManager::StartUdpRelay: couldn't determine the relay address, set UDPRelayIP in ServerConfig.json\n"), user->GetLogName());
+		return;
+	}
+
+	Logger().Debug(OBFUSCATE("[User '%s'] CUserManager::StartUdpRelay: relaying user %d through %s:%d\n"), user->GetLogName(), peerUserID, userRelayIP.c_str(), relayPort);
+
+	g_PacketManager.SendUDPHostData(user->GetExtendedSocket(), true, peerUserID, userRelayIP, relayPort);
+	g_PacketManager.SendUDPHostData(peer->GetExtendedSocket(), false, user->GetID(), peerRelayIP, relayPort);
 }
 
 bool CUserManager::OnOptionPacket(CReceivePacket* msg, IExtendedSocket* socket)

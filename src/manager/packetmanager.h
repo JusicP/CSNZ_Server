@@ -167,7 +167,7 @@ public:
 	
 	void SendSearchRoomNotice(IExtendedSocket* socket, IRoom* room, const std::string& invitersGameName, const std::string& inviteMsg);
 
-	void SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomInfo);
+	void SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomInfo, bool enableHolepunch = true);
 	void SendRoomPlayerJoin(IExtendedSocket* socket, IUser* user, RoomTeamNum num);
 	void SendRoomUpdateSettings(IExtendedSocket* socket, CRoomSettings* newSettings, int low = 0, int lowMid = 0, int highMid = 0, int high = 0);
 	void SendRoomSetUserTeam(IExtendedSocket* socket, IUser* user, int teamNum);

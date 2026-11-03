@@ -18,5 +18,7 @@ bin/*.log
 bin/*.db3
 bin/Logs
 bin/platforms
-
+bin/Debug
+bin/Release
 Releases
+build

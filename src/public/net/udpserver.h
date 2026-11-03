@@ -21,6 +21,8 @@ public:
 	void Stop();
 	void Listen();
 	void SendTo(const Buffer& buf);
+	void SendTo(const Buffer& buf, const sockaddr_in& to);
+	void SendTo(const unsigned char* data, int len, const sockaddr_in& to);
 
 	bool IsRunning();
 

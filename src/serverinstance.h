@@ -23,7 +23,7 @@ public:
 	virtual void OnTCPMessage(IExtendedSocket* socket, CReceivePacket* msg);
 	virtual void OnTCPError(int errorCode);
 
-	virtual void OnUDPMessage(Buffer& buf, unsigned short port);
+	virtual void OnUDPMessage(Buffer& buf, const sockaddr_in& from);
 	virtual void OnUDPError(int errorCode);
 
 	void SetServerActive(bool active);
@@ -43,6 +43,9 @@ public:
 	virtual IExtendedSocket* GetSocketByID(unsigned int id);
 
 private:
+	void OnUDPHolepunchMessage(Buffer& buf, const sockaddr_in& from);
+	void OnUDPRelayMessage(Buffer& buf, const sockaddr_in& from);
+
 	bool m_bIsServerActive;
 
 	time_t m_CurrentTime;
