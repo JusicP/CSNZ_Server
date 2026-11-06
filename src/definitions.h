@@ -473,7 +473,6 @@ struct ServerConfigRoom_s
 {
 	int connectingMethod;
 	bool validateSettings;
-	std::vector<std::string> roomDefaultTitles;
 };
 
 struct ServerConfigBingo
@@ -906,13 +905,15 @@ enum RoomStatus
 
 struct UserNetworkConfig_s
 {
-	std::string m_szExternalIpAddress;
-	int m_nExternalClientPort;
-	int m_nExternalServerPort;
-
-	std::string m_szLocalIpAddress;
-	int m_nLocalClientPort;
-	int m_nLocalServerPort;
+	unsigned long externalIP = 0;
+	unsigned short externalHostPort = 0;
+	unsigned short externalGuestPort = 0;
+	unsigned long localIP = 0;
+	unsigned short localHostPort = 0;
+	unsigned short localGuestPort = 0;
+	unsigned long long lastHostHeartbeat = 0;
+	unsigned long long lastGuestHeartbeat = 0;
+	char networkSet = 0;
 };
 enum UserStatus
 {
@@ -1494,7 +1495,7 @@ enum UserSurveyAnswerResult
 #define ROOM_LOWMID_ZBLIMIT				(1<<17)
 #define ROOM_LOWMID_VOXEL				(1<<18)
 #define ROOM_LOWMID_UNK63				(1<<20)
-#define ROOM_LOWMID_UNK64				(1<<21)
+#define ROOM_LOWMID_P2P					(1<<21)
 #define ROOM_LOWMID_TEAMSWITCH			(1<<22)
 #define ROOM_LOWMID_ZBRESPAWN			(1<<23)
 #define ROOM_LOWMID_ZBBALANCE			(1<<24)
@@ -1829,4 +1830,27 @@ enum ClassModPacketReply
 	Unk100 = 100, // LoadOutUpdate
 	Unk101 = 101, // OpenSlotAnim
 	SendClassModInventory = 102
+};
+
+enum UdpPacketType
+{
+	NetworkFailure = 0,
+	HolepunchFail = 1,
+	ModifySocketInfo = 1,
+	SocketInfo = 2
+};
+
+enum SocketInfoPacketType
+{
+	SocketInfoSuccess = 0,
+	SocketInfoFail = 1,
+	HolepunchSuccess = 2,
+	RelaySuccess = 3,
+	RelayFail = 4,
+	MessageHistory = 5
+};
+
+enum class PortType {
+	Guest = 0,
+	Host = 1
 };

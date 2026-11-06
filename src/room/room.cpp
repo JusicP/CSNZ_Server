@@ -480,8 +480,8 @@ void CRoom::UpdateSettings(CRoomSettings& newSettings)
 		m_pSettings->unk63 = newSettings.unk63;
 		m_pSettings->unk63_vec = newSettings.unk63_vec;
 	}
-	if (newSettings.lowMidFlag & ROOM_LOWMID_UNK64) {
-		m_pSettings->unk64 = newSettings.unk64;
+	if (newSettings.lowMidFlag & ROOM_LOWMID_P2P) {
+		m_pSettings->p2p = newSettings.p2p;
 	}
 	if (newSettings.lowMidFlag & ROOM_LOWMID_TEAMSWITCH) {
 		m_pSettings->teamSwitch = newSettings.teamSwitch;
@@ -742,6 +742,7 @@ void CRoom::OnGameStart()
 {
 	SetStatus(RoomStatus::STATUS_INGAME);
 	SetUserIngame(m_pHostUser, true);
+	SendReadyStatusToAll(m_pHostUser);
 
 	for (auto u : m_Users)
 	{
@@ -749,9 +750,16 @@ void CRoom::OnGameStart()
 
 		if (IsUserReady(u))
 		{
-			if (m_pServer != NULL)
-				UserGameJoin(u);
-			else if (u != m_pHostUser)
+			if (u != m_pHostUser && m_pSettings->p2p && u->GetNetworkConfig().networkSet != 0x3)
+			{
+				ToggleUserReadyStatus(u);
+				SendReadyStatusToAll(u);
+
+				g_PacketManager.SendUMsgNoticeMsgBoxToUuid(u->GetExtendedSocket(), OBFUSCATE("ROOM_JOIN_FAILED_INVALID_GAME_IP"));
+				continue;
+			}
+
+			if (m_pServer != NULL || u != m_pHostUser)
 				UserGameJoin(u);
 		}
 	}
@@ -847,6 +855,12 @@ void CRoom::SendStartMatch(IUser* host)
 
 		if (m_pServer)
 		{
+			m_pSettings->p2p = 0;
+			for (auto u : m_Users)
+			{
+				g_PacketManager.SendRoomUpdateSettings(u->GetExtendedSocket(), m_pSettings, 0, ROOM_LOWMID_P2P);
+			}
+
 			g_PacketManager.SendRoomCreateAndJoin(m_pServer->GetSocket(), this);
 			g_PacketManager.SendHostGameStart(m_pServer->GetSocket(), m_pServer->GetPort());
 		}
@@ -1056,8 +1070,6 @@ void CRoom::HostStartGame()
 
 	OnGameStart();
 
-	SendReadyStatusToAll();
-
 	m_pHostUser->GetCurrentChannel()->SendUpdateRoomList(this);
 
 	if (m_pServer)
@@ -1068,7 +1080,7 @@ void CRoom::HostStartGame()
 	}
 	else
 	{
-		Logger().Info("Host '%s' started room match (RID: %d, IP: %s, port: %d)\n", m_pHostUser->GetUsername().c_str(), m_nID, m_pHostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), m_pHostUser->GetNetworkConfig().m_nExternalClientPort);
+		Logger().Info("Host '%s' started room match (RID: %d, IP: %s, port: %d)\n", m_pHostUser->GetUsername().c_str(), m_nID, ip_to_string(m_pHostUser->GetNetworkConfig().externalIP).c_str(), m_pHostUser->GetNetworkConfig().externalHostPort);
 	}
 
 	if (m_pSettings->familyBattle)

@@ -4,6 +4,7 @@
 {
 	"HostName": <string>, // unused (def. "CSO Server")
 	"Description": <string>, // unused (def. "")
+	"IP": <string>, // IP used for UDP relay system (def. "127.0.0.1")
 	"Port": <string>, // TCP and UDP ports used to connect to the server (def. "30002")
 	"TCPSendBufferSize": <int>, // send buffer size for TCP (def. 131072)
 	"MaxPlayers": <int>, // the maximum number of users that can login the server (def. 100)

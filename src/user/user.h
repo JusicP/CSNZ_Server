@@ -34,7 +34,8 @@ public:
 	CUserCharacter GetCharacter(int lowFlag, int highFlag = 0);
 	CUserCharacterExtended GetCharacterExtended(int flag);
 
-	int UpdateHolepunch(int portId, const std::string& localIpAddress, int localPort, int externalPort);
+	void UpdateHolepunch(unsigned char portType, unsigned long externalIP, unsigned short externalPort, unsigned long localIP, unsigned short localPort, unsigned long long currentTime);
+	void UpdateUDPHeartbeat(unsigned char portType, unsigned long long currentTime);
 	void UpdateClientUserInfo(CUserCharacter character);
 	void UpdateGameName(const std::string& gameName);
 	int UpdatePoints(int64_t points);

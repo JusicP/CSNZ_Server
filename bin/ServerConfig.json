@@ -1,6 +1,7 @@
 {
 	"HostName": "CSO Server",
 	"Description": "",
+	"IP": "127.0.0.1",
 	"Port": "30002",
 	"TCPSendBufferSize": 131072,
 	"MaxPlayers": 100,

@@ -3,6 +3,7 @@
 
 using namespace std;
 
+#define DEFAULT_IP "127.0.0.1"
 #define DEFAULT_PORT "30002"
 
 #define DEFAULTUSER_LEVEL 1
@@ -50,6 +51,7 @@ const char* defaultServerConfig = R"(
 {
 	"HostName": "CSO Server",
 	"Description": "",
+	"IP": "127.0.0.1",
 	"Port": "30002",
 	"TCPSendBufferSize": 131072,
 	"MaxPlayers": 100,
@@ -985,7 +987,8 @@ bool CServerConfig::Load()
 
 		hostName = cfg.value("HostName", "CSO Server");
 		description = cfg.value("Description", "");
-		tcpPort = udpPort = cfg.value("Port", DEFAULT_PORT);
+		ip = cfg.value("IP", DEFAULT_IP);
+		port = cfg.value("Port", DEFAULT_PORT);
 		tcpSendBufferSize = cfg.value("TCPSendBufferSize", 131072);
 		maxPlayers = cfg.value("MaxPlayers", 100);
 		welcomeMessage = cfg.value("WelcomeMessage", "");

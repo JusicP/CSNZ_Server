@@ -17,8 +17,8 @@ public:
 
 	std::string hostName;
 	std::string description;
-	std::string tcpPort;
-	std::string udpPort;
+	std::string ip;
+	std::string port;
 	int tcpSendBufferSize;
 	int maxPlayers;
 	std::string welcomeMessage;

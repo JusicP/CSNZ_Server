@@ -23,7 +23,7 @@ public:
 	virtual void OnTCPMessage(IExtendedSocket* socket, CReceivePacket* msg);
 	virtual void OnTCPError(int errorCode);
 
-	virtual void OnUDPMessage(Buffer& buf, unsigned short port);
+	virtual void OnUDPMessage(Buffer& buf, sockaddr_in& addr);
 	virtual void OnUDPError(int errorCode);
 
 	void SetServerActive(bool active);

@@ -233,7 +233,7 @@ public:
 
 	void SendTitle(IExtendedSocket* socket, int id);
 
-	void SendUDPHostData(IExtendedSocket* socket, bool host, int userID, const std::string& ipAddress, int port);
+	void SendUdpModifySocketInfo(IExtendedSocket* socket, PortType portType, unsigned long userID, unsigned long ip, unsigned short port);
 
 	void SendHostServerStop(IExtendedSocket* socket);
 	void SendHostServerTransfer(IExtendedSocket* socket, const std::string& ipAddress, int port);

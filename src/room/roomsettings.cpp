@@ -278,8 +278,8 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 			unk63_vec.push_back(inPacket.readUInt16_LE());
 		}
 	}
-	if (lowMidFlag & ROOM_LOWMID_UNK64) {
-		unk64 = inPacket.readUInt8();
+	if (lowMidFlag & ROOM_LOWMID_P2P) {
+		p2p = inPacket.readUInt8();
 	}
 	if (lowMidFlag & ROOM_LOWMID_TEAMSWITCH) {
 		teamSwitch = inPacket.readUInt8();
@@ -459,7 +459,7 @@ void CRoomSettings::Init()
 	voxel_unk23 = 0;
 	voxel_server_id = 0;
 	unk63 = 0;
-	unk64 = 0;
+	p2p = 0;
 	teamSwitch = 0;
 	zbRespawn = 0;
 	zbBalance = 0;
@@ -1438,7 +1438,7 @@ void CRoomSettings::LoadDefaultSettings(int gameModeId, int mapId)
 	zbLimit.clear();
 	unk63 = 0;
 	unk63_vec.clear();
-	unk64 = 0;
+	p2p = g_pServerConfig->room.connectingMethod == 1 ? 0 : 1;
 	teamSwitch = 0;
 	zbRespawn = GetDefaultZbRespawn(gameModeId);
 	zbBalance = GetDefaultZbBalance(gameModeId);
@@ -1730,8 +1730,8 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 		if (lowMidFlag & ROOM_LOWMID_UNK63)
 			lowMidFlag &= ~ROOM_LOWMID_UNK63;
 
-		if (lowMidFlag & ROOM_LOWMID_UNK64)
-			lowMidFlag &= ~ROOM_LOWMID_UNK64;
+		if (lowMidFlag & ROOM_LOWMID_P2P)
+			lowMidFlag &= ~ROOM_LOWMID_P2P;
 
 		if (lowMidFlag & ROOM_LOWMID_SUPERROOM)
 			lowMidFlag &= ~ROOM_LOWMID_SUPERROOM;

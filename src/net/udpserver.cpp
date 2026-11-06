@@ -4,6 +4,8 @@
 #include "common/utils.h"
 #include "common/logger.h"
 
+#include "common/net/netdefs.h"
+
 #include <vector>
 
 using namespace std;
@@ -159,12 +161,12 @@ void CUDPServer::Listen()
 		if (FD_ISSET(i, &m_FdsRead))
 		{
 			// got message
-			int datalen = recvfrom(m_Socket, m_Buffer, 5000, 0, (sockaddr*)&m_LastAddr, &m_nLastAddrLen);
+			int datalen = recvfrom(m_Socket, m_Buffer, UDP_PACKET_MAX_SIZE, 0, (sockaddr*)&m_LastAddr, &m_nLastAddrLen);
 
 			Buffer buf(vector<unsigned char>(m_Buffer, m_Buffer + datalen));
 
 			if (m_pListener)
-				m_pListener->OnUDPMessage(buf, ntohs(m_LastAddr.sin_port));
+				m_pListener->OnUDPMessage(buf, m_LastAddr);
 		}
 	}
 
@@ -180,6 +182,17 @@ void CUDPServer::SendTo(const Buffer& buf)
 {
 	const vector<unsigned char>& buffer = buf.getBuffer();
 	sendto(m_Socket, reinterpret_cast<const char*>(&buffer[0]), buffer.size(), 0, (sockaddr*)&m_LastAddr, m_nLastAddrLen);
+}
+
+/**
+ * Sends message to client
+ * @param buf Send buffer
+ * @param addr Destination address
+ */
+void CUDPServer::SendTo(const Buffer& buf, const sockaddr_in& addr)
+{
+	const vector<unsigned char>& buffer = buf.getBuffer();
+	sendto(m_Socket, reinterpret_cast<const char*>(&buffer[0]), buffer.size(), 0, (sockaddr*)&addr, sizeof(addr));
 }
 
 /**

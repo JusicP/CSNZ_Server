@@ -163,7 +163,7 @@ public:
 	int voxel_server_id;
 	int unk63;
 	std::vector<int> unk63_vec;
-	int unk64;
+	int p2p;
 	int teamSwitch;
 	int zbRespawn;
 	int zbBalance;

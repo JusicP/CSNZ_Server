@@ -51,7 +51,8 @@ public:
 	virtual CUserCharacter GetCharacter(int lowFlag, int highFlag = 0) = 0;
 	virtual CUserCharacterExtended GetCharacterExtended(int flag) = 0;
 
-	virtual int UpdateHolepunch(int portId, const std::string& localIpAddress, int localPort, int externalPort) = 0;
+	virtual void UpdateHolepunch(unsigned char portType, unsigned long externalIP, unsigned short externalPort, unsigned long localIP, unsigned short localPort, unsigned long long currentTime) = 0;
+	virtual void UpdateUDPHeartbeat(unsigned char portType, unsigned long long currentTime) = 0;
 	virtual void UpdateClientUserInfo(CUserCharacter character) = 0;
 	virtual void UpdateGameName(const std::string& gameName) = 0;
 	virtual int UpdatePoints(int64_t points) = 0;

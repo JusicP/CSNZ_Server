@@ -2818,8 +2818,8 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 			msg->WriteUInt16(newSettings->unk63_vec[i]);
 		}
 	}
-	if (lowMidFlag & ROOM_LOWMID_UNK64) {
-		msg->WriteUInt8(newSettings->unk64);
+	if (lowMidFlag & ROOM_LOWMID_P2P) {
+		msg->WriteUInt8(newSettings->p2p);
 	}
 	if (lowMidFlag & ROOM_LOWMID_TEAMSWITCH) {
 		msg->WriteUInt8(newSettings->teamSwitch);
@@ -2945,12 +2945,12 @@ void CPacketManager::SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomI
 		msg->WriteUInt8(0);
 		msg->WriteUInt8(0);
 		msg->WriteUInt8(0);
-		msg->WriteUInt32(ip_string_to_int(network.m_szExternalIpAddress), false);
-		msg->WriteUInt16(network.m_nExternalClientPort);
-		msg->WriteUInt16(network.m_nExternalServerPort);
-		msg->WriteUInt32(ip_string_to_int(network.m_szLocalIpAddress), false);
-		msg->WriteUInt16(network.m_nLocalClientPort);
-		msg->WriteUInt16(network.m_nLocalServerPort);
+		msg->WriteUInt32(network.externalIP);
+		msg->WriteUInt16(network.externalHostPort);
+		msg->WriteUInt16(network.externalGuestPort);
+		msg->WriteUInt32(network.localIP);
+		msg->WriteUInt16(network.localHostPort);
+		msg->WriteUInt16(network.localGuestPort);
 
 		CUserCharacter character = user->GetCharacter(UFLAG_LOW_ALL, UFLAG_HIGH_ALL);
 
@@ -2979,12 +2979,12 @@ void CPacketManager::SendRoomPlayerJoin(IExtendedSocket* socket, IUser* user, Ro
 	msg->WriteUInt8(0);
 	msg->WriteUInt8(0);
 	msg->WriteUInt8(0);
-	msg->WriteUInt32(ip_string_to_int(network.m_szExternalIpAddress), false);
-	msg->WriteUInt16(network.m_nExternalClientPort);
-	msg->WriteUInt16(network.m_nExternalServerPort);
-	msg->WriteUInt32(ip_string_to_int(network.m_szLocalIpAddress), false);
-	msg->WriteUInt16(network.m_nLocalClientPort);
-	msg->WriteUInt16(network.m_nLocalServerPort);
+	msg->WriteUInt32(network.externalIP);
+	msg->WriteUInt16(network.externalHostPort);
+	msg->WriteUInt16(network.externalGuestPort);
+	msg->WriteUInt32(network.localIP);
+	msg->WriteUInt16(network.localHostPort);
+	msg->WriteUInt16(network.localGuestPort);
 
 	CUserCharacter character = user->GetCharacter(UFLAG_LOW_ALL, UFLAG_HIGH_ALL);
 
@@ -3564,7 +3564,7 @@ void CPacketManager::SendHostServerJoin(IExtendedSocket* socket, int ipAddress, 
 	msg->BuildHeader();
 	msg->WriteUInt8(HostPacketType::HostServerJoin);
 	msg->WriteString(""); // domain
-	msg->WriteUInt32(ipAddress, false);
+	msg->WriteUInt32(ipAddress);
 	msg->WriteUInt16(port);
 	msg->WriteUInt64(userId);
 	socket->Send(msg);
@@ -3664,12 +3664,12 @@ void CPacketManager::SendHostJoin(IExtendedSocket* socket, IUser* host)
 
 	UserNetworkConfig_s network = host->GetNetworkConfig();
 
-	msg->WriteUInt32(ip_string_to_int(network.m_szExternalIpAddress), false);
-	msg->WriteUInt16(network.m_nExternalClientPort);
-	msg->WriteUInt16(network.m_nExternalServerPort);
-	msg->WriteUInt32(ip_string_to_int(network.m_szLocalIpAddress), false);
-	msg->WriteUInt16(network.m_nLocalClientPort);
-	msg->WriteUInt16(network.m_nLocalServerPort);
+	msg->WriteUInt32(network.externalIP);
+	msg->WriteUInt16(network.externalHostPort);
+	msg->WriteUInt16(network.externalGuestPort);
+	msg->WriteUInt32(network.localIP);
+	msg->WriteUInt16(network.localHostPort);
+	msg->WriteUInt16(network.localGuestPort);
 
 	socket->Send(msg);
 }
@@ -3715,15 +3715,17 @@ void CPacketManager::SendHostRestart(IExtendedSocket* socket, int newHostUserID,
 
 	if (host)
 	{
-		//vector<unsigned char>& saveData = match->GetSaveData();
-		vector<unsigned char> saveData = {};
+		vector<unsigned char>& saveData = match->GetSaveData();
 		msg->WriteUInt16((unsigned int)saveData.size());
-		msg->WriteData(saveData.data(), saveData.size());
 
-		msg->WriteUInt8((unsigned int)match->m_UserStats.size());
-		for (auto userStat : match->m_UserStats)
+		if (!saveData.empty())
 		{
-			msg->WriteUInt32(userStat->m_pUser->GetID());
+			msg->WriteArray(saveData);
+			msg->WriteUInt8((unsigned int)match->m_UserStats.size());
+			for (auto userStat : match->m_UserStats)
+			{
+				msg->WriteUInt32(userStat->m_pUser->GetID());
+			}
 		}
 	}
 	else
@@ -6076,15 +6078,15 @@ void CPacketManager::SendTitle(IExtendedSocket* socket, int id)
 	socket->Send(msg);
 }
 
-void CPacketManager::SendUDPHostData(IExtendedSocket* socket, bool host, int userID, const string& ipAddress, int port)
+void CPacketManager::SendUdpModifySocketInfo(IExtendedSocket* socket, PortType portType, unsigned long userID, unsigned long ip, unsigned short port)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Udp);
 	msg->BuildHeader();
 
-	msg->WriteUInt8(1);
-	msg->WriteUInt8(host);
+	msg->WriteUInt8(UdpPacketType::ModifySocketInfo);
+	msg->WriteUInt8((unsigned char)portType);
 	msg->WriteUInt32(userID);
-	msg->WriteUInt32(ip_string_to_int(ipAddress), false);
+	msg->WriteUInt32(ip);
 	msg->WriteUInt16(port);
 
 	socket->Send(msg);
@@ -6106,7 +6108,7 @@ void CPacketManager::SendHostServerTransfer(IExtendedSocket* socket, const strin
 	msg->BuildHeader();
 
 	msg->WriteUInt8(HostServerPacketType::TransferServer);
-	msg->WriteUInt32(ip_string_to_int(ipAddress), false);
+	msg->WriteUInt32(ip_string_to_int(ipAddress));
 	msg->WriteUInt16(port);
 
 	socket->Send(msg);

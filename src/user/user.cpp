@@ -19,13 +19,6 @@ CUser::CUser(IExtendedSocket* sock, int userID, const std::string& userName)
 
 	m_Status = UserStatus::STATUS_MENU;
 
-	m_NetworkData.m_szExternalIpAddress = m_pSocket->GetIP();
-	m_NetworkData.m_nExternalClientPort = 27005;
-	m_NetworkData.m_nExternalServerPort = 27015;
-	m_NetworkData.m_szLocalIpAddress = m_pSocket->GetIP();
-	m_NetworkData.m_nLocalClientPort = 27005;
-	m_NetworkData.m_nLocalServerPort = 27015;
-
 	m_nUptime = 0;
 }
 
@@ -163,23 +156,39 @@ CUserCharacterExtended CUser::GetCharacterExtended(int flag)
 	return character;
 }
 
-int CUser::UpdateHolepunch(int portId, const string& localIpAddress, int localPort, int externalPort)
+void CUser::UpdateHolepunch(unsigned char portType, unsigned long externalIP, unsigned short externalPort, unsigned long localIP, unsigned short localPort, unsigned long long currentTime)
 {
-	switch (portId)
+	m_NetworkData.externalIP = externalIP;
+	m_NetworkData.localIP = localIP;
+
+	switch ((PortType)portType) {
+		case PortType::Guest: {
+			m_NetworkData.externalGuestPort = externalPort;
+			m_NetworkData.localGuestPort = localPort;
+			m_NetworkData.lastGuestHeartbeat = currentTime;
+			m_NetworkData.networkSet |= 0x1;
+			break;
+		}
+		case PortType::Host: {
+			m_NetworkData.externalHostPort = externalPort;
+			m_NetworkData.localHostPort = localPort;
+			m_NetworkData.lastHostHeartbeat = currentTime;
+			m_NetworkData.networkSet |= 0x2;
+			break;
+		}
+	}
+}
+void CUser::UpdateUDPHeartbeat(unsigned char portType, unsigned long long currentTime)
+{
+	switch ((PortType)portType)
 	{
-	case 0:
-		m_NetworkData.m_szLocalIpAddress = localIpAddress;
-		m_NetworkData.m_nLocalServerPort = localPort;
-		m_NetworkData.m_nExternalServerPort = externalPort;
-		return 0;
-	case 1:
-		m_NetworkData.m_szLocalIpAddress = localIpAddress;
-		m_NetworkData.m_nLocalClientPort = localPort;
-		m_NetworkData.m_nExternalClientPort = externalPort;
-		return 1;
-	default:
-		return -1;
-	};
+		case PortType::Guest:
+			m_NetworkData.lastGuestHeartbeat = currentTime;
+			break;
+		case PortType::Host:
+			m_NetworkData.lastHostHeartbeat = currentTime;
+			break;
+	}
 }
 void CUser::UpdateClientUserInfo(CUserCharacter character)
 {

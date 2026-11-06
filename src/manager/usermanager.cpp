@@ -10,6 +10,7 @@
 #include "questmanager.h"
 #include "voxelmanager.h"
 #include "classmodmanager.h"
+#include "common/net/netdefs.h"
 
 #include "user/userinventoryitem.h"
 
@@ -179,74 +180,97 @@ bool CUserManager::OnUdpPacket(CReceivePacket* msg, IExtendedSocket* socket)
 	if (user == NULL)
 		return false;
 
-	int type = msg->ReadUInt8();
+	unsigned char type = msg->ReadUInt8();
 	switch (type)
 	{
-	case 0:
-		Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 0\n"));
-		break;
-	case 1:
-	{
-		int unk = msg->ReadUInt32();
-
-		Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 1: %d\n"), unk);
-		break;
-	}
-	case 2:
-	{
-		int subType = msg->ReadUInt32();
-		switch (subType)
+		case UdpPacketType::NetworkFailure:
 		{
-		case 0:
-		{
-			int unk = msg->ReadInt32();
-			int unk2 = msg->ReadUInt16();
-			int unk3 = msg->ReadUInt16();
+			Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: received type NetworkFailure\n", user->GetLogName()));
 
-			Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-0: unk: %d, unk2: %d, unk3: %d\n"), unk, unk2, unk3);
+			if (g_pServerConfig->room.connectingMethod == 0)
+			{
+				g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("DISCONNECTED_BY_NETWORK_FAILURE"));
+				g_UserManager.DisconnectUser(user);
+			}
 			break;
 		}
-		case 1:
+		case UdpPacketType::HolepunchFail:
 		{
-			int unk = msg->ReadInt32();
-			int unk2 = msg->ReadUInt16();
-			int unk3 = msg->ReadUInt16();
+			IRoom* room = user->GetCurrentRoom();
+			if (room == NULL)
+				return false;
 
-			Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-1: unk: %d, unk2: %d, unk3: %d\n"), unk, unk2, unk3);
+			unsigned long userID = msg->ReadUInt32();
+
+			IUser* destUser = g_UserManager.GetUserById(userID);
+			if (destUser == NULL)
+				return false;
+
+			if (destUser->GetCurrentRoom() != room)
+				return false;
+
+			Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: received type HolepunchFail: userID: %d\n"), user->GetLogName(), userID);
+
+			g_PacketManager.SendUdpModifySocketInfo(user->GetExtendedSocket(), PortType::Guest, userID, ip_string_to_int(g_pServerConfig->ip), atoi(g_pServerConfig->port.c_str()));
+			g_PacketManager.SendUdpModifySocketInfo(user->GetExtendedSocket(), PortType::Host, userID, ip_string_to_int(g_pServerConfig->ip), atoi(g_pServerConfig->port.c_str()));
 			break;
 		}
-		case 2:
+		case UdpPacketType::SocketInfo:
 		{
-			int unk = msg->ReadInt32();
-			int unk2 = msg->ReadUInt16();
+			unsigned char subType = msg->ReadUInt8();
+			switch (subType)
+			{
+				case SocketInfoPacketType::SocketInfoSuccess:
+				{
+					unsigned long localIP = msg->ReadUInt32();
+					unsigned short retryNumHost = msg->ReadUInt16();
+					unsigned short retryNumGuest = msg->ReadUInt16();
 
-			Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-2: unk: %d, unk2: %d\n"), unk, unk2);
-			break;
-		}
-		case 3:
-		{
-			int unk = msg->ReadInt32();
-			int unk2 = msg->ReadUInt16();
+					Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: received type SocketInfo::SocketInfoSuccess: localIP: %s, retryNumHost: %d, retryNumGuest: %d\n"), user->GetLogName(), ip_to_string(localIP).c_str(), retryNumHost, retryNumGuest);
+					break;
+				}
+				case SocketInfoPacketType::SocketInfoFail:
+				{
+					unsigned long localIP = msg->ReadUInt32();
+					unsigned short localHostPort = msg->ReadUInt16();
+					unsigned short localGuestPort = msg->ReadUInt16();
 
-			Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-3: unk: %d, unk2: %d\n"), unk, unk2);
-			break;
-		}
-		case 4:
-		{
-			int unk = msg->ReadInt32();
+					Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: received type SocketInfo::SocketInfoFail: localIP: %s, localHostPort: %d, localGuestPort: %d\n"), user->GetLogName(), ip_to_string(localIP).c_str(), localHostPort, localGuestPort);
+					break;
+				}
+				case SocketInfoPacketType::HolepunchSuccess:
+				{
+					unsigned long userID = msg->ReadUInt32();
+					unsigned short retryNum = msg->ReadUInt16();
 
-			Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-4: unk: %d\n"), unk);
-			break;
-		}
-		case 5:
-		{
-			int unk = msg->ReadInt32();
-			int unk2 = msg->ReadUInt16();
+					Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: received type SocketInfo::HolepunchSuccess: userID: %d, retryNum: %d\n"), user->GetLogName(), userID, retryNum);
+					break;
+				}
+				case SocketInfoPacketType::RelaySuccess:
+				{
+					unsigned long userID = msg->ReadUInt32();
+					unsigned short retryNum = msg->ReadUInt16();
 
-			Logger().Info(OBFUSCATE("CUserManager::OnUdpPacket: received type 2-5: unk: %d, unk2: %d\n"), unk, unk2);
-			break;
-		}
-		}
+					Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: received type SocketInfo::RelaySuccess: userID: %d, retryNum: %d\n"), user->GetLogName(), userID, retryNum);
+					break;
+				}
+				case SocketInfoPacketType::RelayFail:
+				{
+					unsigned long userID = msg->ReadUInt32();
+
+					Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: received type SocketInfo::RelayFail: userID: %d\n"), user->GetLogName(), userID);
+					break;
+				}
+				case SocketInfoPacketType::MessageHistory:
+				{
+					unsigned long userID = msg->ReadUInt32();
+					unsigned short size = msg->ReadUInt16();
+					vector<unsigned char> buffer = msg->ReadArray(size);
+
+					Logger().Info(OBFUSCATE("[User '%s'] CUserManager::OnUdpPacket: received type SocketInfo::MessageHistory: userID: %d, size: %d\n"), user->GetLogName(), userID, size);
+					break;
+				}
+			}
 		break;
 	}
 	default:
@@ -987,8 +1011,19 @@ bool CUserManager::OnUpdateInfoPacket(CReceivePacket* msg, IExtendedSocket* sock
 
 void CUserManager::OnSecondTick(time_t curTime)
 {
+	time_t currentTime = time(NULL);
+
 	for (auto u : m_Users)
+	{
+		UserNetworkConfig_s network = u->GetNetworkConfig();
+		if (network.networkSet == 0x3 && (network.lastGuestHeartbeat + UDP_CLIENT_HEARTBEAT_TIMEOUT < currentTime || network.lastHostHeartbeat + UDP_CLIENT_HEARTBEAT_TIMEOUT < currentTime)) {
+			g_PacketManager.SendUMsgNoticeMsgBoxToUuid(u->GetExtendedSocket(), OBFUSCATE("DISCONNECTED_BY_NETWORK_FAILURE"));
+			g_UserManager.DisconnectUser(u);
+			continue;
+		}
+
 		u->OnTick();
+	}
 }
 
 void CUserManager::SendNoticeMessageToAll(const string& msg)
@@ -1048,7 +1083,7 @@ int CUserManager::LoginUser(IExtendedSocket* socket, const string& userName, con
 		return LOGIN_SERVER_IS_FULL;
 	}
 
-	Logger().Info(OBFUSCATE("User logged in (IP: %s, UID: %d, Username: %s)\n"), newUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), userID, userName.c_str());
+	Logger().Info(OBFUSCATE("User logged in (IP: %s, UID: %d, Username: %s)\n"), socket->GetIP().c_str(), userID, userName.c_str());
 
 	// Update last login time, last IP and last HWID
 	CUserData data = newUser->GetUser(UDATA_FLAG_FIRSTLOGONTIME);

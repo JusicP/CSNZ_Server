@@ -21,6 +21,7 @@ public:
 	void Stop();
 	void Listen();
 	void SendTo(const Buffer& buf);
+	void SendTo(const Buffer& buf, const sockaddr_in& addr);
 
 	bool IsRunning();
 

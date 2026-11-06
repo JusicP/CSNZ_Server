@@ -15,7 +15,6 @@ uint32_t ip_string_to_int(const string& in, bool* const success)
 {
 	uint32_t ret = 0;
 	const bool _success = (1 == inet_pton(AF_INET, in.c_str(), &ret));
-	ret = ntohl(ret);
 
 	if (success)
 	{
@@ -32,7 +31,6 @@ uint32_t ip_string_to_int(const string& in, bool* const success)
 string ip_to_string(uint32_t in, bool* const success)
 {
 	string ret(INET_ADDRSTRLEN, '\0');
-	in = htonl(in);
 	const bool _success = (NULL != inet_ntop(AF_INET, &in, &ret[0], ret.size()));
 
 	if (success)

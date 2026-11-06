@@ -200,7 +200,7 @@ public:
 
 	virtual void SendTitle(IExtendedSocket* socket, int id) = 0;
 
-	virtual void SendUDPHostData(IExtendedSocket* socket, bool host, int userID, const std::string& ipAddress, int port) = 0;
+	virtual void SendUdpModifySocketInfo(IExtendedSocket* socket, PortType portType, unsigned long userID, unsigned long ip, unsigned short port) = 0;
 
 	virtual void SendHostServerStop(IExtendedSocket* socket) = 0;
 	virtual void SendHostServerTransfer(IExtendedSocket* socket, const std::string& ipAddress, int port) = 0;

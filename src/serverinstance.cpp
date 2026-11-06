@@ -74,8 +74,8 @@ bool CServerInstance::Init()
 	g_pGameModeListTable = new CCSVTable("Data/GameModeList.csv", rapidcsv::LabelParams(0, 0), rapidcsv::SeparatorParams(), rapidcsv::ConverterParams(true), rapidcsv::LineReaderParams());
 
 	if (!Manager().InitAll() ||
-		!m_TCPServer.Start(g_pServerConfig->tcpPort, g_pServerConfig->tcpSendBufferSize, g_pServerConfig->ssl) ||
-		!m_UDPServer.Start(g_pServerConfig->udpPort))
+		!m_TCPServer.Start(g_pServerConfig->port, g_pServerConfig->tcpSendBufferSize, g_pServerConfig->ssl) ||
+		!m_UDPServer.Start(g_pServerConfig->port))
 	{
 		Logger().Error("Server initialization failed.\n");
 		m_bIsServerActive = false;
@@ -200,62 +200,163 @@ void CServerInstance::OnTCPError(int errorCode)
 	//SetServerActive(false);
 }
 
-void CServerInstance::OnUDPMessage(Buffer& buf, unsigned short port)
+void CServerInstance::OnUDPMessage(Buffer& buf, sockaddr_in& addr)
 {
-	// 7, 14 is well known
-	// 14 = type 0 (Punch)
-	// 7 = type 1 (HeartBeat)
-	if (buf.getBuffer().size() < 7)
+	switch (buf.readUInt8())
 	{
-		Logger().Error("[CServerInstance::OnUDPMessage] invalid packet???\n");
-		return;
-	}
-
-	char signature = buf.readUInt8();
-	if (signature != UDP_HOLEPUNCH_PACKET_SIGNATURE_1)
-	{
-		Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] signature error\n"));
-		return;
-	}
-
-	int userID = buf.readUInt32_LE();
-	int type = buf.readUInt8();
-
-	IUser* user = g_UserManager.GetUserById(userID);
-	if (!user)
-	{
-		Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Packet but not inside g_UserManager\n"), userID);
-		return;
-	}
-
-	if (type == 0)
-	{
-		int portID = buf.readUInt8();
-		int localAddr = ~buf.readUInt32_BE(); // TODO: Fix this...
-		string localIpAddress = ip_to_string(localAddr);
-		int localPort = buf.readUInt16_LE();
-		int tries = buf.readUInt8();
-
-		Logger().Info("OnUDPMessage(0) - userID: %d, portID: %d, localAddr: %d (%s), localPort: %d, tries: %d\n", userID, portID, localAddr, localIpAddress.c_str(), localPort, tries);
-
-		if (user->UpdateHolepunch(portID, localIpAddress, localPort, port) == -1)
+		case UDP_CLIENT_PACKET_SIGNATURE:
 		{
-			Logger().Warn("UpdateHolepunch Failed: %d, %d, %d\n", portID, localPort, port);
-		}
+			unsigned long userID = buf.readUInt32_LE();
+			IUser* user = g_UserManager.GetUserById(userID);
+			if (user == NULL)
+			{
+				Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Client Packet but not inside g_UserManager\n"), userID);
+				return;
+			}
 
-		Buffer replyBuffer;
-		replyBuffer.writeUInt8('W');
-		replyBuffer.writeUInt8(0);
-		replyBuffer.writeUInt8(1);
-		m_UDPServer.SendTo(replyBuffer);
-	}
-	else if (type == 1)
-	{
-		int tries = buf.readUInt8();
+			if (strcmp(ip_to_string(addr.sin_addr.s_addr).c_str(), user->GetExtendedSocket()->GetIP().c_str()) != 0)
+			{
+				Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Client Packet from different IP, expected: %s, actual: %s\n"), userID, user->GetExtendedSocket()->GetIP().c_str(), ip_to_string(addr.sin_addr.s_addr).c_str());
+				return;
+			}
+
+			switch ((ClientPacketType)buf.readUInt8())
+			{
+				case ClientPacketType::SocketInfo:
+				{
+					PortType portType = (PortType)buf.readUInt8();
+					if (portType != PortType::Guest && portType != PortType::Host) {
+						Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Client Packet but its portType is invalid: %d\n"), userID, portType);
+						return;
+					}
+
+					unsigned long localIP = ~buf.readUInt32_LE();
+					unsigned short localPort = buf.readUInt16_LE();
+					unsigned char retryNum = buf.readUInt8();
+
+					Logger().Info("OnUDPMessage(SocketInfo) - userID: %d, portType: %s, localIP: %s, localPort: %d, retryNum: %d, externalPort: %d\n", userID, portType == PortType::Guest ? "guest" : "host", ip_to_string(localIP).c_str(), localPort, retryNum, addr.sin_port);
+
+					user->UpdateHolepunch((unsigned char)portType, addr.sin_addr.s_addr, addr.sin_port, localIP, localPort, time(NULL));
+
+					Buffer replyBuffer;
+					replyBuffer.writeUInt8(UDP_CLIENT_PACKET_SIGNATURE);
+					replyBuffer.writeUInt8(0);
+					replyBuffer.writeUInt8(1);
+					m_UDPServer.SendTo(replyBuffer);
+					break;
+				}
+				case ClientPacketType::Heartbeat:
+				{
+					unsigned char retryNum = buf.readUInt8();
+
+					PortType portType;
+					UserNetworkConfig_s network = user->GetNetworkConfig();
+
+					if (addr.sin_port == network.externalGuestPort)
+						portType = PortType::Guest;
+					else if (addr.sin_port == network.externalHostPort)
+						portType = PortType::Host;
+					else
+					{
+						Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Client Packet but its port doesn't match any of the user's ports: {} and {}\n"), userID, network.externalGuestPort, network.externalHostPort);
+						return;
+					}
 
 #ifdef _DEBUG
-		Logger().Debug("OnUDPMessage(1) - userID: %d, tries: %d\n", userID, tries);
+					Logger().Debug("OnUDPMessage(Heartbeat) - userID: %d, retryNum: %d, port: %d\n", userID, retryNum, addr.sin_port);
 #endif
+
+					user->UpdateUDPHeartbeat((unsigned char)portType, time(NULL));
+					break;
+				}
+			}
+
+			break;
+		}
+		case UDP_RELAY_PACKET_SIGNATURE:
+		{
+			unsigned long userID = buf.readUInt32_LE();
+			IUser* user = g_UserManager.GetUserById(userID);
+			if (user == NULL)
+			{
+				Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Relay Packet but not inside g_UserManager\n"), userID);
+				return;
+			}
+
+			if (strcmp(ip_to_string(addr.sin_addr.s_addr).c_str(), user->GetExtendedSocket()->GetIP().c_str()) != 0)
+			{
+				Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Client Packet from different IP, expected: %s, actual: %s\n"), userID, user->GetExtendedSocket()->GetIP().c_str(), ip_to_string(addr.sin_addr.s_addr).c_str());
+				return;
+			}
+
+			UserNetworkConfig_s network = user->GetNetworkConfig();
+			if (addr.sin_port != network.externalGuestPort && addr.sin_port != network.externalHostPort)
+			{
+				Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Relay Packet but its port doesn't match any of the user's ports: {} and {}\n"), userID, network.externalGuestPort, network.externalHostPort);
+				return;
+			}
+
+			IRoom* room = user->GetCurrentRoom();
+			if (room == NULL)
+			{
+#ifdef _DEBUG
+				Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Relay Packet but its room is NULL\n"), userID);
+#endif
+				return;
+			}
+
+			PortType portType = (PortType)buf.readUInt8();
+			if (portType != PortType::Guest && portType != PortType::Host)
+			{
+				Logger().Info(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Relay Packet but its portType is invalid: %d\n"), userID, (int)portType);
+				return;
+			}
+
+			unsigned long targetUserID = buf.readUInt32_LE();
+			if (!targetUserID)
+			{
+				// TODO: Figure out what this packet is about. Known structure (16 bytes):
+				// relay signature (Y) - 1 byte
+				// userID - 4 bytes
+				// portType - 1 byte
+				// unk1 (always 0) - 4 bytes
+				// unk2 (always 0) - 1 byte
+				// userID (again) - 4 bytes
+				// retryNum - 1 byte
+				return;
+			}
+
+			IUser* targetUser = g_UserManager.GetUserById(targetUserID);
+			if (targetUser == NULL)
+			{
+				Logger().Debug(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Relay Packet but targetUser not inside g_UserManager\n"), userID);
+				return;
+			}
+
+			if (targetUser->GetCurrentRoom() != room)
+			{
+#ifdef _DEBUG
+				Logger().Debug(OBFUSCATE("[CServerInstance::OnUDPMessage] User '%d' Sent UDP Relay Packet but targetUser not in the same room\n"), userID);
+#endif
+				return;
+			}
+
+#ifdef _DEBUG
+			Logger().Debug("OnUDPMessage(Relay) - userID: %d, portType: %d, targetUserID: %d, port: %d\n", userID, targetUserID, addr.sin_port);
+#endif
+
+			UserNetworkConfig_s targetNetwork = targetUser->GetNetworkConfig();
+			sockaddr_in targetAddr = {};
+			targetAddr.sin_family = AF_INET;
+			targetAddr.sin_addr.s_addr = targetNetwork.externalIP;
+			targetAddr.sin_port = portType == PortType::Host ? targetNetwork.externalHostPort : targetNetwork.externalGuestPort;
+
+			vector<unsigned char> relayBuf = buf.getBuffer();
+			relayBuf.erase(relayBuf.begin(), relayBuf.begin() + 10);
+
+			m_UDPServer.SendTo(Buffer(relayBuf), targetAddr);
+			break;
+		}
 	}
 }
 

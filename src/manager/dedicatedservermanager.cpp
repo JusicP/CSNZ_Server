@@ -88,7 +88,7 @@ bool CDedicatedServerManager::OnPacket(CReceivePacket* msg, IExtendedSocket* soc
 		}
 
 		int port = msg->ReadUInt16(); // -port, default is 27015
-		int ip = msg->ReadUInt32(true); // ip from -hostip dedi argument
+		int ip = msg->ReadUInt32(); // ip from -hostip dedi argument
 		std::string domain = msg->ReadString(); // domain from -hostdomain dedi argument
 
 		// if IP is not specified by dedi server, use IP from socket

@@ -1218,6 +1218,12 @@ bool CChannelManager::OnNewRoomRequest(CReceivePacket* msg, IUser* user)
 		return false;
 	}
 
+	if (g_pServerConfig->room.connectingMethod == 0 && user->GetNetworkConfig().networkSet != 0x3)
+	{
+		g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("ROOM_JOIN_FAILED_INVALID_GAME_IP"));
+		return false;
+	}
+
 	CRoomSettings* roomSettings = new CRoomSettings(msg->GetData());
 	if (!roomSettings->CheckSettings(user))
 	{
@@ -1320,6 +1326,12 @@ bool CChannelManager::OnJoinRoomRequest(CReceivePacket* msg, IUser* user)
 	if (room->IsUserKicked(user->GetID()))
 	{
 		g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("ROOM_JOIN_FAILED_KICKED"));
+		return false;
+	}
+
+	if (g_pServerConfig->room.connectingMethod == 0 && user->GetNetworkConfig().networkSet != 0x3)
+	{
+		g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("ROOM_JOIN_FAILED_INVALID_GAME_IP"));
 		return false;
 	}
 
@@ -1578,7 +1590,9 @@ bool CChannelManager::OnConnectionFailure(IUser* user)
 	}
 	else
 	{
-		Logger().Info("User '%s' unsuccessfully tried to connect to the game match(%s:%d)\n", user->GetLogName(), hostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), hostUser->GetNetworkConfig().m_nExternalClientPort);
+		UserNetworkConfig_s network = hostUser->GetNetworkConfig();
+
+		Logger().Info("User '%s' unsuccessfully tried to connect to the game match(%s:%d)\n", user->GetLogName(), ip_to_string(network.externalIP).c_str(), network.externalHostPort);
 
 		g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), va("Cannot establish connection to %s:%d. Possible reasons:\n"
 			"1. Host connected to the master server with localhost(127.0.0.1) ip\n"
@@ -1587,7 +1601,7 @@ bool CChannelManager::OnConnectionFailure(IUser* user)
 			"4. You are trying to connect to a host with strict NAT\n"
 			"Host address: %s\n"
 			"Your address: %s",
-			hostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), hostUser->GetNetworkConfig().m_nExternalClientPort, hostUser->GetNetworkConfig().m_nLocalClientPort == hostUser->GetNetworkConfig().m_nExternalClientPort ? va("%d", hostUser->GetNetworkConfig().m_nExternalClientPort) : va ("%d or %d", hostUser->GetNetworkConfig().m_nLocalClientPort, hostUser->GetNetworkConfig().m_nExternalClientPort), hostUser->GetNetworkConfig().m_szExternalIpAddress.c_str(), user->GetNetworkConfig().m_szExternalIpAddress.c_str()));
+			ip_to_string(network.externalIP).c_str(), network.externalHostPort, network.localHostPort == network.externalHostPort ? va("%d", network.externalHostPort) : va ("%d or %d", network.localHostPort, network.externalHostPort), ip_to_string(network.externalIP).c_str(), ip_to_string(user->GetNetworkConfig().externalIP).c_str()));
 	}
 
 	RoomReadyStatus readyStatus = room->ToggleUserReadyStatus(user);
@@ -1630,10 +1644,18 @@ bool CChannelManager::OnGameStartRequest(IUser* user)
 	// send to the host game start request
 	if (currentRoom->GetStatus() == RoomStatus::STATUS_WAITING && currentRoom->GetHostUser() == user)
 	{
-		if (g_pServerConfig->room.connectingMethod == 1 && !g_DedicatedServerManager.IsPoolAvailable() && currentRoom->GetServer() == NULL)
+		if (g_pServerConfig->room.connectingMethod != 0 && !g_DedicatedServerManager.IsPoolAvailable() && currentRoom->GetServer() == NULL)
 		{
-			g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("ROOM_START_NOT_ENOUGH_DEDICATE"));
-			return false;
+			if (g_pServerConfig->room.connectingMethod == 1)
+			{
+				g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("ROOM_START_NOT_ENOUGH_DEDICATE"));
+				return false;
+			}
+			else if (g_pServerConfig->room.connectingMethod == 2 && user->GetNetworkConfig().networkSet != 0x3)
+			{
+				g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("ROOM_JOIN_FAILED_INVALID_GAME_IP"));
+				return false;
+			}
 		}
 
 		currentRoom->HostStartGame();
@@ -1642,6 +1664,12 @@ bool CChannelManager::OnGameStartRequest(IUser* user)
 	}
 	else if (currentRoom->GetStatus() == RoomStatus::STATUS_INGAME)
 	{
+		if (roomSettings->p2p && user->GetNetworkConfig().networkSet != 0x3)
+		{
+			g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("ROOM_JOIN_FAILED_INVALID_GAME_IP"));
+			return false;
+		}
+
 		currentRoom->UserGameJoin(user);
 
 		return true;
