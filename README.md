@@ -38,4 +38,4 @@ cmake --build build
 ```
 
 # Documentation
-You can find server documentation in [DOCUMENTATION.md](doc/documentation.md) file.
+You can find server documentation in [DOCUMENTATION.md](docs/documentation.md) file.
