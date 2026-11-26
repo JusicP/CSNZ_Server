@@ -1364,8 +1364,8 @@ int CItemManager::AddItems(int userID, IUser* user, vector<RewardItem>& items)
 			}
 		}
 
-		CUserInventoryItem item;
-		item.PushItem(insertedItems, itemID, count, itemStatus, itemInUse, currentTimestamp, duration, 0, 0, 0, 0, 0, {}, 0, 0, lockStatus); // push new items to inventory
+		CUserInventoryItem inventoryItem;
+		inventoryItem.PushItem(insertedItems, itemID, count, itemStatus, itemInUse, currentTimestamp, duration, 0, 0, 0, 0, 0, {}, 0, 0, lockStatus); // push new items to inventory
 	}
 
 	if (result == ITEM_ADD_DB_ERROR)
